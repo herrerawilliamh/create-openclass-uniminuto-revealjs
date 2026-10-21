@@ -1,14 +1,19 @@
 # Graph Report - create-openclass-uniminuto-revealjs  (2026-10-21)
 
 ## Corpus Check
-- 51 files · ~31,569 words
+- 51 files · ~31,679 words
 - Verdict: corpus is large enough that graph structure adds value.
-- Unclassified: 12 file(s) not represented in the graph (top: (none) 6, .css 4, .template 1)
+- Unclassified: 13 file(s) not represented in the graph (top: (none) 7, .css 4, .template 1)
 
 ## Summary
-- 461 nodes · 577 edges · 32 communities (25 shown, 7 thin omitted)
+- 462 nodes · 578 edges · 32 communities (25 shown, 7 thin omitted)
 - Extraction: 98% EXTRACTED · 2% INFERRED · 0% AMBIGUOUS · INFERRED: 14 edges (avg confidence: 0.86)
 - Token cost: 0 input · 0 output
+
+## Graph Freshness
+- Built from commit: `6b6de1ed`
+- Run `git rev-parse HEAD` and compare to check if the graph is stale.
+- Run `graphify update .` after code changes (no API cost).
 
 ## Community Hubs (Navigation)
 - generar-desde-config.mjs
@@ -37,7 +42,7 @@
 - Pagina
 - OpenClass UNIMINUTO · Reveal.js
 - Plantilla semanal para crear una OpenClass con IA
-- dependencies
+- scripts
 - app.js
 - Microactividad interactiva (5–10 minutos)
 - Prompt para crear una semana de OpenClass con IA
@@ -52,7 +57,7 @@
 7. `cargarPlugins()` - 11 edges
 8. `Manual del creador de OpenClass UNIMINUTO Reveal.js` - 10 edges
 9. `abrirNavegador()` - 9 edges
-10. `OpenClass UNIMINUTO · Reveal.js` - 8 edges
+10. `OpenClass master: minimal AI context` - 9 edges
 
 ## Surprising Connections (you probably didn't know these)
 - `Architecture and key files` --references--> `puedeMover()`  [INFERRED]
@@ -84,8 +89,8 @@ Cohesion: 0.12
 Nodes (14): chart.js, reveal.js, OpenClassCodigo(), TECLAS, cargarFase2(), FASE2, cargarCss(), cargarPlugins() (+6 more)
 
 ### Community 3 - "template/package.json"
-Cohesion: 0.06
-Nodes (30): @fontsource/atkinson-hyperlegible, @fontsource/merriweather-sans, mermaid, vite, @vitejs/plugin-react, devDependencies, vite, @vitejs/plugin-react (+22 more)
+Cohesion: 0.07
+Nodes (26): @fontsource/atkinson-hyperlegible, @fontsource/merriweather-sans, mermaid, vite, @vitejs/plugin-react, dependencies, chart.js, @fontsource/atkinson-hyperlegible (+18 more)
 
 ### Community 4 - "semana.mjs"
 Cohesion: 0.12
@@ -120,8 +125,8 @@ Cohesion: 0.13
 Nodes (14): Arquitectura básica de IoT, Conceptos clave y aplicaciones, Código: semáforo ambiental con ESP32, De un dato físico a una decisión digital, Demostración de contenido extenso, Generalidades de IoT, Internet de las cosas, IoT como ecosistema conectado (+6 more)
 
 ### Community 13 - "OpenClass master: minimal AI context"
-Cohesion: 0.20
-Nodes (9): Architecture and key files, Checks and graph maintenance, Distribution decision (2026-10-21, confirmed by the user), Generation routes, Institutional and scope constraints, OpenClass master: minimal AI context, Start here, Thirteen existing layouts (+1 more)
+Cohesion: 0.18
+Nodes (10): Architecture and key files, Checks and graph maintenance, Distribution decision (2026-10-21, confirmed by the user), Generation routes, Institutional and scope constraints, OpenClass master: minimal AI context, Publication state (2026-10-21), Start here (+2 more)
 
 ### Community 14 - "Laboratorio interactivo de OpenClass"
 Cohesion: 0.22
@@ -159,9 +164,9 @@ Nodes (8): Comandos, Desarrollo del generador, Instalación y primer curso, Lice
 Cohesion: 0.25
 Nodes (7): Contenido, Datos generales, Interacción y evaluación, Material académico disponible, Observaciones pedagógicas, Plantilla semanal para crear una OpenClass con IA, Referencias
 
-### Community 26 - "dependencies"
-Cohesion: 0.22
-Nodes (9): dependencies, chart.js, @fontsource/atkinson-hyperlegible, @fontsource/merriweather-sans, mermaid, react, react-dom, reveal.js (+1 more)
+### Community 26 - "scripts"
+Cohesion: 0.15
+Nodes (13): scripts, build:all, config, demo, dev, general, laboratorio, pages:build (+5 more)
 
 ### Community 29 - "app.js"
 Cohesion: 0.53
@@ -173,23 +178,23 @@ Nodes (3): Alternativas, Cambiar el tema, Microactividad interactiva (5–10 min
 
 ## Knowledge Gaps
 - **1 isolated node(s):** `mermaid`
-  These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 312 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
+  These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 313 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
 - **7 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
 - **Why does `paginarMarkdown()` connect `Presentacion.jsx` to `contenido.test.mjs`?**
-  _High betweenness centrality (0.047) - this node is a cross-community bridge._
+  _High betweenness centrality (0.048) - this node is a cross-community bridge._
 - **What connects `mermaid` to the rest of the system?**
   _1 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `create-openclass-uniminuto-revealjs.mjs` be split into smaller, more focused modules?**
   _Cohesion score 0.1038961038961039 - nodes in this community are weakly interconnected._
+- **Why does `scripts` connect `scripts` to `template/package.json`?**
+  _High betweenness centrality (0.030) - this node is a cross-community bridge._
 - **Should `index.mjs` be split into smaller, more focused modules?**
   _Cohesion score 0.12318840579710146 - nodes in this community are weakly interconnected._
 - **Should `template/package.json` be split into smaller, more focused modules?**
-  _Cohesion score 0.06451612903225806 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.07407407407407407 - nodes in this community are weakly interconnected._
 - **Should `semana.mjs` be split into smaller, more focused modules?**
   _Cohesion score 0.12280701754385964 - nodes in this community are weakly interconnected._
-- **Should `Presentacion.jsx` be split into smaller, more focused modules?**
-  _Cohesion score 0.1164021164021164 - nodes in this community are weakly interconnected._

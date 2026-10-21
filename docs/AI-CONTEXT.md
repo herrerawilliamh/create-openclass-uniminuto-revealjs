@@ -30,6 +30,11 @@ Read only this file at session start. Before source exploration, run `graphify q
 ## Distribution decision (2026-10-21, confirmed by the user)
 Hybrid model: public GitHub/Pages/npm ship a NEUTRAL theme (own design, `scripts/render-neutral-assets.mjs`, sources in `recursos-neutros/`) with the same file names and geometry. Institutional originals (logos, accreditation, 70 años, backgrounds, plane, favicon) and four IoT images of undocumented origin live only in local `recursos-institucionales/` (gitignored, outside npm `files`, ignored by Graphify) and are applied with `--assets`. Backup of the approved RC3 state: `.backups/rc3-pre-final-20261021/`.
 
+## Publication state (2026-10-21)
+- GitHub public `main`; Pages via `.github/workflows/pages.yml` at https://herrerawilliamh.github.io/create-openclass-uniminuto-revealjs/ (landing + `/curso/`).
+- npm `create-openclass-uniminuto-revealjs@1.0.0`, dist-tag `latest`. npm uses staged publishing: publishing needs the maintainer's 2FA and approval (`npm stage approve` or npmjs.com → Staged Packages). A `0.0.0-stage` placeholder and an accidental `lastest` dist-tag exist.
+- Known: `npm audit` low (KaTeX via Mermaid; fix requires Mermaid 12, semver major). Never use `npm audit fix --force`.
+
 ## Checks and graph maintenance
 - `npm test` (17 tests); `npm run test:navegador` (fresh course, base `/prueba-openclass/`, Chrome); `npm run site:build` then `node --test tests/sitio.test.mjs`.
 - Course-level: `npm run test:estructura`, `npm run build:all`.

@@ -96,6 +96,9 @@ Estructura: `bin/` (CLI), `template/` (curso que se copia), `site/` (landing de 
 - KaTeX se descarga de un CDN: sin conexión, las fórmulas se muestran como texto.
 - Las actividades son locales: no envían resultados a Moodle ni a otros servidores.
 - Seminar, Poll y Questions (participación multiusuario) están incluidos pero desactivados.
+- `npm audit` informa un aviso de severidad baja en KaTeX (dependencia interna de Mermaid); la
+  corrección exige Mermaid 12 (cambio mayor) y se evaluará en una versión posterior. El contenido
+  de las presentaciones lo escribe el docente, no usuarios externos.
 
 ## Licencia y créditos
 
