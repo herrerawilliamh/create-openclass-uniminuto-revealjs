@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="es" data-kind="galeria">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<meta name="description" content="Galería de los 13 layouts de OpenClass con vista previa real, ficha y código Markdown copiable."/>
+<title>OpenClass · Galería de 13 layouts</title>
+<link rel="icon" href="%BASE_URL%favicon.png"/>
+</head>
+<body>
+<a class="saltar" href="#galeria">Saltar a la galería</a>
+<header class="g-cabecera">
+  <div class="g-contenedor">
+    <p class="g-sobre">OpenClass · Reveal.js</p>
+    <h1>Galería de los 13 layouts</h1>
+    <p>Cada tarjeta muestra una captura real del layout, su propósito y el Markdown listo para copiar. Abre la ficha para ver parámetros, límites y errores frecuentes.</p>
+    <nav class="g-nav" aria-label="Navegación">
+      <a href="%BASE_URL%">Portal</a>
+      <a href="%BASE_URL%demo-completa/">Demostración completa</a>
+      <a href="%BASE_URL%guia/">Guía del docente</a>
+    </nav>
+  </div>
+</header>
+<main class="g-contenedor">
+  <section class="g-herramientas" aria-label="Filtrar y comparar">
+    <label class="g-buscar">Buscar layout
+      <input id="buscar" type="search" placeholder="imagen, código, tabla, video…" autocomplete="off"/>
+    </label>
+    <div class="g-comparar">
+      <label>Comparar <select id="comparar-a"></select></label>
+      <label>con <select id="comparar-b"></select></label>
+    </div>
+  </section>
+  <section id="comparacion" class="g-comparacion" aria-live="polite"></section>
+  <p id="sin-resultados" class="g-aviso" hidden>No hay layouts que coincidan con la búsqueda.</p>
+  <section id="galeria" class="g-rejilla" aria-label="Layouts"></section>
+  <p class="g-nota">Las vistas previas se generan con el tema neutro público. Si tu curso se creó con <code>--assets</code>, verás tus fondos institucionales.</p>
+</main>
+<script type="module" src="./galeria.mjs"></script>
+</body>
+</html>

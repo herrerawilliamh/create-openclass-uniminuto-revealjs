@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OpenClass · Microactividad</title>
+<link rel="stylesheet" href="estilos.css">
+</head>
+<body data-estado="cargando">
+<main id="actividad">
+  <header class="cabecera">
+    <div>
+      <p class="sobretitulo">OpenClass · Microactividad (5–10 min)</p>
+      <h1 id="titulo">Microactividad</h1>
+      <p><strong>Objetivo:</strong> <span id="objetivo"></span></p>
+    </div>
+    <div class="tiempo" aria-label="Tiempo sugerido">
+      <span id="reloj" aria-live="off">07:00</span>
+      <button type="button" id="cronometro" class="secundario">Iniciar tiempo</button>
+    </div>
+  </header>
+  <details open>
+    <summary>Instrucciones</summary>
+    <ol id="instrucciones"></ol>
+  </details>
+  <div class="barra" aria-hidden="true"><span id="progreso"></span></div>
+  <p id="contador" class="quieto"></p>
+  <form id="formulario" novalidate>
+    <div id="elementos"></div>
+    <div class="acciones">
+      <button type="submit" id="comprobar">Comprobar</button>
+      <button type="button" id="reintentar" class="secundario" hidden>Reintentar las que faltan</button>
+      <button type="button" id="reiniciar" class="secundario">Reiniciar</button>
+    </div>
+  </form>
+  <p id="estado" class="estado" role="status" aria-live="polite"></p>
+  <section id="resultado" class="resultado" hidden aria-labelledby="titulo-resultado">
+    <h2 id="titulo-resultado">Resultado</h2>
+    <p class="puntaje" id="puntaje"></p>
+    <div class="barra grande" aria-hidden="true"><span id="barra-resultado"></span></div>
+    <p id="mensaje"></p>
+    <ul id="por-categoria"></ul>
+  </section>
+  <p class="quieto">Las respuestas se procesan en este navegador; no se envían ni se guardan.</p>
+</main>
+<script src="datos.js"></script>
+<script src="logica.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

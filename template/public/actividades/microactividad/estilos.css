@@ -1,0 +1,42 @@
+/* ESTILOS DE LA MICROACTIVIDAD — colores del tema OpenClass. */
+:root { --azul: #243764; --amarillo: #ffca05; --lila: #5464bf; --ok: #1f7a4d; --mal: #b3261e; font-family: 'Atkinson Hyperlegible', system-ui, -apple-system, 'Segoe UI', sans-serif; color: var(--azul); background: #f7f9fc; }
+* { box-sizing: border-box; }
+body { margin: 0; padding: clamp(10px, 2vw, 22px); }
+main { max-width: 1100px; margin: auto; background: #fff; border: 1px solid #dee6f2; border-top: 7px solid var(--azul); padding: clamp(14px, 2.4vw, 28px); }
+.cabecera { display: flex; justify-content: space-between; gap: 16px; align-items: flex-start; flex-wrap: wrap; }
+.sobretitulo { margin: 0; font-size: 13px; letter-spacing: .08em; text-transform: uppercase; color: #56637e; font-weight: 700; }
+h1 { font-size: clamp(22px, 2.6vw, 32px); margin: .2em 0 .3em; }
+h2 { margin: .2em 0; }
+p { line-height: 1.45; margin: .4em 0; }
+.tiempo { display: flex; align-items: center; gap: 10px; }
+#reloj { font: 800 28px/1 ui-monospace, Consolas, monospace; padding: 6px 10px; border-radius: 8px; background: #eef1fb; }
+details { margin: 8px 0; }
+summary { cursor: pointer; font-weight: 700; }
+ol { margin: 6px 0 0; padding-left: 22px; line-height: 1.45; }
+.barra { height: 7px; background: #e8edf7; margin: 10px 0 4px; border-radius: 4px; overflow: hidden; }
+.barra span { display: block; height: 100%; width: 0; background: var(--amarillo); transition: width .25s; }
+.barra.grande { height: 14px; }
+.barra.grande span { background: var(--lila); }
+.quieto { font-size: 14px; color: #56637e; }
+.item { border: 2px solid #dfe5f0; border-radius: 10px; margin: 10px 0; padding: 10px 14px 8px; }
+.item legend { font-weight: 700; padding: 0 6px; line-height: 1.35; }
+.item.pendiente { border-color: var(--amarillo); background: #fffbe8; }
+.item.correcto { border-color: var(--ok); background: #effaf3; }
+.item.incorrecto { border-color: var(--mal); background: #fdf0ef; }
+.opciones { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+.opciones label { display: inline-flex; align-items: center; gap: 8px; padding: 7px 12px; border: 2px solid #d9e0ed; border-radius: 999px; cursor: pointer; background: #fff; }
+.opciones label:hover, .opciones label:focus-within { border-color: var(--lila); }
+.opciones input { accent-color: var(--azul); margin: 0; }
+.opciones label:has(input:checked) { border-color: var(--azul); background: #e8edf7; font-weight: 700; }
+.explicacion { margin: 6px 0 2px; font-size: 15px; }
+.correcto .explicacion { color: var(--ok); }
+.incorrecto .explicacion { color: var(--mal); }
+.acciones { display: flex; flex-wrap: wrap; gap: 10px; margin: 14px 0 6px; }
+button { border: 0; border-radius: 8px; background: var(--azul); color: #fff; padding: 11px 18px; font: 700 16px/1 inherit; font-family: inherit; cursor: pointer; }
+button.secundario { background: #e8edf7; color: var(--azul); }
+button:focus-visible, .opciones label:focus-within { outline: 3px solid var(--amarillo); outline-offset: 2px; }
+.estado { min-height: 1.5em; border-left: 5px solid var(--amarillo); background: #f1f4fa; padding: 8px 12px; }
+.resultado { margin-top: 12px; padding: 14px 18px; border-radius: 10px; background: #eef1fb; }
+.puntaje { font: 800 30px/1.1 inherit; font-family: inherit; margin: 4px 0 8px; }
+.error { color: var(--mal); font-weight: 700; }
+@media (prefers-reduced-motion: reduce) { .barra span { transition: none; } }

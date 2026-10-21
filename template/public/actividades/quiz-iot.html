@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OpenClass · Autoevaluación IoT</title>
+<style>
+:root{font-family:system-ui,-apple-system,Segoe UI,sans-serif;color:#243764;background:#f7f9fc}*{box-sizing:border-box}body{margin:0;padding:clamp(12px,3vw,28px)}main{margin:auto;max-width:1080px;background:#fff;border:1px solid #dee6f2;border-top:7px solid #243764;padding:clamp(18px,3vw,36px)}h1{font-size:clamp(26px,3vw,38px);margin:.25em 0}p{line-height:1.5}fieldset{border:0;padding:0;margin:20px 0 10px}legend{font-size:clamp(19px,2vw,26px);font-weight:750;margin-bottom:16px}label{display:block;padding:12px 14px;border:2px solid #d9e0ed;margin:10px 0;cursor:pointer}label:focus-within,label:hover{border-color:#647bc4}label input{accent-color:#243764;margin-right:14px}button{border:0;background:#243764;color:white;padding:12px 20px;font:700 16px system-ui;cursor:pointer;margin:6px 8px 6px 0}button:disabled{opacity:.5;cursor:not-allowed}button.secondary{background:#e8edf7;color:#243764}.bar{height:7px;background:#e8edf7;margin:18px 0}.bar span{display:block;background:#ffca05;height:100%;transition:width .2s}.feedback{border-left:5px solid #ffca05;padding:12px 16px;background:#f1f4fa;margin-top:14px;min-height:56px}.quiet{font-size:14px;color:#56637e}#result{display:none}button:focus-visible,label:focus-within{outline:3px solid #ffca05;outline-offset:2px}
+</style></head><body><main>
+<p class="quiet">UNIMINUTO · OpenClass · Actividad local de demostración</p><h1>Comprueba tus conocimientos de IoT</h1>
+<p>Selecciona una opción, comprueba la respuesta y continúa. La actividad no envía ni almacena datos personales.</p>
+<div class="bar" aria-hidden="true"><span id="progress" style="width:0%"></span></div>
+<section id="exercise"><p id="counter" class="quiet"></p><form id="quiz"><fieldset><legend id="question"></legend><div id="answers"></div></fieldset><button id="check" type="submit" disabled>Comprobar</button><button type="button" id="next" class="secondary" hidden>Siguiente</button></form><div class="feedback" id="feedback" role="status" aria-live="polite">Elige una respuesta para empezar.</div></section>
+<section id="result"><h2>Resultado de la actividad</h2><p id="score"></p><button type="button" id="restart">Repetir actividad</button></section>
+</main>
+<script>
+'use strict';
+const questions=[
+ {q:'¿Qué función cumple un sensor?',options:['Activa siempre un motor','Mide una magnitud física','Reemplaza una red inalámbrica','Almacena toda la aplicación'],answer:1,explain:'Los sensores capturan magnitudes del entorno y las convierten en información procesable.'},
+ {q:'¿Cuál de estos dispositivos puede ejecutar código de control local?',options:['ESP32','Cable HDMI','Resistencia fija','Conector USB'],answer:0,explain:'Un ESP32 integra procesamiento y periféricos para controlar prototipos conectados.'},
+ {q:'¿Qué protocolo es habitual para publicar telemetría?',options:['MQTT','JPEG','CSS','PNG'],answer:0,explain:'MQTT emplea un modelo publicar/suscribir y es habitual en soluciones IoT.'},
+ {q:'¿Qué es un actuador?',options:['Un dispositivo que mide sin intervenir','Un componente que ejecuta una acción física','Un formato de imagen','Una base de datos'],answer:1,explain:'Los actuadores transforman decisiones electrónicas en acciones, por ejemplo encender un ventilador.'}
+];
+const $=id=>document.getElementById(id);let index=0,points=0,answered=false;
+function render(){const item=questions[index];answered=false;$('counter').textContent=`Pregunta ${index+1} de ${questions.length}`;$('question').textContent=item.q;$('answers').replaceChildren();item.options.forEach((option,i)=>{const label=document.createElement('label');const input=document.createElement('input');input.type='radio';input.name='answer';input.value=i;input.required=true;input.addEventListener('change',()=>{$('check').disabled=false});label.append(input,document.createTextNode(option));$('answers').append(label)});$('feedback').textContent='Elige una respuesta para empezar.';$('check').hidden=false;$('check').disabled=true;$('next').hidden=true;$('progress').style.width=`${100*index/questions.length}%`}
+$('quiz').addEventListener('submit',e=>{e.preventDefault();if(answered)return;const input=$('quiz').querySelector('input:checked');if(!input)return;answered=true;const ok=Number(input.value)===questions[index].answer;if(ok)points++;$('feedback').textContent=`${ok?'Correcto.':'Respuesta a revisar.'} ${questions[index].explain}`;$('check').hidden=true;$('next').hidden=false;$('next').textContent=index===questions.length-1?'Ver resultado':'Siguiente';$('answers').querySelectorAll('input').forEach(el=>el.disabled=true)});
+$('next').addEventListener('click',()=>{index++;if(index<questions.length){render()}else{$('exercise').hidden=true;$('result').style.display='block';$('progress').style.width='100%';$('score').textContent=`${points} de ${questions.length} respuestas correctas.`}});
+$('restart').addEventListener('click',()=>{index=0;points=0;$('result').style.display='none';$('exercise').hidden=false;render()});render();
+</script></body></html>

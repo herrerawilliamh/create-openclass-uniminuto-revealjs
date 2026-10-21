@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080"><defs>
+  <linearGradient id="av1" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fbe7a6"/><stop offset=".55" stop-color="#e4b448"/><stop offset="1" stop-color="#b9862a"/></linearGradient>
+  <linearGradient id="av2" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f2cd6b"/><stop offset="1" stop-color="#a8741d"/></linearGradient>
+  <linearGradient id="av3" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9b6b1c"/><stop offset="1" stop-color="#6d4911"/></linearGradient></defs>
+  <rect width="1920" height="1080" fill="#fff"/>
+  <path d="M0 0 H1280 L1130 150 H0 Z" fill="#233359"/>
+  <path d="M1280 0 H1410 L1260 150 H1130 Z" fill="#f6a81b"/>
+  <path d="M1410 0 H1475 L1352 115 H1290 Z" fill="#ffcd0f"/>
+  <g font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" text-anchor="end">
+  <text x="1885" y="92" font-size="67.08" font-weight="800" fill="#243764" letter-spacing="-2">Open<tspan fill="#f2a900">Class</tspan></text>
+  <text x="1885" y="126.32" font-size="21.060000000000002" font-weight="600" fill="#5464bf" letter-spacing="3">PLANTILLA DOCENTE · REVEAL.JS</text>
+</g>
+  <path d="M0 1012 H1840 L1772 1080 H0 Z" fill="#233359"/>
+  <path d="M1760 1080 L1920 944 V990 L1812 1080 Z" fill="#f6a81b"/>
+  <path d="M1838 1080 L1920 1010 V1036 L1868 1080 Z" fill="#ffcd0f"/>
+  <path d="M0 1080 L58 1022 H96 L38 1080 Z" fill="#ffcd0f"/>
+  <g transform="translate(8 990) scale(0.26)">
+  <path d="M0 152 L500 0 L172 182 Z" fill="url(#av1)"/>
+  <path d="M172 182 L500 0 L252 268 Z" fill="url(#av2)"/>
+  <path d="M172 182 L252 268 L206 300 Z" fill="url(#av3)"/>
+  <path d="M0 152 L500 0" stroke="#fff6d6" stroke-width="3" opacity=".7"/>
+</g></svg>

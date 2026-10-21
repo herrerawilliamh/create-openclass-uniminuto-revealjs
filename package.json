@@ -1,0 +1,49 @@
+{
+  "name": "create-openclass-uniminuto-revealjs",
+  "version": "1.0.0",
+  "description": "Generador npm de presentaciones docentes OpenClass con Reveal.js: 13 layouts, código con scroll, Mermaid, Chart, actividades y guía del docente",
+  "author": "William Herrera",
+  "license": "MIT",
+  "type": "module",
+  "bin": {
+    "create-openclass-uniminuto-revealjs": "bin/create-openclass-uniminuto-revealjs.mjs"
+  },
+  "files": [
+    "bin",
+    "template",
+    "docs",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "test": "node --test tests/creator.test.mjs tests/contenido.test.mjs",
+    "test:navegador": "node scripts/test-navegador.mjs",
+    "assets:neutros": "node scripts/render-neutral-assets.mjs && node scripts/render-demo-video.mjs",
+    "galeria:capturas": "node scripts/capture-gallery.mjs",
+    "site:build": "node scripts/build-site.mjs",
+    "pack:check": "npm pack --dry-run --json"
+  },
+  "engines": {
+    "node": ">=20.19.0"
+  },
+  "keywords": [
+    "create",
+    "openclass",
+    "uniminuto",
+    "reveal.js",
+    "react",
+    "educacion",
+    "revealjs",
+    "presentaciones",
+    "markdown",
+    "docentes"
+  ],
+  "homepage": "https://herrerawilliamh.github.io/create-openclass-uniminuto-revealjs/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/herrerawilliamh/create-openclass-uniminuto-revealjs.git"
+  },
+  "bugs": {
+    "url": "https://github.com/herrerawilliamh/create-openclass-uniminuto-revealjs/issues"
+  }
+}

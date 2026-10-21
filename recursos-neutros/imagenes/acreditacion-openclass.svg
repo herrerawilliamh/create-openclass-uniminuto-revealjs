@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="626" viewBox="0 0 1200 626"><defs>
+  <linearGradient id="av1" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fbe7a6"/><stop offset=".55" stop-color="#e4b448"/><stop offset="1" stop-color="#b9862a"/></linearGradient>
+  <linearGradient id="av2" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f2cd6b"/><stop offset="1" stop-color="#a8741d"/></linearGradient>
+  <linearGradient id="av3" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9b6b1c"/><stop offset="1" stop-color="#6d4911"/></linearGradient></defs>
+  <rect width="1200" height="626" fill="#fff"/>
+  <g font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" fill="#0f3d6e">
+    <text x="20" y="200" font-size="190" font-weight="800" letter-spacing="-4">OPEN</text>
+    <text x="20" y="380" font-size="190" font-weight="800" letter-spacing="-4">CLASS</text>
+    <rect x="22" y="420" width="560" height="10"/>
+    <text x="22" y="530" font-size="74" font-weight="700">Aula activa</text>
+  </g>
+  <path d="M640 600 V90" stroke="#0f3d6e" stroke-width="12" stroke-dasharray="34 22"/>
+  <path d="M590 92 L640 18 L690 92 Z" fill="#0f3d6e"/>
+  <g font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="64" fill="#0f3d6e"><text x="700" y="190">Explicar,</text><text x="700" y="290">practicar y</text><text x="700" y="390">evaluar</text><text x="700" y="490" font-weight="700">juntos.</text></g></svg>

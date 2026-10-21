@@ -1,0 +1,31 @@
+node_modules/
+dist/
+.backups/
+.cache/
+__pycache__/
+.venv/
+*.tgz
+*.zip
+*.log
+.env*
+
+# Recursos institucionales sin autorización de redistribución pública (solo locales)
+recursos-institucionales/
+
+# Construcción local del sitio de GitHub Pages
+_site/
+.site-build/
+
+# Configuración local de agentes (las instrucciones compartidas viven en AGENTS.md y CLAUDE.md).
+# Las habilidades de Graphify se instalan con `graphify install`; odd/ son notas internas de trabajo.
+.claude/settings.local.json
+.claude/skills/
+.codex/skills/
+odd/
+.vscode/
+
+# Graphify: se comparten graph.json, graph.html y GRAPH_REPORT.md; no cachés ni estado local
+graphify-out/cache/
+graphify-out/.graphify_*
+graphify-out/manifest.json
+graphify-out/cost.json

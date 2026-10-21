@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="820" height="1000" viewBox="0 0 820 1000"><defs>
+  <linearGradient id="av1" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fbe7a6"/><stop offset=".55" stop-color="#e4b448"/><stop offset="1" stop-color="#b9862a"/></linearGradient>
+  <linearGradient id="av2" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f2cd6b"/><stop offset="1" stop-color="#a8741d"/></linearGradient>
+  <linearGradient id="av3" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9b6b1c"/><stop offset="1" stop-color="#6d4911"/></linearGradient><linearGradient id="claro" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f4f7fd"/><stop offset="1" stop-color="#dfe7f6"/></linearGradient></defs><rect width="820" height="1000" fill="url(#claro)"/>
+  <text x="410" y="110" text-anchor="middle" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="50" font-weight="800" fill="#233660">Evidencias de aprendizaje</text>
+  <path d="M90 760 H740" stroke="#233660" stroke-width="5"/>
+  <rect x="110" y="500" width="110" height="260" rx="12" fill="#5464bf"/>
+  <text x="165" y="810" text-anchor="middle" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="30" font-weight="700" fill="#233660">Inicio</text><rect x="270" y="380" width="110" height="380" rx="12" fill="#243764"/>
+  <text x="325" y="810" text-anchor="middle" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="30" font-weight="700" fill="#233660">Práctica</text><rect x="430" y="290" width="110" height="470" rx="12" fill="#f6a81b"/>
+  <text x="485" y="810" text-anchor="middle" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="30" font-weight="700" fill="#233660">Reto</text><rect x="590" y="220" width="110" height="540" rx="12" fill="#ffcd0f"/>
+  <text x="645" y="810" text-anchor="middle" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="30" font-weight="700" fill="#233660">Cierre</text>
+  <text x="410" y="900" text-anchor="middle" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="34" fill="#233660">progreso observable durante la sesión</text></svg>

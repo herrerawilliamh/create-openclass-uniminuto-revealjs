@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="820" height="1000" viewBox="0 0 820 1000"><defs>
+  <linearGradient id="av1" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fbe7a6"/><stop offset=".55" stop-color="#e4b448"/><stop offset="1" stop-color="#b9862a"/></linearGradient>
+  <linearGradient id="av2" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f2cd6b"/><stop offset="1" stop-color="#a8741d"/></linearGradient>
+  <linearGradient id="av3" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9b6b1c"/><stop offset="1" stop-color="#6d4911"/></linearGradient><linearGradient id="claro" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f4f7fd"/><stop offset="1" stop-color="#dfe7f6"/></linearGradient></defs><rect width="820" height="1000" fill="url(#claro)"/>
+  <text x="410" y="96" text-anchor="middle" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="50" font-weight="800" fill="#233660">Secuencia de la sesión</text>
+  
+  <rect x="110" y="160" width="600" height="150" rx="22" fill="#ffcd0f"/>
+  <text x="410" y="231" text-anchor="middle" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="40" font-weight="800" fill="#243764">1 · Activar</text>
+  <text x="410" y="273" text-anchor="middle" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="26" fill="#243764" opacity=".9">pregunta inicial</text>
+  <path d="M410 310 V352" stroke="#5464bf" stroke-width="8" stroke-dasharray="14 10"/><path d="M390 346 L410 370 L430 346 Z" fill="#5464bf"/>
+  
+  <rect x="110" y="370" width="600" height="150" rx="22" fill="#243764"/>
+  <text x="410" y="441" text-anchor="middle" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="40" font-weight="800" fill="#fff">2 · Explicar</text>
+  <text x="410" y="483" text-anchor="middle" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="26" fill="#fff" opacity=".9">concepto y ejemplo</text>
+  <path d="M410 520 V562" stroke="#5464bf" stroke-width="8" stroke-dasharray="14 10"/><path d="M390 556 L410 580 L430 556 Z" fill="#5464bf"/>
+  
+  <rect x="110" y="580" width="600" height="150" rx="22" fill="#5464bf"/>
+  <text x="410" y="651" text-anchor="middle" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="40" font-weight="800" fill="#fff">3 · Practicar</text>
+  <text x="410" y="693" text-anchor="middle" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="26" fill="#fff" opacity=".9">microactividad</text>
+  <path d="M410 730 V772" stroke="#5464bf" stroke-width="8" stroke-dasharray="14 10"/><path d="M390 766 L410 790 L430 766 Z" fill="#5464bf"/>
+  
+  <rect x="110" y="790" width="600" height="150" rx="22" fill="#f6a81b"/>
+  <text x="410" y="861" text-anchor="middle" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="40" font-weight="800" fill="#243764">4 · Evaluar</text>
+  <text x="410" y="903" text-anchor="middle" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="26" fill="#243764" opacity=".9">retroalimentación</text></svg>

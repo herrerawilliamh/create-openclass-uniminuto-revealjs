@@ -1,0 +1,69 @@
+:root { --azul: #243764; --azul-2: #1b2a50; --amarillo: #ffca05; --lila: #5464bf; --tinta: #233660; --suave: #f3f6fc; --linea: #dfe5f1; }
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; scroll-padding-top: 80px; }
+body { margin: 0; font: 17px/1.6 'Segoe UI', system-ui, -apple-system, Roboto, Arial, sans-serif; color: var(--tinta); background: #fff; }
+a { color: var(--lila); }
+img { max-width: 100%; height: auto; display: block; }
+code { font-family: ui-monospace, Consolas, monospace; font-size: .92em; }
+.saltar { position: absolute; left: -999px; }
+.saltar:focus { left: 16px; top: 16px; z-index: 20; background: #fff; padding: 8px 12px; }
+.envoltura { max-width: 1200px; margin: 0 auto; padding: 0 16px; }
+a:focus-visible, button:focus-visible { outline: 3px solid var(--amarillo); outline-offset: 3px; }
+.barra { position: sticky; top: 0; z-index: 10; background: rgba(255, 255, 255, .96); border-bottom: 3px solid var(--amarillo); backdrop-filter: blur(6px); }
+.barra-interna { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 64px; flex-wrap: wrap; }
+.marca { display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--azul); font-weight: 800; font-size: 1.15rem; }
+.marca small { display: block; font-size: .72rem; font-weight: 600; color: #66758d; line-height: 1.1; }
+.sello { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 10px; background: var(--amarillo); color: var(--azul); font-weight: 900; }
+.barra nav { display: flex; flex-wrap: wrap; gap: 4px 16px; }
+.barra nav a { text-decoration: none; color: var(--tinta); font-weight: 650; font-size: .95rem; }
+.barra nav a.gh { color: var(--azul); }
+.heroe { background: linear-gradient(135deg, var(--azul-2), var(--azul) 60%, #2e4380); color: #fff; padding: 56px 0 28px; }
+.heroe-rejilla { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); gap: 40px; align-items: center; }
+.sobre { text-transform: uppercase; letter-spacing: .12em; font-weight: 800; font-size: .8rem; color: var(--amarillo); margin: 0; }
+h1 { font-size: clamp(2rem, 4.4vw, 3.3rem); line-height: 1.08; margin: .3em 0; letter-spacing: -.02em; }
+h1 em { font-style: normal; color: var(--amarillo); }
+.entrada { font-size: 1.12rem; color: #dbe3f6; max-width: 640px; }
+.acciones { display: flex; flex-wrap: wrap; gap: 10px; margin: 22px 0 6px; }
+.boton { display: inline-flex; align-items: center; padding: 11px 16px; border-radius: 10px; font-weight: 800; font-size: .88rem; letter-spacing: .02em; text-decoration: none; background: rgba(255, 255, 255, .12); color: #fff; border: 1px solid rgba(255, 255, 255, .35); }
+.boton:hover { background: rgba(255, 255, 255, .22); }
+.boton.primario { background: var(--amarillo); color: var(--azul); border-color: var(--amarillo); }
+.seccion .boton:not(.primario) { background: #fff; color: var(--azul); border-color: var(--linea); }
+.marco { margin: 0; border-radius: 14px; overflow: hidden; box-shadow: 0 18px 50px rgba(5, 12, 35, .35); border: 6px solid rgba(255, 255, 255, .9); background: #fff; }
+.aviso { font-size: .88rem; color: #c9d4ee; margin-top: 30px; }
+.aviso code { color: #fff; }
+.seccion { padding: 64px 16px; }
+.seccion.envoltura { padding-left: 16px; padding-right: 16px; }
+.fondo-suave { background: var(--suave); }
+h2 { font-size: clamp(1.6rem, 3vw, 2.3rem); margin: 0 0 .4em; color: var(--azul); letter-spacing: -.01em; }
+h3 { margin: 0 0 .3em; color: var(--azul); }
+.rejilla-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)); gap: 18px; margin-top: 22px; }
+.tarjeta { border: 1px solid var(--linea); border-radius: 16px; padding: 22px; background: #fff; border-top: 5px solid var(--amarillo); }
+.tarjeta p { margin: .3em 0 .6em; }
+.tira { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)); gap: 14px; margin-top: 30px; }
+.tira figure, .rejilla-layouts figure { margin: 0; }
+.tira img { border-radius: 10px; border: 1px solid var(--linea); }
+.tira figcaption { font-size: .88rem; font-weight: 700; margin-top: 6px; }
+.codigo { position: relative; background: #1d2742; color: #f2f5fb; border-radius: 12px; margin: 14px 0 20px; }
+.codigo pre { margin: 0; padding: 22px 18px; overflow: auto; font: .95rem/1.7 ui-monospace, Consolas, monospace; }
+.copiar { position: absolute; top: 10px; right: 10px; border: 0; border-radius: 8px; padding: 6px 12px; background: var(--amarillo); color: var(--azul); font-weight: 800; cursor: pointer; }
+.nota { font-size: .92rem; color: #4d5c7d; overflow-wrap: anywhere; }
+.rejilla-layouts { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr)); gap: 18px; margin-top: 24px; }
+.layout { display: flex; flex-direction: column; border: 1px solid var(--linea); border-radius: 14px; overflow: hidden; background: #fff; }
+.layout img { aspect-ratio: 16 / 9; width: 100%; background: #e8edf7; }
+.layout div { padding: 12px 14px 14px; display: flex; flex-direction: column; gap: 6px; flex: 1; }
+.layout h3 { font-size: 1.02rem; }
+.layout p { margin: 0; font-size: .92rem; line-height: 1.45; }
+.layout .clase { font: 700 .78rem ui-monospace, Consolas, monospace; color: var(--lila); }
+.layout .botones { display: flex; gap: 8px; flex-wrap: wrap; margin-top: auto; padding-top: 6px; }
+.layout .botones a, .layout .botones button { border: 0; border-radius: 8px; padding: 7px 11px; font-weight: 800; font-size: .78rem; cursor: pointer; text-decoration: none; background: var(--azul); color: #fff; font-family: inherit; }
+.layout .botones a { background: #e8edf7; color: var(--azul); }
+.dos { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 36px; align-items: center; }
+.lista { padding-left: 20px; }
+.pie { background: var(--azul-2); color: #d5ddef; padding: 30px 0; font-size: .9rem; }
+.pie a { color: var(--amarillo); }
+@media (max-width: 880px) {
+  .heroe-rejilla, .dos { grid-template-columns: minmax(0, 1fr); }
+  .heroe { padding-top: 36px; }
+  .barra nav { gap: 2px 12px; }
+}
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }

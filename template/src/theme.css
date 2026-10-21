@@ -1,0 +1,1070 @@
+@import '@fontsource/atkinson-hyperlegible/400.css';
+@import '@fontsource/atkinson-hyperlegible/700.css';
+@import '@fontsource/merriweather-sans/400.css';
+@import '@fontsource/merriweather-sans/700.css';
+
+/* OPENCLASS — tema institucional UNIMINUTO para Reveal.js
+   Lienzo Reveal 1280 × 720; fondos institucionales 1920 × 1080 (16:9) anclados al lienzo.
+   Orden: portal · visor · navegación (pie azul) · layouts 03-11 y 13 · títulos internos ·
+   separador (02) · cierre (12) · portada (01). Todas las páginas usan data-kind="demo". */
+:root {
+  --oc-azul: #243764;
+  --oc-amarillo: #ffca05;
+  --oc-tinta: #233660;
+  font-family: 'Atkinson Hyperlegible', Arial, sans-serif;
+  color: #172235;
+  background: #f7f8fc;
+}
+
+/* Portal académico — conservar su estructura actual. */
+body {
+  margin: 0;
+}
+
+h1,
+h2,
+h3 {
+  font-family: 'Merriweather Sans', Arial, sans-serif;
+}
+
+.portal {
+  max-width: 1140px;
+  padding: 32px 24px 72px;
+  margin: 0 auto;
+}
+
+.portal-header {
+  background: #243764;
+  color: white;
+  border-radius: 20px;
+  padding: 34px 38px;
+}
+
+.portal-header h1 {
+  font-size: clamp(1.7rem, 4vw, 2.6rem);
+  max-width: 760px;
+}
+
+.portal-header>p {
+  max-width: 650px;
+}
+
+.overline {
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  font-size: .78rem;
+  font-weight: 700;
+  opacity: .85;
+}
+
+.chip {
+  display: inline-block;
+  border-radius: 99px;
+  padding: 6px 12px;
+  color: #16214c;
+  background: #ffca05;
+  font-size: .85rem;
+  font-weight: 700;
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  padding: 24px;
+  border-radius: 15px;
+  background: white;
+  box-shadow: 0 4px 22px #121f3b10;
+}
+
+.card h2,
+.card h3 {
+  margin-top: 4px;
+}
+
+.card p {
+  line-height: 1.5;
+}
+
+.general-card {
+  margin: 20px 0 32px;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  border-left: 7px solid #ffca05;
+}
+
+/* Demostración completa: recurso de referencia, visualmente distinto de las semanas. */
+.oc-demo-entry {
+  border-left-color: #5464bf;
+  background: linear-gradient(90deg, #eef1fb, #fff 60%);
+}
+
+.oc-demo-entry .action-link:first-child {
+  padding: 8px 14px;
+  border-radius: 8px;
+  background: #243764;
+  color: #fff;
+}
+
+.oc-portal-extra-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 18px;
+  align-items: center;
+}
+
+.week-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 18px;
+}
+
+.action-link {
+  display: inline-flex;
+  align-items: center;
+  font-weight: 700;
+  text-decoration: none;
+  color: #243764;
+  margin-top: auto;
+}
+
+.action-link:hover {
+  text-decoration: underline;
+}
+
+footer {
+  padding-top: 36px;
+  color: #758096;
+  font-size: .78rem;
+}
+
+@media (max-width: 600px) {
+  .general-card {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .portal-header {
+    padding: 24px;
+  }
+}
+
+/* Visor medible: incluye el demo. */
+html:is([data-kind="general"], [data-kind="week"], [data-kind="demo"]),
+html:is([data-kind="general"], [data-kind="week"], [data-kind="demo"]) body,
+html:is([data-kind="general"], [data-kind="week"], [data-kind="demo"]) #app {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+html:is([data-kind="general"], [data-kind="week"], [data-kind="demo"]) #app {
+  position: relative;
+  min-height: 100dvh;
+}
+
+/* Exportar a PDF (?print-pdf): Reveal apila una página por diapositiva; el visor fijo de arriba
+   las recortaría a la primera. */
+html.reveal-print:is([data-kind="general"], [data-kind="week"], [data-kind="demo"]),
+html.reveal-print:is([data-kind="general"], [data-kind="week"], [data-kind="demo"]) body,
+html.reveal-print:is([data-kind="general"], [data-kind="week"], [data-kind="demo"]) #app {
+  height: auto !important;
+  min-height: 0 !important;
+  overflow: visible !important;
+}
+
+/* Fondo anclado al lienzo. Reveal escala 1280x720 con
+   S = round(min(0.94·W/1280, 0.94·H/720) acotado a [0.2, 2], 0.01), es decir, un lienzo de
+   ancho round(min(94vw, 94vh·16/9), 12.8px). El fondo es ese lienzo más el margen de 0.06,
+   concéntrico y 16:9: llena una pantalla 16:9 y en otras proporciones deja franjas en vez de
+   recortar el PNG. Imagen → lienzo: x = xImg·0.7092 − 40.9 ; y = yImg·0.7092 − 23.0 */
+html:is([data-kind="general"], [data-kind="week"], [data-kind="demo"]) .reveal .backgrounds {
+  --oc-lienzo: round(nearest, clamp(256px, min(94vw, 94dvh * 16 / 9), 2560px), 12.8px);
+  inset: 0;
+  width: min(100vw, 100dvh * 16 / 9);
+  height: min(100dvh, 100vw * 9 / 16);
+  width: calc(var(--oc-lienzo) / 0.94);
+  height: calc(var(--oc-lienzo) * 9 / 16 / 0.94);
+  margin: auto;
+}
+
+.reveal {
+  font-family: 'Atkinson Hyperlegible', Arial, sans-serif;
+  color: #1c253a;
+}
+
+.reveal :is(h1, h2, h3) {
+  font-family: 'Merriweather Sans', Arial, sans-serif;
+  color: #5464bf;
+  text-transform: none;
+}
+
+.reveal h1 {
+  font-size: 1.6em;
+}
+
+.reveal h2 {
+  font-size: 1.16em;
+}
+
+.reveal :is(p, li) {
+  line-height: 1.35;
+}
+
+.reveal .progress {
+  height: 3px;
+  color: #f0a800;
+}
+
+/* --------------- NAVEGACIÓN INSTITUCIONAL: PIE AZUL ----------------
+   Botones NATIVOS de Reveal (eventos y teclado intactos), portal del curso, herramientas de Custom
+   Controls y logo 70 años, anclados al lienzo igual que el fondo (u = px de pantalla por px de
+   lienzo). Viven dentro del pie azul de la plantilla (Y 696,1–743; borde derecho en diagonal:
+   X 1243 en Y 704, X 1211 en Y 734). Barra de botones Y 704–734, centrada en el pie.
+   · izquierda: casa / portal (X 82–116), «Diapositiva X / Y» (desde X 124), dibujo (X 471–585)
+   · centro: logo 70 años = «Volver al inicio» (X 596–684), sobre el logo impreso (X 601,6–677,5)
+   · derecha: vista (X 695–849), anterior / siguiente (X 1124–1198), bajo «Vigilada Mineducación»
+     (X 1157–1247, Y 675,6–686,2) sin tocarla.
+   Botones: fondo blanco e icono azul; hover y foco en amarillo institucional. */
+html:is([data-kind="general"], [data-kind="week"], [data-kind="demo"]) {
+  --oc-lienzo: round(nearest, clamp(256px, min(94vw, 94dvh * 16 / 9), 2560px), 12.8px);
+  --oc-u: calc(var(--oc-lienzo) / 1280);
+  --oc-x0: calc((100vw - var(--oc-lienzo)) / 2);
+  --oc-y0: calc((100dvh - var(--oc-lienzo) * 9 / 16) / 2);
+  --oc-barra-y: calc(var(--oc-y0) + 704 * var(--oc-u));
+  --oc-barra-h: calc(30 * var(--oc-u));
+  --oc-boton-w: calc(34 * var(--oc-u));
+  --oc-pie: #23325b;
+  --oc-sombra: 0 1px 2px rgba(8, 16, 40, .35);
+}
+
+.back-link,
+.reveal .slide-number,
+.reveal .controls button:is(.navigate-left, .navigate-right),
+#customcontrols>ul>li>button {
+  box-sizing: border-box !important;
+  height: var(--oc-barra-h) !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: calc(4 * var(--oc-u)) !important;
+  background: #fff !important;
+  color: var(--oc-azul) !important;
+  box-shadow: var(--oc-sombra) !important;
+  transition: background .15s ease !important;
+}
+
+:is(.back-link, .oc-inicio, #customcontrols>ul>li>button):focus-visible,
+.reveal .controls button:is(.navigate-left, .navigate-right):focus-visible {
+  outline: max(2px, calc(2 * var(--oc-u))) solid var(--oc-amarillo) !important;
+  outline-offset: max(1px, calc(2 * var(--oc-u))) !important;
+}
+
+:is(.back-link, #customcontrols>ul>li>button):is(:hover, :focus-visible),
+.reveal .controls button:is(.navigate-left, .navigate-right).enabled:hover {
+  background: var(--oc-amarillo) !important;
+}
+
+.back-link {
+  position: fixed;
+  top: var(--oc-barra-y);
+  left: calc(var(--oc-x0) + 82 * var(--oc-u));
+  z-index: 30;
+  width: var(--oc-boton-w);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.back-link svg,
+#customcontrols>ul>li>button svg {
+  width: calc(20 * var(--oc-u));
+  height: calc(20 * var(--oc-u));
+}
+
+.reveal .slide-number {
+  position: absolute !important;
+  top: var(--oc-barra-y) !important;
+  bottom: auto !important;
+  left: calc(var(--oc-x0) + 124 * var(--oc-u)) !important;
+  right: auto !important;
+  z-index: 30 !important;
+  display: flex !important;
+  align-items: center;
+  padding: 0 calc(11 * var(--oc-u)) !important;
+  font: 700 calc(14 * var(--oc-u))/1 'Atkinson Hyperlegible', Arial, sans-serif !important;
+  white-space: nowrap;
+}
+
+/* Logo 70 años: botón «Volver al inicio». Su fondo es el azul del pie y tapa el logo impreso en
+   la plantilla, así solo se ve el del botón. La imagen (tinta X 64–1420, Y 120–963 de 1448×1086)
+   va centrada con 41 px de alto de tinta y «respira» con un pulso lento; se detiene si el sistema
+   pide menos movimiento. */
+.oc-inicio {
+  position: fixed;
+  left: calc(var(--oc-x0) + 596 * var(--oc-u));
+  top: calc(var(--oc-y0) + 697 * var(--oc-u));
+  z-index: 30;
+  width: calc(88 * var(--oc-u));
+  height: calc(45 * var(--oc-u));
+  padding: 0;
+  border: 0;
+  border-radius: calc(4 * var(--oc-u));
+  background: var(--oc-pie);
+  cursor: pointer;
+}
+
+.oc-inicio img {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: calc(70 * var(--oc-u));
+  height: calc(52.5 * var(--oc-u));
+  max-width: none;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  animation: oc-respira 2.6s ease-in-out infinite;
+}
+
+@keyframes oc-respira {
+  0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: .9; }
+  50% { transform: translate(-50%, -50%) scale(1.045); opacity: 1; }
+}
+
+.oc-inicio:is(:hover, :focus-visible) img {
+  animation: none;
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1.08);
+}
+
+.oc-inicio::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 8 * var(--oc-u));
+  transform: translate(-50%, calc(4 * var(--oc-u)));
+  padding: calc(6 * var(--oc-u)) calc(10 * var(--oc-u));
+  border-radius: calc(4 * var(--oc-u));
+  background: #fff;
+  color: var(--oc-azul);
+  font: 700 calc(13 * var(--oc-u))/1 'Atkinson Hyperlegible', Arial, sans-serif;
+  white-space: nowrap;
+  box-shadow: 0 2px 8px rgba(8, 16, 40, .3);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .18s ease, transform .18s ease;
+}
+
+.oc-inicio:is(:hover, :focus-visible)::after {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .oc-inicio img {
+    animation: none;
+  }
+}
+
+.reveal .controls {
+  top: var(--oc-barra-y) !important;
+  right: auto !important;
+  bottom: auto !important;
+  left: calc(var(--oc-x0) + 1124 * var(--oc-u)) !important;
+  width: calc(74 * var(--oc-u)) !important;
+  height: var(--oc-barra-h) !important;
+  z-index: 30 !important;
+  filter: none !important;
+}
+
+.reveal .controls button:is(.navigate-left, .navigate-right) {
+  position: absolute !important;
+  top: 0 !important;
+  bottom: auto !important;
+  right: auto !important;
+  width: var(--oc-boton-w) !important;
+  transform: none !important;
+}
+
+.reveal .controls button.navigate-left {
+  left: 0 !important;
+}
+
+.reveal .controls button.navigate-right {
+  left: calc(40 * var(--oc-u)) !important;
+}
+
+.reveal .controls button:is(.navigate-left, .navigate-right).enabled {
+  visibility: visible;
+  opacity: 1 !important;
+}
+
+.reveal .controls button:is(.navigate-left, .navigate-right) .controls-arrow {
+  display: none !important;
+}
+
+/* Chevron centrado; el desplazamiento horizontal compensa el peso óptico del trazo girado. */
+.reveal .controls button:is(.navigate-left, .navigate-right)::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: calc(9 * var(--oc-u));
+  height: calc(9 * var(--oc-u));
+  border-right: max(2px, calc(2.5 * var(--oc-u))) solid currentColor;
+  border-top: max(2px, calc(2.5 * var(--oc-u))) solid currentColor;
+}
+
+.reveal .controls button.navigate-left::after {
+  transform: translate(-30%, -50%) rotate(-135deg);
+}
+
+.reveal .controls button.navigate-right::after {
+  transform: translate(-70%, -50%) rotate(45deg);
+}
+
+/* Las flechas verticales conservan sus clases nativas para futuras pilas. */
+.reveal .controls button:is(.navigate-up, .navigate-down) {
+  color: var(--oc-amarillo);
+}
+
+/* Herramientas del plugin Custom Controls (configuradas en src/plugins/index.mjs), a lado y lado
+   del logo: dibujo a la izquierda (hasta «Borrar»), vista a la derecha. La caja deja pasar los
+   clics del hueco central al botón 70 años. Reemplaza por completo customcontrols/style.css. */
+#customcontrols {
+  position: fixed;
+  top: var(--oc-barra-y);
+  left: calc(var(--oc-x0) + 471 * var(--oc-u));
+  z-index: 30;
+  width: calc(378 * var(--oc-u));
+  font-size: 0;
+  pointer-events: none;
+}
+
+#customcontrols>button {
+  display: none;
+}
+
+#customcontrols>ul {
+  display: flex;
+  gap: calc(6 * var(--oc-u));
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+#customcontrols>ul>li {
+  margin: 0;
+  padding: 0;
+  pointer-events: auto;
+}
+
+#customcontrols>ul>li#oc-h-borrar {
+  margin-right: auto;
+}
+
+#customcontrols>ul>li>button {
+  width: var(--oc-boton-w) !important;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+/* Portada (layout oc-l-cover, sin pie azul): todas las herramientas salvo casa y logo 70 años, en
+   una fila Y 704–734 de la franja blanca: herramientas X 420–694 (25 px tras la franja amarilla,
+   X 131–395), «Diapositiva X / Y» desde X 706 (crece a la derecha) y «siguiente» en X 936–970,
+   alineado con el filete de SEMANA y a 21 px del logo de acreditación (X 991,5). Botones blancos
+   con borde azul discreto; el foco es azul porque el amarillo no contrasta sobre blanco.
+   Cierre: sin herramientas ni botón 70 años (el PNG ya trae el logo). Los atajos de teclado
+   siguen activos en ambos. */
+html:has(.reveal .slides>section.present.oc-l-cover) :is(.back-link, .oc-inicio, .reveal .controls .navigate-left),
+html:has(.reveal .slides>section.present.oc-l-closing) :is(.oc-inicio, #customcontrols) {
+  display: none !important;
+}
+
+html:has(.reveal .slides>section.present.oc-l-cover) #customcontrols {
+  left: calc(var(--oc-x0) + 420 * var(--oc-u));
+  width: auto;
+}
+
+html:has(.reveal .slides>section.present.oc-l-cover) #customcontrols>ul>li#oc-h-borrar {
+  margin-right: 0;
+}
+
+html:has(.reveal .slides>section.present.oc-l-cover) .reveal .slide-number {
+  left: calc(var(--oc-x0) + 706 * var(--oc-u)) !important;
+}
+
+html:has(.reveal .slides>section.present.oc-l-cover) .reveal .controls {
+  left: calc(var(--oc-x0) + 896 * var(--oc-u)) !important;
+}
+
+html:has(.reveal .slides>section.present.oc-l-cover) :is(#customcontrols>ul>li>button, .reveal .slide-number, .reveal .controls button) {
+  box-shadow: 0 0 0 1px rgba(36, 55, 100, .4), var(--oc-sombra) !important;
+}
+
+html:has(.reveal .slides>section.present.oc-l-cover) :is(#customcontrols>ul>li>button, .reveal .controls button):is(:hover, :focus-visible) {
+  box-shadow: 0 0 0 1px var(--oc-azul), var(--oc-sombra) !important;
+}
+
+html:has(.reveal .slides>section.present.oc-l-cover) :is(#customcontrols>ul>li>button, .reveal .controls button):focus-visible {
+  outline-color: var(--oc-azul) !important;
+}
+
+/* Paleta del chalkboard sin Font Awesome: cada color es un cuadro sólido. */
+.reveal div.palette i.fa-square {
+  display: block;
+  width: 26px;
+  height: 26px;
+  border-radius: 4px;
+  background: currentColor;
+}
+
+/* Ocultar controles en impresión. */
+@media print {
+
+  .back-link,
+  .oc-inicio,
+  #customcontrols,
+  .reveal .controls,
+  .reveal .slide-number,
+  .reveal .progress {
+    display: none !important;
+  }
+}
+
+/* ----------------- LAYOUTS ----------------- */
+/* Altura fija: con center:true reveal calcula top = (720 − scrollHeight) / 2; así es siempre 0
+   y todo top absoluto es coordenada real del lienzo. */
+html[data-kind="demo"] .reveal .slides section.oc-demo {
+  position: absolute;
+  height: 720px !important;
+  box-sizing: border-box !important;
+  color: var(--oc-tinta) !important;
+  text-align: left !important;
+}
+
+/* 03-11 + 13: bandas dibujadas en la imagen de fondo, NO en CSS.
+   ÁREA ÚTIL Y 100–666: 16,6 px bajo la banda superior (Y 83,4) y 9,6 px sobre «Vigilada
+   Mineducación» (Y 675,6); la navegación vive en el pie azul (Y ≥ 696). */
+html[data-kind="demo"] .reveal .slides section.oc-demo:not(.oc-l-cover):not(.oc-l-section):not(.oc-l-closing) {
+  height: 720px !important;
+  padding: 100px 54px 54px !important;
+  font-size: 25px !important;
+}
+
+/* Base de cuerpo con :where() (especificidad 0,4,3): así las reglas por layout de abajo
+   (párrafo inicial de texto, listas de imagen) ganan, como pretendía la hoja «Pegado». */
+html[data-kind="demo"] .reveal .slides section.oc-demo:where(:not(.oc-l-cover):not(.oc-l-section):not(.oc-l-closing))>p,
+html[data-kind="demo"] .reveal .slides section.oc-demo:where(:not(.oc-l-cover):not(.oc-l-section):not(.oc-l-closing)) li {
+  color: var(--oc-tinta) !important;
+  font-size: 26px !important;
+  line-height: 1.32 !important;
+  overflow-wrap: break-word;
+}
+
+html[data-kind="demo"] .reveal .slides section.oc-demo:where(:not(.oc-l-cover):not(.oc-l-section):not(.oc-l-closing))>p {
+  margin: 0 0 17px !important;
+}
+
+html[data-kind="demo"] .reveal .slides section.oc-demo :is(ul, ol) {
+  color: var(--oc-tinta) !important;
+}
+
+html[data-kind="demo"] .reveal .slides section.oc-demo :is(ul, ol) strong {
+  color: var(--oc-tinta) !important;
+}
+
+/* 03-06: áreas espejo. */
+html[data-kind="demo"] .reveal .slides section.oc-demo:is(.oc-l-image-left, .oc-l-image-right, .oc-l-top-right, .oc-l-top-left)>p:has(img) {
+  position: absolute !important;
+  top: 104px !important;
+  width: 455px !important;
+  height: 556px !important;
+  box-sizing: border-box !important;
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+html[data-kind="demo"] .reveal .slides section.oc-demo:is(.oc-l-image-left, .oc-l-top-right)>p:has(img) {
+  left: 58px !important;
+}
+
+html[data-kind="demo"] .reveal .slides section.oc-demo:is(.oc-l-image-right, .oc-l-top-left)>p:has(img) {
+  right: 58px !important;
+}
+
+html[data-kind="demo"] .reveal .slides section.oc-demo:is(.oc-l-image-left, .oc-l-image-right, .oc-l-top-right, .oc-l-top-left)>p:has(img) img {
+  display: block !important;
+  width: auto !important;
+  height: auto !important;
+  max-width: 100% !important;
+  max-height: 100% !important;
+  object-fit: contain !important;
+  border: 0 !important;
+  margin: 0 !important;
+  box-shadow: none !important;
+  background: transparent !important;
+}
+
+html[data-kind="demo"] .reveal .slides section.oc-demo:is(.oc-l-image-left, .oc-l-image-right, .oc-l-top-right, .oc-l-top-left)> :is(ul, ol) {
+  position: absolute !important;
+  top: 104px !important;
+  width: 620px !important;
+  min-height: 556px !important;
+  margin: 0 !important;
+  padding: 0 0 0 34px !important;
+  box-sizing: border-box !important;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: center !important;
+  gap: 14px !important;
+}
+
+html[data-kind="demo"] .reveal .slides section.oc-demo:is(.oc-l-image-left, .oc-l-top-right)> :is(ul, ol) {
+  left: 555px !important;
+}
+
+html[data-kind="demo"] .reveal .slides section.oc-demo:is(.oc-l-image-right, .oc-l-top-left)> :is(ul, ol) {
+  left: 86px !important;
+}
+
+html[data-kind="demo"] .reveal .slides section.oc-demo:is(.oc-l-image-left, .oc-l-image-right, .oc-l-top-right, .oc-l-top-left) li {
+  font-size: 25px !important;
+  line-height: 1.3 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+html[data-kind="demo"] .reveal .slides section.oc-demo:is(.oc-l-image-left, .oc-l-image-right, .oc-l-top-right, .oc-l-top-left)> :is(ul, ol):has(> li:last-child:nth-child(-n+4)) li {
+  font-size: 28px !important;
+  line-height: 1.27 !important;
+}
+
+/* 07 multimedia: toda el área útil, X 42–1238 × Y 100–666 (antes Y 122–648). */
+html[data-kind="demo"] .reveal .slides section.oc-demo.oc-l-multimedia .oc-media-demo,
+html[data-kind="demo"] .reveal .slides section.oc-demo.oc-l-multimedia> :is(video, iframe, .mermaid, .oc-chart) {
+  position: absolute !important;
+  left: 42px !important;
+  top: 100px !important;
+  width: 1196px !important;
+  height: 566px !important;
+  max-width: none !important;
+  max-height: none !important;
+  margin: 0 !important;
+  box-sizing: border-box !important;
+}
+
+html[data-kind="demo"] .reveal .slides section.oc-demo.oc-l-multimedia .oc-media-demo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 22px 34px !important;
+  border: 3px dashed #6b79a8;
+  border-radius: 18px;
+  background: #e8edf7;
+  color: var(--oc-tinta);
+  text-align: center;
+}
+
+html[data-kind="demo"] .reveal .slides section.oc-demo.oc-l-multimedia .oc-media-demo strong {
+  font-size: 34px !important;
+}
+
+html[data-kind="demo"] .reveal .slides section.oc-demo.oc-l-multimedia .oc-media-demo p {
+  font-size: 23px !important;
+  max-width: 930px;
+  margin: 14px 0 0 !important;
+}
+
+html[data-kind="demo"] .reveal .slides section.oc-demo.oc-l-multimedia .oc-media-demo .oc-media-tip {
+  font-size: 18px !important;
+  color: #40547d !important;
+}
+
+html[data-kind="demo"] .reveal .slides section.oc-demo.oc-l-multimedia> :is(video, iframe) {
+  object-fit: contain !important;
+}
+
+/* Diagrama Mermaid y gráfico Chart.js: misma caja que multimedia. */
+html[data-kind="demo"] .reveal .slides section.oc-demo.oc-l-multimedia>.mermaid {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+html[data-kind="demo"] .reveal .slides section.oc-demo.oc-l-multimedia>.mermaid svg {
+  max-width: 100% !important;
+  max-height: 100% !important;
+  width: auto;
+  height: auto;
+}
+
+html[data-kind="demo"] .reveal .slides section.oc-demo.oc-l-multimedia>.oc-chart canvas {
+  max-height: none !important;
+}
+
+/* 08-09: texto y objetivos. */
+html[data-kind="demo"] .reveal .slides section.oc-demo:is(.oc-l-text, .oc-l-objectives)> :is(p, ul, ol) {
+  max-width: 1145px !important;
+}
+
+html[data-kind="demo"] .reveal .slides section.oc-demo.oc-l-text>p:first-of-type {
+  font-size: 31px !important;
+  line-height: 1.3 !important;
+}
+
+html[data-kind="demo"] .reveal .slides section.oc-demo.oc-l-objectives> :is(ul, ol) {
+  margin-left: 34px !important;
+}
+
+html[data-kind="demo"] .reveal .slides section.oc-demo.oc-l-objectives li {
+  margin-bottom: 14px !important;
+}
+
+/* La paginación une viñetas con línea en blanco (lista «suelta», li > p): sin este margen las
+   continuaciones empezaban 20 px más abajo que la primera página. */
+html[data-kind="demo"] .reveal .slides section.oc-demo:is(.oc-l-text, .oc-l-objectives) li>p {
+  margin: 0 !important;
+}
+
+/* 10-11: columnas con separación adicional, sin crear bandas en el fondo. */
+html[data-kind="demo"] .reveal .slides section.oc-demo:is(.oc-l-two-cols, .oc-l-two-titles)>table {
+  position: absolute !important;
+  left: 44px !important;
+  top: 104px !important;
+  width: 1192px !important;
+  margin: 0 !important;
+  border-collapse: separate !important;
+  border-spacing: 22px 0 !important;
+  table-layout: fixed !important;
+  font-size: 24px !important;
+}
+
+html[data-kind="demo"] .reveal .slides section.oc-demo:is(.oc-l-two-cols, .oc-l-two-titles) table th {
+  padding: 13px 12px !important;
+  background: var(--oc-azul) !important;
+  color: white !important;
+  font: 800 28px/1.14 'Merriweather Sans', Arial, sans-serif !important;
+  text-align: center !important;
+}
+
+html[data-kind="demo"] .reveal .slides section.oc-demo:is(.oc-l-two-cols, .oc-l-two-titles) table td {
+  padding: 12px 14px !important;
+  color: var(--oc-tinta) !important;
+  background: white !important;
+  border-bottom: 1px solid #dce3ee !important;
+  vertical-align: top !important;
+  font-size: 25px !important;
+  line-height: 1.28 !important;
+  overflow-wrap: anywhere;
+}
+
+/* 13: código EXACTAMENTE en la misma caja del multimedia.
+   Desplazamiento interno durante presentación; no reorganiza paginación JS. */
+html[data-kind="demo"] .reveal .slides section.oc-demo.oc-l-code>pre {
+  position: absolute !important;
+  left: 42px !important;
+  top: 100px !important;
+  width: 1196px !important;
+  height: 566px !important;
+  max-height: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  box-sizing: border-box !important;
+  overflow: auto !important;
+  border: 2px solid #e6b117 !important;
+  border-radius: 8px !important;
+  background: #242720 !important;
+  box-shadow: none !important;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+}
+
+html[data-kind="demo"] .reveal .slides section.oc-demo.oc-l-code>pre code {
+  display: block !important;
+  min-height: 100% !important;
+  max-height: none !important;
+  padding: 18px 24px !important;
+  box-sizing: border-box !important;
+  overflow: visible !important;
+  font-size: 19px !important;
+  line-height: 1.30 !important;
+  white-space: pre !important;
+  tab-size: 4 !important;
+}
+
+/* Scrollbar del código: color institucional, visible en Chrome/Edge. */
+html[data-kind="demo"] .reveal .slides section.oc-demo.oc-l-code>pre::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+
+html[data-kind="demo"] .reveal .slides section.oc-demo.oc-l-code>pre::-webkit-scrollbar-thumb {
+  background: #6e7b95;
+  border: 3px solid #242720;
+  border-radius: 4px;
+}
+
+html[data-kind="demo"] .reveal .slides section.oc-demo.oc-l-code>pre::-webkit-scrollbar-track {
+  background: #242720;
+}
+
+html[data-kind="demo"] .reveal .slides section.oc-demo.oc-l-code>pre:focus-visible {
+  outline: 3px solid var(--oc-amarillo) !important;
+  outline-offset: 2px;
+}
+
+/* Botón «Copiar código» (plugins/codigo.mjs): esquina superior derecha de la caja, fuera del
+   área desplazable para no moverse con el código; respeta el canal de la barra de scroll. */
+html[data-kind="demo"] .reveal .slides section.oc-demo.oc-l-code>.oc-copiar {
+  position: absolute;
+  top: 110px;
+  right: 70px;
+  z-index: 3;
+  padding: 7px 14px;
+  border: 0;
+  border-radius: 6px;
+  background: var(--oc-amarillo);
+  color: var(--oc-azul);
+  font: 700 16px/1.1 'Atkinson Hyperlegible', Arial, sans-serif;
+  cursor: pointer;
+  opacity: .92;
+}
+
+html[data-kind="demo"] .reveal .slides section.oc-demo.oc-l-code>.oc-copiar:is(:hover, :focus-visible) {
+  opacity: 1;
+  outline: 3px solid #fff;
+  outline-offset: 1px;
+}
+
+html[data-kind="demo"] .reveal .slides section.oc-demo.oc-l-code>.oc-copiar[data-estado="error"] {
+  background: #f1c4c4;
+}
+
+/* Indicador de contenido pendiente en modo scroll; desaparece al llegar al final. */
+html[data-kind="demo"] .reveal .slides section.oc-demo.oc-l-code[data-oc-mas-codigo]::after {
+  content: '↓ Desplaza para ver más código';
+  position: absolute;
+  right: 70px;
+  bottom: 64px;
+  z-index: 3;
+  padding: 5px 12px;
+  border-radius: 6px;
+  background: rgba(36, 55, 100, .92);
+  color: #fff;
+  font: 700 15px/1.1 'Atkinson Hyperlegible', Arial, sans-serif;
+  pointer-events: none;
+}
+
+@media print {
+  html[data-kind="demo"] .reveal .slides section.oc-demo.oc-l-code>.oc-copiar,
+  html[data-kind="demo"] .reveal .slides section.oc-demo.oc-l-code::after {
+    display: none !important;
+  }
+}
+
+/* ---------- TÍTULOS DE CONTENIDO (layouts 03-11 y 13) ----------
+   La caja coincide con la banda azul VISIBLE del fondo anclado (Y −23 … 83,4; incluye el margen
+   de reveal sobre el lienzo), así el centrado flex deja los glifos en su centro (Y ≈ 30):
+   1 línea ≈ Y 10–51 y 2 líneas ≈ Y −9–67, con ≥ 15 px hasta el borde inferior de la banda. */
+html[data-kind="demo"] .reveal .slides section.oc-demo:not(.oc-l-cover):not(.oc-l-section):not(.oc-l-closing)> :is(h1, h2) {
+  position: absolute !important;
+  left: 46px !important;
+  top: -23px !important;
+  width: 700px !important;
+  max-width: 700px !important;
+  height: 106.4px !important;
+  min-height: 106.4px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  box-sizing: border-box !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  align-content: center !important;
+  text-align: left !important;
+  background: transparent !important;
+  color: #ffffff !important;
+  font: 800 clamp(28px, 2.7vw, 36px)/1.06 'Merriweather Sans', Arial, sans-serif !important;
+  letter-spacing: -0.018em !important;
+  text-wrap: pretty !important;
+  white-space: normal !important;
+  overflow-wrap: break-word !important;
+  word-break: normal !important;
+  text-transform: none !important;
+  text-shadow: none !important;
+  z-index: 2 !important;
+}
+
+/* Ajuste fino para títulos muy largos: nunca invaden la cuña amarilla */
+html[data-kind="demo"] .reveal .slides section.oc-demo.oc-l-code> :is(h1, h2),
+html[data-kind="demo"] .reveal .slides section.oc-demo.oc-l-two-cols> :is(h1, h2),
+html[data-kind="demo"] .reveal .slides section.oc-demo.oc-l-image-left> :is(h1, h2),
+html[data-kind="demo"] .reveal .slides section.oc-demo.oc-l-image-right> :is(h1, h2) {
+  width: 690px !important;
+  max-width: 690px !important;
+}
+
+/* ---------- SEPARADOR (02): layout «Conceptos básicos» ----------
+   Fondo de plantilla: cabecera con logos, banda azul central con el título y avión. */
+html[data-kind="demo"] .reveal .slides section.oc-demo.oc-l-section {
+  padding: 0 !important;
+}
+
+/* S2: banda y avión suben juntos 77 px desde la posición efectiva del Gate 1 (445,5 / 352,5);
+   el conjunto queda centrado entre la cabecera (Y 83) y el pie (Y 696) del fondo. */
+html[data-kind="demo"] .reveal .slides section.oc-demo.oc-l-section> :is(h1, h2) {
+  position: absolute !important;
+  left: 188px !important;
+  top: 368.5px !important;
+  width: 980px !important;
+  min-height: 112px !important;
+  margin: 0 !important;
+  padding: 16px 60px 16px 96px !important;
+  box-sizing: border-box !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  text-align: center !important;
+  text-wrap: balance !important;
+  background: var(--oc-azul) !important;
+  color: #ffffff !important;
+  font: 800 clamp(38px, 3.8vw, 52px)/1.08 'Merriweather Sans', Arial, sans-serif !important;
+  letter-spacing: -0.02em !important;
+  overflow-wrap: anywhere !important;
+  z-index: 2 !important;
+}
+
+/* Avión del separador, a la izquierda de la banda. */
+html[data-kind="demo"] .reveal .slides section.oc-demo.oc-l-section>.oc-section-plane {
+  position: absolute !important;
+  left: 45px !important;
+  top: 275.5px !important;
+  width: 356px !important;
+  height: 228px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+  z-index: 3 !important;
+  pointer-events: none !important;
+  user-select: none !important;
+}
+
+html[data-kind="demo"] .reveal .slides section.oc-demo.oc-l-section .oc-section-plane img {
+  display: block !important;
+  width: 100% !important;
+  height: 100% !important;
+  max-width: none !important;
+  max-height: none !important;
+  object-fit: contain !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+
+/* ---------- CIERRE INSTITUCIONAL (12) ----------
+   slide-06-cierre.png ya contiene «GRACIAS» (X 469–931, Y 219–293), avión, lema, logo 70 años y
+   la URL: el título del Markdown solo queda para lectores de pantalla y la vista general. */
+html[data-kind="demo"] .reveal .slides section.oc-demo.oc-l-closing {
+  padding: 0 !important;
+}
+
+html[data-kind="demo"] .reveal .slides section.oc-demo.oc-l-closing> :not(aside) {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  margin: -1px !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  clip-path: inset(50%) !important;
+  white-space: nowrap !important;
+}
+
+/* ---------- PORTADA INSTITUCIONAL (01) ----------
+   Fondo slide-01-portada.png intacto: franja amarilla vertical (X 130–393), avión y banda azul
+   (Y 311,7–563,5) vienen dibujados en el PNG. Título: variante C aprobada (70 px, 1.035, caja de
+   657 px en X 507), centrada en la banda a la derecha del avión: caja Y 329–547. Hasta ~40
+   caracteres caben en 3 líneas; uno más largo se desborda de forma visible, nunca se recorta. */
+html[data-kind="demo"] .reveal .slides section.oc-demo.oc-l-cover {
+  padding: 0 !important;
+}
+
+html[data-kind="demo"] .reveal .slides section.oc-demo.oc-l-cover> :is(h1, h2) {
+  position: absolute !important;
+  left: 507px !important;
+  top: 329px !important;
+  width: 657px !important;
+  height: 218px !important;
+  box-sizing: border-box !important;
+  margin: 0 !important;
+  padding: 0 14px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  text-align: center !important;
+  text-wrap: balance !important;
+  background: transparent !important;
+  color: var(--oc-amarillo) !important;
+  font: 800 70px/1.035 'Merriweather Sans', Arial, sans-serif !important;
+  letter-spacing: -.03em !important;
+  overflow-wrap: break-word !important;
+  text-shadow: none !important;
+  z-index: 2 !important;
+}
+
+/* Logo de acreditación: el PNG trae el antiguo (tinta X 1087–1275, Y 602–718). Encima va una caja
+   blanca —el fondo de la franja es #fff puro— con imagenes/acreditacion-openclass.png, que lo
+   tapa entero: X 991,5–1279, Y 579–729 (tinta 993–1278 × 580–728, centrada en la franja blanca
+   Y 565–743). Vive en la capa de fondo y no en la sección, para desvanecerse con el PNG en la
+   transición sin dejar ver el logo antiguo. Porcentajes del fondo (lienzo / 0,94, origen en
+   X −40,85, Y −22,98): x% = (X + 40,85) / 1361,7 ; y% = (Y + 22,98) / 765,96. */
+html[data-kind="demo"] .reveal .slide-background[data-background-hash*="slide-01-portada"]::after {
+  content: '';
+  position: absolute;
+  left: 75.815%;
+  top: 78.592%;
+  width: 21.113%;
+  height: 19.583%;
+  background: #fff url('/imagenes/acreditacion-openclass.png') center / contain no-repeat;
+  pointer-events: none;
+}
+
+/* «SEMANA N» y fecha: bloque alineado a la derecha que termina 22 px antes del logo de
+   acreditación (tinta X 993–1278) y centrado en su altura (Y 621–687, centro 654). Crece hacia la
+   izquierda con cualquier semana o fecha. El filete amarillo vertical (borde derecho de ambos
+   párrafos, continuo) separa el bloque del logo. */
+html[data-kind="demo"] .reveal .slides section.oc-demo.oc-l-cover>p {
+  position: absolute !important;
+  left: auto !important;
+  right: 310px !important;
+  width: auto !important;
+  margin: 0 !important;
+  padding: 0 16px 0 0 !important;
+  border-right: 5px solid var(--oc-amarillo) !important;
+  text-align: right !important;
+  white-space: nowrap !important;
+  color: var(--oc-azul) !important;
+}
+
+html[data-kind="demo"] .reveal .slides section.oc-demo.oc-l-cover>p:nth-of-type(1) {
+  top: 621px !important;
+  font: 800 34px/40px 'Merriweather Sans', Arial, sans-serif !important;
+  letter-spacing: .02em !important;
+}
+
+html[data-kind="demo"] .reveal .slides section.oc-demo.oc-l-cover>p:nth-of-type(2) {
+  top: 661px !important;
+  font: 400 22px/26px 'Atkinson Hyperlegible', Arial, sans-serif !important;
+  color: #40547d !important;
+}
+

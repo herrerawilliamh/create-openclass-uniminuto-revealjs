@@ -1,0 +1,74 @@
+{
+  "course": {
+    "shortName": "curso",
+    "fullName": "Curso UNIMINUTO",
+    "year": "2026",
+    "description": "Presentación institucional interactiva del curso.",
+    "openClassLabel": "Open Class"
+  },
+  "generation": {
+    "weeksTotal": 8,
+    "activeWeeks": [
+      1
+    ],
+    "overwriteWeekContent": false
+  },
+  "weeks": [
+    {
+      "number": 1,
+      "title": "Introducción y fundamentos",
+      "date": "2026",
+      "centralTheme": "Conceptos básicos",
+      "activity": "Participación y aplicación"
+    },
+    {
+      "number": 2,
+      "title": "Título semana 2",
+      "date": "2026",
+      "centralTheme": "Tema central de la semana 2",
+      "activity": "Participación y aplicación"
+    },
+    {
+      "number": 3,
+      "title": "Título semana 3",
+      "date": "2026",
+      "centralTheme": "Tema central de la semana 3",
+      "activity": "Participación y aplicación"
+    },
+    {
+      "number": 4,
+      "title": "Título semana 4",
+      "date": "2026",
+      "centralTheme": "Tema central de la semana 4",
+      "activity": "Participación y aplicación"
+    },
+    {
+      "number": 5,
+      "title": "Título semana 5",
+      "date": "2026",
+      "centralTheme": "Tema central de la semana 5",
+      "activity": "Participación y aplicación"
+    },
+    {
+      "number": 6,
+      "title": "Título semana 6",
+      "date": "2026",
+      "centralTheme": "Tema central de la semana 6",
+      "activity": "Participación y aplicación"
+    },
+    {
+      "number": 7,
+      "title": "Título semana 7",
+      "date": "2026",
+      "centralTheme": "Tema central de la semana 7",
+      "activity": "Participación y aplicación"
+    },
+    {
+      "number": 8,
+      "title": "Título semana 8",
+      "date": "2026",
+      "centralTheme": "Tema central de la semana 8",
+      "activity": "Participación y aplicación"
+    }
+  ]
+}

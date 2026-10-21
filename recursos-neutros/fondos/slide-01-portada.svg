@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080"><defs>
+  <linearGradient id="av1" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fbe7a6"/><stop offset=".55" stop-color="#e4b448"/><stop offset="1" stop-color="#b9862a"/></linearGradient>
+  <linearGradient id="av2" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f2cd6b"/><stop offset="1" stop-color="#a8741d"/></linearGradient>
+  <linearGradient id="av3" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9b6b1c"/><stop offset="1" stop-color="#6d4911"/></linearGradient><linearGradient id="franja" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffd21a"/><stop offset="1" stop-color="#fcc10f"/></linearGradient></defs>
+  <rect width="1920" height="1080" fill="#fff"/>
+  <rect x="240" y="0" width="374" height="828" fill="url(#franja)"/>
+  <rect x="0" y="470" width="1920" height="358" fill="#233359"/>
+  <rect x="240" y="470" width="374" height="358" fill="#f8b416"/>
+  <rect x="243" y="966" width="372" height="114" fill="#ffcd0f"/>
+  <g transform="translate(238 326) scale(1.02)">
+  <path d="M0 152 L500 0 L172 182 Z" fill="url(#av1)"/>
+  <path d="M172 182 L500 0 L252 268 Z" fill="url(#av2)"/>
+  <path d="M172 182 L252 268 L206 300 Z" fill="url(#av3)"/>
+  <path d="M0 152 L500 0" stroke="#fff6d6" stroke-width="3" opacity=".7"/>
+</g>
+  <g font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" text-anchor="end">
+  <text x="1850" y="150" font-size="86" font-weight="800" fill="#243764" letter-spacing="-2">Open<tspan fill="#f2a900">Class</tspan></text>
+  <text x="1850" y="194" font-size="27" font-weight="600" fill="#5464bf" letter-spacing="3">PLANTILLA DOCENTE · REVEAL.JS</text>
+</g>
+  <rect x="1420" y="214" width="430" height="6" rx="3" fill="#ffcd0f"/></svg>

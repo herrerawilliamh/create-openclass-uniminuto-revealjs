@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080"><defs>
+  <linearGradient id="av1" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fbe7a6"/><stop offset=".55" stop-color="#e4b448"/><stop offset="1" stop-color="#b9862a"/></linearGradient>
+  <linearGradient id="av2" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f2cd6b"/><stop offset="1" stop-color="#a8741d"/></linearGradient>
+  <linearGradient id="av3" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9b6b1c"/><stop offset="1" stop-color="#6d4911"/></linearGradient><linearGradient id="noche" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#0a1430"/><stop offset=".6" stop-color="#15234a"/><stop offset="1" stop-color="#1f2f5e"/></linearGradient></defs>
+  <rect width="1920" height="1080" fill="url(#noche)"/>
+  <circle cx="1640" cy="820" r="420" fill="#ffffff" opacity=".035"/>
+  <circle cx="260" cy="980" r="300" fill="#ffffff" opacity=".03"/>
+  <rect x="0" y="140" width="1160" height="16" fill="#ffcd0f"/>
+  <g font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" text-anchor="end">
+  <text x="1850" y="160" font-size="77.4" font-weight="800" fill="#ffffff" letter-spacing="-2">Open<tspan fill="#f2a900">Class</tspan></text>
+  <text x="1850" y="199.6" font-size="24.3" font-weight="600" fill="#ffcd0f" letter-spacing="3">PLANTILLA DOCENTE · REVEAL.JS</text>
+</g>
+  <g transform="translate(330 300) scale(0.74)">
+  <path d="M0 152 L500 0 L172 182 Z" fill="url(#av1)"/>
+  <path d="M172 182 L500 0 L252 268 Z" fill="url(#av2)"/>
+  <path d="M172 182 L252 268 L206 300 Z" fill="url(#av3)"/>
+  <path d="M0 152 L500 0" stroke="#fff6d6" stroke-width="3" opacity=".7"/>
+</g>
+  <text x="720" y="452" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="168" font-weight="800" fill="#fff" letter-spacing="-3">GRACIAS</text>
+  <text x="960" y="580" text-anchor="middle" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="42" font-weight="600" fill="#e8edf7">Aprender, practicar y compartir en cada sesión</text>
+  <text x="960" y="680" text-anchor="middle" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="80" font-weight="800" fill="#ffcd0f" letter-spacing="1">¡HASTA LA PRÓXIMA!</text>
+  <rect x="760" y="760" width="400" height="6" rx="3" fill="#ffcd0f" opacity=".85"/>
+  <text x="960" y="970" text-anchor="middle" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="36" font-weight="600" fill="#fff">Presentación creada con <tspan fill="#ffcd0f">OpenClass · Reveal.js</tspan></text></svg>

@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OpenClass · Presentaciones docentes con Reveal.js</title>
+<meta name="description" content="Generador npm de presentaciones docentes interactivas con Reveal.js: 13 layouts, código con scroll, Mermaid, Chart, fórmulas, actividades y guía del docente.">
+<link rel="icon" href="curso/favicon.png">
+<link rel="stylesheet" href="site.css">
+</head>
+<body>
+<a class="saltar" href="#contenido">Saltar al contenido</a>
+<header class="barra">
+  <div class="envoltura barra-interna">
+    <a class="marca" href="./"><span class="sello">OC</span><span>OpenClass<small>Reveal.js · v{{VERSION}}</small></span></a>
+    <nav aria-label="Secciones">
+      <a href="#instalar">Instalar</a>
+      <a href="#layouts">Layouts</a>
+      <a href="#actividades">Actividades</a>
+      <a href="#ia">IA</a>
+      <a href="curso/guia/">Guía</a>
+      <a class="gh" href="{{GITHUB}}">GitHub</a>
+    </nav>
+  </div>
+</header>
+<main id="contenido">
+  <section class="heroe">
+    <div class="envoltura heroe-rejilla">
+      <div>
+        <p class="sobre">OpenClass UNIMINUTO · Reveal.js</p>
+        <h1>Clases interactivas escritas en Markdown, <em>listas para presentar</em></h1>
+        <p class="entrada">Un comando de npm crea un curso completo: portal, ocho semanas, 13 layouts con identidad visual, código con scroll, diagramas, gráficos, fórmulas, actividades y una guía del docente. Sin saber React.</p>
+        <div class="acciones">
+          <a class="boton primario" href="#instalar">INSTALAR CON NPM</a>
+          <a class="boton" href="curso/demo-completa/">VER DEMOSTRACIÓN</a>
+          <a class="boton" href="curso/galeria/">EXPLORAR LOS 13 LAYOUTS</a>
+          <a class="boton" href="curso/guia/">GUÍA DEL DOCENTE</a>
+          <a class="boton" href="{{GITHUB}}">GITHUB</a>
+        </div>
+      </div>
+      <figure class="marco"><img src="capturas/portada.webp" alt="Portada de la demostración «TEMÁTICA DE PRUEBA»" width="1280" height="720"></figure>
+    </div>
+    <p class="envoltura aviso">Proyecto docente independiente de código abierto. No es un sitio oficial de UNIMINUTO. El paquete público usa un tema neutro: los logotipos institucionales no se distribuyen y cada docente autorizado los aplica en su equipo con <code>--assets</code>.</p>
+  </section>
+
+  <section class="seccion envoltura" aria-labelledby="t-caracteristicas">
+    <h2 id="t-caracteristicas">Lo que incluye cada curso</h2>
+    <div class="rejilla-3">
+      <article class="tarjeta"><h3>13 layouts</h3><p>Portada, separador, resultados, imágenes, texto, columnas, comparación, multimedia, código y cierre, con vista previa real.</p></article>
+      <article class="tarjeta"><h3>Código sin límites</h3><p>Programas extensos con scroll vertical y horizontal, botón copiar y teclado seguro; o paginados para PDF.</p></article>
+      <article class="tarjeta"><h3>Diagramas y datos</h3><p>Mermaid, Chart.js y fórmulas KaTeX escritas como texto, sin capturas de baja resolución.</p></article>
+      <article class="tarjeta"><h3>Aprendizaje activo</h3><p>Microactividad editable con validación y retroalimentación, quiz y laboratorio dentro de la presentación.</p></article>
+      <article class="tarjeta"><h3>Herramientas docentes</h3><p>Vista del presentador con notas, pizarra, anotaciones, búsqueda, vista general y exportación a PDF.</p></article>
+      <article class="tarjeta"><h3>Publicación estática</h3><p>Compila a HTML/CSS/JS y se publica en GitHub Pages con el flujo de trabajo incluido.</p></article>
+    </div>
+    <div class="tira">
+      <figure><img src="capturas/codigo-scroll.webp" alt="Código desplazable con botón copiar" loading="lazy" width="1280" height="720"><figcaption>Código con scroll y copiar</figcaption></figure>
+      <figure><img src="capturas/mermaid.webp" alt="Diagrama Mermaid" loading="lazy" width="1280" height="720"><figcaption>Mermaid</figcaption></figure>
+      <figure><img src="capturas/chart.webp" alt="Gráfico de barras con Chart" loading="lazy" width="1280" height="720"><figcaption>Chart</figcaption></figure>
+      <figure><img src="capturas/formulas.webp" alt="Fórmulas con KaTeX" loading="lazy" width="1280" height="720"><figcaption>Fórmulas</figcaption></figure>
+    </div>
+  </section>
+
+  <section class="seccion fondo-suave" id="instalar" aria-labelledby="t-instalar">
+    <div class="envoltura">
+      <h2 id="t-instalar">Instalar con npm</h2>
+      <p>Requiere <a href="https://nodejs.org/">Node.js</a> 20.19 o posterior. El curso se crea <strong>en tu equipo</strong>; esta página solo documenta y muestra la demostración.</p>
+      <div class="codigo"><button type="button" class="copiar" data-copiar>Copiar</button><pre><code>npm create openclass-uniminuto-revealjs@latest mi-curso
+cd mi-curso
+npm install
+npm run dev</code></pre></div>
+      <p>Docentes con autorización para los recursos institucionales:</p>
+      <div class="codigo"><button type="button" class="copiar" data-copiar>Copiar</button><pre><code>npm create openclass-uniminuto-revealjs@latest mi-curso -- --assets "RUTA/recursos-institucionales"</code></pre></div>
+      <p class="nota">Paquete: <a href="{{NPM}}">{{NPM}}</a></p>
+    </div>
+  </section>
+
+  <section class="seccion envoltura" id="layouts" aria-labelledby="t-layouts">
+    <h2 id="t-layouts">Los 13 layouts</h2>
+    <p>Capturas reales de la demostración. Copia el Markdown de cualquier layout y pégalo en tu semana. Ficha completa en la <a href="curso/galeria/">galería</a>.</p>
+    <div class="rejilla-layouts">
+<!--TARJETAS-->
+    </div>
+  </section>
+
+  <section class="seccion fondo-suave" id="actividades" aria-labelledby="t-actividades">
+    <div class="envoltura dos">
+      <div>
+        <h2 id="t-actividades">Actividades interactivas</h2>
+        <p>Una microactividad de 5 a 10 minutos funciona dentro de la diapositiva: los estudiantes clasifican acciones, comprueban, leen la retroalimentación y reintentan.</p>
+        <ul class="lista">
+          <li>Validación de respuestas incompletas, correctas e incorrectas.</li>
+          <li>Resultado observable, reinicio y cronómetro orientativo.</li>
+          <li>Accesible con teclado y lector de pantalla; funciona en iframe aislado.</li>
+          <li>Para otro tema se edita un solo archivo: <code>datos.js</code>.</li>
+        </ul>
+        <div class="acciones"><a class="boton primario" href="curso/actividades/microactividad/index.html">PROBAR LA ACTIVIDAD</a><a class="boton" href="curso/demo-completa/#/actividad-iframe">VERLA EN LA PRESENTACIÓN</a></div>
+      </div>
+      <figure class="marco"><img src="capturas/actividad-iframe.webp" alt="Microactividad dentro de la presentación" loading="lazy" width="1280" height="720"></figure>
+    </div>
+  </section>
+
+  <section class="seccion envoltura" id="ia" aria-labelledby="t-ia">
+    <h2 id="t-ia">Crear una semana con inteligencia artificial</h2>
+    <p>Cada curso trae tres archivos en <code>docs/IA/</code> para que ChatGPT, Claude o Codex produzcan Markdown compatible, sin inventar clases, enlaces ni bibliografía.</p>
+    <div class="rejilla-3">
+      <article class="tarjeta"><h3>1 · Instrucciones</h3><p><code>INSTRUCCIONES-OPENCLASS.md</code>: contrato técnico con la arquitectura, los 13 layouts y las reglas de validación.</p><a href="{{GITHUB}}/blob/main/template/docs/IA/INSTRUCCIONES-OPENCLASS.md">Ver archivo</a></article>
+      <article class="tarjeta"><h3>2 · Plantilla semanal</h3><p><code>PLANTILLA-SEMANAL.md</code>: curso, tema, resultados, materiales, actividades y evaluación (admite datos parciales).</p><a href="{{GITHUB}}/blob/main/template/docs/IA/PLANTILLA-SEMANAL.md">Ver archivo</a></article>
+      <article class="tarjeta"><h3>3 · Prompt</h3><p><code>PROMPT-CREAR-SEMANA.md</code>: secuencia pedagógica, microactividad, evaluación formativa y reporte de pendientes.</p><a href="{{GITHUB}}/blob/main/template/docs/IA/PROMPT-CREAR-SEMANA.md">Ver archivo</a></article>
+    </div>
+  </section>
+</main>
+<footer class="pie">
+  <div class="envoltura">
+    <p><strong>OpenClass Reveal.js</strong> · código MIT · <a href="{{GITHUB}}">GitHub</a> · <a href="{{NPM}}">npm</a> · <a href="curso/guia/">Guía del docente</a></p>
+    <p>Créditos: <a href="https://revealjs.com/">Reveal.js</a>, <a href="https://github.com/rajgoel/reveal.js-plugins">reveal.js-plugins</a> (Chalkboard, Custom Controls, Chart), <a href="https://mermaid.js.org/">Mermaid</a>, <a href="https://www.chartjs.org/">Chart.js</a>, <a href="https://katex.org/">KaTeX</a>, fuentes Atkinson Hyperlegible y Merriweather Sans (OFL). Autor: William Herrera.</p>
+  </div>
+</footer>
+<script type="application/json" id="datos-layouts"><!--DATOS--></script>
+<script>
+(() => {
+  const datos = JSON.parse(document.getElementById('datos-layouts').textContent);
+  async function copiar(texto, boton) {
+    let ok = true;
+    try { await navigator.clipboard.writeText(texto); } catch {
+      const a = Object.assign(document.createElement('textarea'), { value: texto }); document.body.append(a); a.select(); ok = document.execCommand('copy'); a.remove();
+    }
+    const original = boton.textContent; boton.textContent = ok ? '¡Copiado!' : 'No se pudo copiar';
+    setTimeout(() => { boton.textContent = original; }, 1800);
+  }
+  document.querySelectorAll('[data-copiar]').forEach((b) => b.addEventListener('click', () => copiar(b.parentElement.querySelector('code').textContent, b)));
+  document.querySelectorAll('[data-layout]').forEach((b) => b.addEventListener('click', () => copiar(datos[b.dataset.layout], b)));
+})();
+</script>
+</body>
+</html>

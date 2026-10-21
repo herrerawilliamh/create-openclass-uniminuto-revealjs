@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="623" height="880" viewBox="0 0 623 880"><defs>
+  <linearGradient id="av1" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fbe7a6"/><stop offset=".55" stop-color="#e4b448"/><stop offset="1" stop-color="#b9862a"/></linearGradient>
+  <linearGradient id="av2" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f2cd6b"/><stop offset="1" stop-color="#a8741d"/></linearGradient>
+  <linearGradient id="av3" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9b6b1c"/><stop offset="1" stop-color="#6d4911"/></linearGradient><linearGradient id="claro" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f4f7fd"/><stop offset="1" stop-color="#dfe7f6"/></linearGradient></defs><rect width="623" height="880" fill="url(#claro)"/>
+  <g stroke="#5464bf" stroke-width="5" stroke-dasharray="10 9" fill="none">
+    <path d="M311 210 V380"/><path d="M311 470 L120 560"/><path d="M311 470 L502 560"/><path d="M311 470 L120 760"/><path d="M311 470 L502 760"/><path d="M311 470 V700"/>
+  </g>
+  <path d="M190 170 a70 70 0 0 1 60 -96 a90 90 0 0 1 160 20 a62 62 0 0 1 30 76 Z" fill="#243764"/>
+  <text x="311" y="160" text-anchor="middle" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="34" font-weight="800" fill="#fff">Nube</text>
+  <rect x="216" y="380" width="190" height="120" rx="20" fill="#ffcd0f"/>
+  <text x="311" y="452" text-anchor="middle" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="34" font-weight="800" fill="#243764">Pasarela</text>
+  <circle cx="120" cy="580" r="58" fill="#fff" stroke="#243764" stroke-width="6"/>
+  <text x="120" y="596" text-anchor="middle" font-size="46">💡</text>
+  <text x="120" y="680" text-anchor="middle" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="28" font-weight="700" fill="#233660">Luz</text><circle cx="502" cy="580" r="58" fill="#fff" stroke="#243764" stroke-width="6"/>
+  <text x="502" y="596" text-anchor="middle" font-size="46">📷</text>
+  <text x="502" y="680" text-anchor="middle" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="28" font-weight="700" fill="#233660">Cámara</text><circle cx="311" cy="720" r="58" fill="#fff" stroke="#243764" stroke-width="6"/>
+  <text x="311" y="736" text-anchor="middle" font-size="46">🌡️</text>
+  <text x="311" y="820" text-anchor="middle" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="28" font-weight="700" fill="#233660">Sensor</text>
+  <circle cx="120" cy="770" r="50" fill="#fff" stroke="#243764" stroke-width="6"/>
+  <text x="120" y="786" text-anchor="middle" font-size="46">⌚</text>
+  <text x="120" y="862" text-anchor="middle" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="28" font-weight="700" fill="#233660"></text><circle cx="502" cy="770" r="50" fill="#fff" stroke="#243764" stroke-width="6"/>
+  <text x="502" y="786" text-anchor="middle" font-size="46">📱</text>
+  <text x="502" y="862" text-anchor="middle" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="28" font-weight="700" fill="#233660"></text></svg>

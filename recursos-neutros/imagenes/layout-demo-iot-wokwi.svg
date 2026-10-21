@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="495" height="880" viewBox="0 0 495 880"><defs>
+  <linearGradient id="av1" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fbe7a6"/><stop offset=".55" stop-color="#e4b448"/><stop offset="1" stop-color="#b9862a"/></linearGradient>
+  <linearGradient id="av2" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f2cd6b"/><stop offset="1" stop-color="#a8741d"/></linearGradient>
+  <linearGradient id="av3" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9b6b1c"/><stop offset="1" stop-color="#6d4911"/></linearGradient><linearGradient id="claro" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f4f7fd"/><stop offset="1" stop-color="#dfe7f6"/></linearGradient></defs><rect width="495" height="880" fill="url(#claro)"/>
+  <text x="247" y="90" text-anchor="middle" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="40" font-weight="800" fill="#233660">Circuito simulado</text>
+  <rect x="150" y="300" width="195" height="300" rx="14" fill="#1f2a44"/>
+  <text x="247" y="460" text-anchor="middle" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="34" font-weight="800" fill="#fff">MCU</text>
+  <rect x="60" y="140" width="120" height="110" rx="10" fill="#fff" stroke="#5464bf" stroke-width="6"/>
+  <text x="120" y="208" text-anchor="middle" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="26" font-weight="700" fill="#233660">DHT22</text>
+  <path d="M120 250 V330 H150" stroke="#2e8b57" stroke-width="7" fill="none"/>
+  <path d="M345 430 H400 V640" stroke="#2e9d5b" stroke-width="7" fill="none"/><circle cx="400" cy="660" r="26" fill="#2e9d5b"/><path d="M345 500 H400 V710" stroke="#f2b705" stroke-width="7" fill="none"/><circle cx="400" cy="730" r="26" fill="#f2b705"/><path d="M345 570 H400 V780" stroke="#e5534b" stroke-width="7" fill="none"/><circle cx="400" cy="800" r="26" fill="#e5534b"/>
+  <text x="120" y="720" text-anchor="middle" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="28" fill="#233660">3 indicadores</text></svg>
