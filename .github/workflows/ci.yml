@@ -35,6 +35,76 @@ jobs:
       - name: Contenido del paquete npm
         run: npm pack --dry-run --json
 
+  paquete:
+    # Trazabilidad del tarball: lo genera con npm pack y lo sube como artefacto. No publica nada ni usa secretos.
+    name: Evidencia del paquete npm (npm pack)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # En pull_request, el commit del PR (no el merge sintético): la evidencia corresponde al árbol revisado.
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Generar el paquete y su evidencia
+        env:
+          ESPERADO: ${{ github.event.pull_request.head.sha || github.sha }}
+          SALIDA: ${{ github.workspace }}/evidencia-paquete
+          CONTENIDO: ${{ runner.temp }}/contenido-paquete
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$ESPERADO" || { echo "HEAD no es $ESPERADO"; exit 1; }
+          test -z "$(git status --porcelain)" || { echo "Árbol de trabajo modificado"; exit 1; }
+          mkdir -p "$SALIDA" "$CONTENIDO"
+          npm pack --json --pack-destination "$SALIDA" > "$SALIDA/npm-pack.json"
+          tar -xzf "$SALIDA/$(node -p "require(process.argv[1])[0].filename" "$SALIDA/npm-pack.json")" -C "$CONTENIDO"
+          NPM_VERSION="$(npm --version)" node --input-type=commonjs - <<'JS'
+          const fs = require('fs'), path = require('path'), crypto = require('crypto');
+          const { execFileSync } = require('child_process');
+          const { SALIDA, CONTENIDO, NPM_VERSION, GITHUB_SERVER_URL, GITHUB_REPOSITORY, GITHUB_RUN_ID, GITHUB_STEP_SUMMARY } = process.env;
+          const hash = (alg, b) => crypto.createHash(alg).update(b).digest('hex');
+          const git = (...a) => execFileSync('git', a, { encoding: 'utf8' }).trim();
+          const fallo = (m) => { console.error(m); process.exit(1); };
+          const pack = JSON.parse(fs.readFileSync(path.join(SALIDA, 'npm-pack.json'), 'utf8'))[0];
+          const base = path.join(CONTENIDO, 'package');
+          const listar = (d, p = '') => fs.readdirSync(d, { withFileTypes: true }).flatMap((e) =>
+            e.isDirectory() ? listar(path.join(d, e.name), p + e.name + '/') : [p + e.name]);
+          const declarados = pack.files.map((f) => f.path).sort(), extraidos = listar(base).sort();
+          if (JSON.stringify(declarados) !== JSON.stringify(extraidos)) fallo('npm pack --json no coincide con el contenido del .tgz');
+          if (declarados.length !== pack.entryCount) fallo(`entryCount ${pack.entryCount} != ${declarados.length} archivos`);
+          const tgz = fs.readFileSync(path.join(SALIDA, pack.filename));
+          if (hash('sha1', tgz) !== pack.shasum) fallo('El SHA-1 del .tgz no coincide con npm pack');
+          const files = declarados.map((p) => {
+            const b = fs.readFileSync(path.join(base, p));
+            return { path: p, size: b.length, sha256: hash('sha256', b) };
+          });
+          const tarball = { filename: pack.filename, size: tgz.length, sha256: hash('sha256', tgz), shasum: pack.shasum, integrity: pack.integrity };
+          const manifiesto = {
+            name: pack.name, version: pack.version,
+            commit: git('rev-parse', 'HEAD'), tree: git('rev-parse', 'HEAD^{tree}'),
+            run: `${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}`,
+            node: process.version, npm: NPM_VERSION,
+            tarball, filesCount: files.length, files,
+          };
+          fs.writeFileSync(path.join(SALIDA, 'manifiesto.json'), JSON.stringify(manifiesto, null, 2) + '\n');
+          fs.writeFileSync(path.join(SALIDA, 'contenido.sha256'), files.map((f) => `${f.sha256}  ${f.path}`).join('\n') + '\n');
+          fs.writeFileSync(path.join(SALIDA, `${pack.filename}.sha256`), `${tarball.sha256}  ${pack.filename}\n`);
+          const resumen = [`### Paquete ${pack.name}@${pack.version}`, '', `- Commit: \`${manifiesto.commit}\``, `- Tree: \`${manifiesto.tree}\``,
+            `- Tarball: \`${pack.filename}\`, ${tarball.size} bytes`, `- SHA-256: \`${tarball.sha256}\``, `- Archivos: ${files.length}`,
+            `- Node ${manifiesto.node}, npm ${manifiesto.npm}`, ''].join('\n');
+          fs.appendFileSync(GITHUB_STEP_SUMMARY, resumen);
+          console.log(resumen);
+          JS
+      - name: Subir evidencia del paquete
+        uses: actions/upload-artifact@v4
+        with:
+          name: paquete-npm-${{ github.event.pull_request.head.sha || github.sha }}
+          path: evidencia-paquete
+          if-no-files-found: error
+          retention-days: 90
+
   navegador:
     name: Chrome real (DOM, portal, navegador, sitio)
     runs-on: ubuntu-latest
