@@ -1,6 +1,6 @@
 {
   "name": "create-openclass-uniminuto-revealjs",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Generador npm de presentaciones docentes OpenClass con Reveal.js: 13 layouts, código con scroll, Mermaid, Chart, actividades y guía del docente",
   "author": "William Herrera",
   "license": "MIT",
@@ -11,13 +11,23 @@
   "files": [
     "bin",
     "template",
-    "docs",
+    "docs/GUIA-DEL-CREADOR.md",
     "README.md",
+    "CHANGELOG.md",
     "LICENSE"
   ],
   "scripts": {
-    "test": "node --test tests/creator.test.mjs tests/contenido.test.mjs",
+    "test": "node --test tests/creator.test.mjs tests/contenido.test.mjs tests/semana.test.mjs",
+    "test:p2": "node --test tests/portada-pedagogica.test.mjs",
+    "test:docente": "node --test tests/docente-p3.test.mjs",
+    "test:seguridad": "node --test tests/publicacion-seguridad.test.mjs",
+    "test:ligeras": "npm test && npm run test:p2 && npm run test:docente && npm run test:seguridad",
+    "test:dom": "node --test --test-concurrency=1 tests/portada-dom.test.mjs",
+    "test:portal": "node --test --test-concurrency=1 tests/portal-academico.test.mjs",
     "test:navegador": "node scripts/test-navegador.mjs",
+    "test:sitio": "node --test tests/sitio.test.mjs",
+    "test:chrome": "npm run test:dom && npm run test:portal && npm run test:navegador",
+    "test:release": "npm run test:ligeras && npm run test:chrome && npm run site:build && npm run test:sitio",
     "assets:neutros": "node scripts/render-neutral-assets.mjs && node scripts/render-demo-video.mjs",
     "galeria:capturas": "node scripts/capture-gallery.mjs",
     "site:build": "node scripts/build-site.mjs",
@@ -25,6 +35,10 @@
   },
   "engines": {
     "node": ">=20.19.0"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
   },
   "keywords": [
     "create",

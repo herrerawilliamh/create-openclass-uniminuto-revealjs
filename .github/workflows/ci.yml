@@ -1,0 +1,70 @@
+name: Pruebas del generador (CI)
+
+# CI ordinaria: no publica nada. En main la ejecuta pages.yml antes de desplegar, y release.yml antes de
+# preparar la publicación en npm (workflow_call); en ambos casos es condición obligatoria.
+on:
+  pull_request:
+  workflow_dispatch:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  ligeras:
+    name: Basales, P2, documentación y seguridad (Node ${{ matrix.node }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # 20.19.0 = mínimo declarado en engines; 22 y 24 = LTS vigentes.
+        node: ['20.19.0', '22', '24']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+      - name: Basales (28)
+        run: npm test
+      - name: P2 primera secuencia semanal (28)
+        run: npm run test:p2
+      - name: P3 documentación distribuida (4)
+        run: npm run test:docente
+      - name: P4 seguridad de publicación (12)
+        run: npm run test:seguridad
+      - name: Contenido del paquete npm
+        run: npm pack --dry-run --json
+
+  navegador:
+    name: Chrome real (DOM, portal, navegador, sitio)
+    runs-on: ubuntu-latest
+    env:
+      PAGES_BASE: /${{ github.event.repository.name }}/
+      CHROME_PATH: /usr/bin/google-chrome
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          # scripts/lib/chrome.mjs usa el WebSocket global (Node >= 22).
+          node-version: '22'
+      - name: P2 portada en el DOM (8, suite completa)
+        run: npm run test:dom
+        env:
+          OPENCLASS_EVIDENCIA: ${{ github.workspace }}/evidencia/dom
+      - name: P3 portal académico (7)
+        run: npm run test:portal
+        env:
+          OPENCLASS_EVIDENCIA: ${{ github.workspace }}/evidencia/portal
+      - name: Navegador (11)
+        run: npm run test:navegador
+      - name: Construir el sitio de GitHub Pages
+        run: npm run site:build
+      - name: Sitio de GitHub Pages
+        run: npm run test:sitio
+      - name: Evidencia de fallos
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: evidencia-navegador
+          path: evidencia
+          if-no-files-found: ignore

@@ -52,6 +52,7 @@ function toWeekNumber() {
 function normalizeWeek(weekNumber, existing = {}) {
   const title = String(existing.title || `Título semana ${weekNumber}`).trim();
   return {
+    ...existing,
     number: weekNumber,
     title,
     date: String(existing.date || new Date().getFullYear()).trim(),
@@ -113,7 +114,7 @@ console.log(`Semana        : ${weekNumber}`);
 console.log(`Activas       : ${config.generation.activeWeeks.join(", ")}`);
 console.log(`Contenido     : ${forceContent ? "se sobrescribirá" : "se conserva si ya existe"}\n`);
 
-const generatorArgs = ["scripts/generar-desde-config.mjs", "--config", configPath, ...(forceContent ? ["--force-content"] : [])];
+const generatorArgs = ["scripts/generar-desde-config.mjs", "--config", configPath, ...(forceContent ? ["--force-week", String(weekNumber)] : [])];
 const result = spawnSync(process.execPath, generatorArgs, {
   stdio: "inherit",
   shell: false,
