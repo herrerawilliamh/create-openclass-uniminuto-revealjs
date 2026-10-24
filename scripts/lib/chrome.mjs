@@ -25,6 +25,9 @@ export function rutaChrome() {
 
 const esperar = (ms) => new Promise((r) => setTimeout(r, ms));
 
+// Ninguna orden CDP puede quedar pendiente para siempre: un Chrome colgado o cerrado se convierte en error.
+const LIMITE_CDP = Number(process.env.OPENCLASS_CDP_TIMEOUT) || 60000;
+
 class Conexion {
   constructor(ws) {
     this.ws = ws; this.id = 0; this.pendientes = new Map(); this.oyentes = new Set();
@@ -36,11 +39,23 @@ class Conexion {
         msg.error ? reject(new Error(`${msg.error.message} ${msg.error.data || ''}`)) : resolve(msg.result);
       } else for (const fn of this.oyentes) fn(msg);
     });
+    ws.addEventListener('close', () => {
+      for (const { reject, method } of this.pendientes.values()) reject(new Error(`CDP: conexión cerrada durante ${method}`));
+      this.pendientes.clear();
+    });
   }
-  send(method, params = {}, sessionId) {
+  send(method, params = {}, sessionId, { timeout = LIMITE_CDP } = {}) {
+    if (this.ws.readyState !== WebSocket.OPEN) return Promise.reject(new Error(`CDP: conexión cerrada antes de ${method}`));
     const id = ++this.id;
-    this.ws.send(JSON.stringify({ id, method, params, ...(sessionId && { sessionId }) }));
-    return new Promise((resolve, reject) => this.pendientes.set(id, { resolve, reject }));
+    return new Promise((resolve, reject) => {
+      const reloj = setTimeout(() => {
+        this.pendientes.delete(id);
+        reject(new Error(`CDP: ${method} sin respuesta en ${timeout} ms`));
+      }, timeout);
+      const fin = (fn) => (v) => { clearTimeout(reloj); fn(v); };
+      this.pendientes.set(id, { resolve: fin(resolve), reject: fin(reject), method });
+      this.ws.send(JSON.stringify({ id, method, params, ...(sessionId && { sessionId }) }));
+    });
   }
 }
 
@@ -117,18 +132,44 @@ export async function abrirNavegador({ ancho = 1920, alto = 1080 } = {}) {
     '--disable-extensions', '--mute-audio', '--autoplay-policy=no-user-gesture-required',
     `--window-size=${ancho},${alto}`, 'about:blank',
   ], { stdio: 'ignore' });
-  const archivo = path.join(perfil, 'DevToolsActivePort');
-  for (let i = 0; i < 200 && !existsSync(archivo); i++) await esperar(50);
-  let puerto;
-  for (let i = 0; i < 50 && !puerto; i++) {
-    puerto = readFileSync(archivo, 'utf8').split('\n')[0].trim();
-    if (!puerto) await esperar(50);
+  const salida = new Promise((r) => proc.once('exit', r));
+  let ws, cdp, cerrado = false;
+  // Cierre idempotente y acotado: Browser.close, después kill si el proceso sigue vivo; el perfil se borra al final.
+  async function cerrar() {
+    if (cerrado) return;
+    cerrado = true;
+    if (ws?.readyState === WebSocket.OPEN) {
+      try { await (cdp ?? new Conexion(ws)).send('Browser.close', {}, undefined, { timeout: 5000 }); } catch { /* ya cerrado */ }
+      ws.close();
+    }
+    const vivo = proc.exitCode === null && proc.signalCode === null;
+    if (vivo && await Promise.race([salida.then(() => false), esperar(3000).then(() => true)])) {
+      proc.kill();
+      await Promise.race([salida, esperar(3000)]);
+    }
+    await esperar(300);
+    try { rmSync(perfil, { recursive: true, force: true }); } catch { /* bloqueo temporal en Windows */ }
   }
-  const { webSocketDebuggerUrl } = await (await fetch(`http://127.0.0.1:${puerto}/json/version`)).json();
-  const ws = new WebSocket(webSocketDebuggerUrl);
-  await new Promise((resolve, reject) => { ws.onopen = resolve; ws.onerror = reject; });
-  const cdp = new Conexion(ws);
+  try {
+    const archivo = path.join(perfil, 'DevToolsActivePort');
+    let puerto;
+    for (let i = 0; i < 300 && !puerto; i++) {
+      if (proc.exitCode !== null) throw new Error(`Chrome terminó al iniciar (código ${proc.exitCode})`);
+      puerto = existsSync(archivo) && readFileSync(archivo, 'utf8').split('\n')[0].trim();
+      if (!puerto) await esperar(50);
+    }
+    if (!puerto) throw new Error('Chrome no publicó DevToolsActivePort en 15 s');
+    const { webSocketDebuggerUrl } = await (await fetch(`http://127.0.0.1:${puerto}/json/version`, { signal: AbortSignal.timeout(10000) })).json();
+    ws = new WebSocket(webSocketDebuggerUrl);
+    await new Promise((resolve, reject) => {
+      const reloj = setTimeout(() => reject(new Error('CDP: WebSocket sin abrir en 10 s')), 10000);
+      ws.onopen = () => { clearTimeout(reloj); resolve(); };
+      ws.onerror = (e) => { clearTimeout(reloj); reject(e.error || new Error('CDP: error del WebSocket')); };
+    });
+    cdp = new Conexion(ws);
+  } catch (e) { await cerrar(); throw e; }
   return {
+    pid: proc.pid,
     async pagina({ ancho: w = ancho, alto: h = alto, escala = 1 } = {}) {
       const { targetId } = await cdp.send('Target.createTarget', { url: 'about:blank' });
       const { sessionId } = await cdp.send('Target.attachToTarget', { targetId, flatten: true });
@@ -138,11 +179,6 @@ export async function abrirNavegador({ ancho = 1920, alto = 1080 } = {}) {
       await p.viewport(w, h, escala);
       return p;
     },
-    async cerrar() {
-      try { await cdp.send('Browser.close'); } catch { /* ya cerrado */ }
-      ws.close(); proc.kill();
-      await esperar(300);
-      try { rmSync(perfil, { recursive: true, force: true }); } catch { /* bloqueo temporal en Windows */ }
-    },
+    cerrar,
   };
 }

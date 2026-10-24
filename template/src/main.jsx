@@ -1,6 +1,7 @@
 import React from 'react';
 import { createRoot } from 'react-dom/client';
-import config from '../openclass.config.json';
+// Proyección pública de openclass.config.json (módulo virtual de vite.config.mjs).
+import config from 'virtual:openclass-config';
 import { Portal } from './Portal.jsx';
 import { Presentacion } from './Presentacion.jsx';
 import './theme.css';

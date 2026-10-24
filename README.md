@@ -19,8 +19,11 @@ El docente escribe **Markdown**; no necesita saber React.
 
 ## Requisitos
 
-- [Node.js](https://nodejs.org/) **20.19 o posterior** (incluye npm).
+- [Node.js](https://nodejs.org/) **20.19 o posterior** (incluye npm). La CI (`.github/workflows/ci.yml`)
+  está configurada para Node 20.19, 22 y 24; el estado real de cada ejecución se consulta en la
+  pestaña *Actions* del repositorio.
 - Un editor de texto (VS Code recomendado) y Chrome, Edge o Firefox.
+- Novedades de cada versión: [CHANGELOG.md](CHANGELOG.md).
 
 ## Instalación y primer curso
 
@@ -39,6 +42,18 @@ Con los recursos institucionales (solo docentes autorizados, carpeta entregada p
 ```bash
 npm create openclass-uniminuto-revealjs@latest mi-curso -- --assets "RUTA/recursos-institucionales"
 ```
+
+## Actualizar un curso existente
+
+```bash
+npx create-openclass-uniminuto-revealjs@latest <carpeta-del-curso> --update-theme
+```
+
+Actualiza la infraestructura (scripts, componentes, estilos, guía) y guarda una copia previa en
+`respaldos/`; conserva el Markdown de las semanas y `openclass.config.json`. Las semanas ya
+elaboradas no se regeneran: para la nueva apertura (diapositiva 3) añade `weeks[].opening` y copia la
+diapositiva de un curso nuevo, o usa `npm run semana -- N --force-content`, que reemplaza el archivo
+completo de la semana N.
 
 ## Comandos
 
@@ -79,10 +94,18 @@ En un curso:
 ## Desarrollo del generador
 
 ```bash
-npm test                    # generador, paginación, demostración, galería y microactividad
+npm test                    # controles basales: generador, paginación, demostración, galería, microactividad y semanas
+npm run test:p2             # primera secuencia semanal: portada, tema y activación
+npm run test:docente        # guía, prompt maestro y contrato distribuidos; contenido del paquete
+npm run test:seguridad      # seguridad de publicación: nada privado llega a dist/
+npm run test:ligeras        # las cuatro anteriores
+npm run test:dom            # portada en el DOM, ocho casos en Chrome real
+npm run test:portal         # portal del estudiante en Chrome real
 npm run test:navegador      # crea un curso, lo compila con base de subcarpeta y lo prueba en Chrome real
+npm run test:chrome         # las tres anteriores
 npm run site:build          # construye _site/ (landing + curso de demostración) para GitHub Pages
-node --test tests/sitio.test.mjs
+npm run test:sitio          # landing y enlaces del sitio construido
+npm run test:release        # todo lo anterior: condición para publicar
 npm run galeria:capturas -- <dist-de-un-curso>   # regenera las capturas reales de la galería
 npm run assets:neutros      # regenera el tema neutro y el video de demostración
 ```

@@ -1,0 +1,75 @@
+name: Publicar en npm (Trusted Publishing, staged)
+
+# Solo manual: Actions → «Publicar en npm» → Run workflow, eligiendo el TAG vX.Y.Z (no una rama).
+# Sin tokens: npm autentica este workflow por OIDC (Trusted Publisher configurado en npmjs.com para
+# herrerawilliamh/create-openclass-uniminuto-revealjs, archivo release.yml, entorno npm-publish).
+# El paquete queda STAGED: el propietario lo aprueba con 2FA (`npm stage approve <id>` o npmjs.com).
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Versión exacta (igual a package.json y al tag, sin la v). Ej.: 1.1.0'
+        required: true
+        type: string
+      confirmar:
+        description: 'Escribe PUBLICAR para confirmar'
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: npm-release
+  cancel-in-progress: false
+
+jobs:
+  pruebas:
+    # Suite completa obligatoria (ligeras en Node 20.19/22/24 + Chrome real + sitio).
+    if: github.ref == format('refs/tags/v{0}', inputs.version) && inputs.confirmar == 'PUBLICAR'
+    uses: ./.github/workflows/ci.yml
+
+  publicar:
+    needs: pruebas
+    runs-on: ubuntu-latest
+    # Entorno con revisores obligatorios (configurar en GitHub → Settings → Environments).
+    environment: npm-publish
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          # Trusted Publishing exige Node >= 22.14.0; `npm stage publish` exige npm >= 11.15.0.
+          node-version: '24'
+          registry-url: 'https://registry.npmjs.org'
+      - name: npm >= 11.15.0 (publicación staged)
+        # El npm que trae Node 24 puede ser anterior a 11.15.0: se instala uno compatible dentro de la serie 11.
+        run: npm install -g "npm@>=11.15.0 <12"
+      - name: Comprobaciones previas
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          set -euo pipefail
+          test "$(node -p "require('./package.json').version")" = "$VERSION" || { echo "package.json no es $VERSION"; exit 1; }
+          test "$(node -p "require('./package.json').name")" = "create-openclass-uniminuto-revealjs"
+          git fetch origin main
+          git merge-base --is-ancestor "$GITHUB_SHA" origin/main || { echo "El tag v$VERSION no está en main"; exit 1; }
+          node -e "
+            const ge = (v, m) => { const a = v.replace(/^v/, '').split('.').map(Number), b = m.split('.').map(Number);
+              for (let i = 0; i < 3; i++) if (a[i] !== b[i]) return a[i] > b[i]; return true; };
+            const [nodeV, npmV] = process.argv.slice(1);
+            if (!ge(nodeV, '22.14.0')) { console.error('Node ' + nodeV + ' < 22.14.0 (Trusted Publishing)'); process.exit(1); }
+            if (!ge(npmV, '11.15.0')) { console.error('npm ' + npmV + ' < 11.15.0 (npm stage publish)'); process.exit(1); }
+            console.log('Node ' + nodeV + ', npm ' + npmV);
+          " "$(node --version)" "$(npm --version)"
+          if npm view "create-openclass-uniminuto-revealjs@$VERSION" version >/dev/null 2>&1; then
+            echo "La versión $VERSION ya existe en npm: no se sobrescribe"; exit 1
+          fi
+      - name: Contenido del paquete
+        run: npm pack --dry-run --json
+      - name: Preparar publicación (staged; requiere aprobación 2FA del propietario)
+        run: npm stage publish --access public --tag latest --provenance

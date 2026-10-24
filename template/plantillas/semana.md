@@ -1,9 +1,9 @@
-# OpenClass — {{TITULO}}
+# {{CURSO}}
 <!-- .slide: class="oc-demo oc-l-cover" data-background-image="{{BASE_URL}}fondos/slide-01-portada.png" data-background-size="cover" -->
 
 **SEMANA {{SEMANA}}**
 
-{{FECHA}}
+{{TITULO_FECHA}}
 
 Notes:
 Introducir el tema central de esta semana.
@@ -17,6 +17,20 @@ Introducir el tema central de esta semana.
 
 Notes:
 Anunciar el bloque temático y conectar con conocimientos previos.
+
+---
+
+## Activación
+<!-- .slide: class="oc-demo oc-l-text" data-background-image="../../fondos/slide-05-template.png" data-background-size="cover" -->
+
+{{PREGUNTA}}
+
+{{PARTICIPACION}}
+
+Duración: {{DURACION}}.
+
+Notes:
+Rompehielos de {{DURACION}} para la sesión sincrónica por Zoom o Teams. Leer la pregunta en voz alta y dar la instrucción; quien no pueda usar el chat participa de forma oral. Cerrar recogiendo dos o tres respuestas y conectarlas con el tema.
 
 ---
 

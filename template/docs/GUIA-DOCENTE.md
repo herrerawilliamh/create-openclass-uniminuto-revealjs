@@ -27,7 +27,17 @@ Con recursos institucionales locales: `npm create openclass-uniminuto-revealjs@l
 npm run semana -- 2 --title "Sensores y actuadores" --date "2026-11-04" --theme "Medición y control"
 ```
 
-Edita el archivo generado en `semanas/`. El comando no reemplaza Markdown existente a menos que agregues `--force-content`. Puedes activar varias semanas de 1 a 8 y regenerar índices con `npm run config`.
+Edita el archivo generado en `semanas/`. El comando no reemplaza Markdown existente a menos que agregues `--force-content`, que reemplaza el archivo completo de esa semana: úsalo solo antes de elaborar el contenido. Puedes activar varias semanas de 1 a 8 y regenerar índices con `npm run config`. El portal muestra solo las semanas de `generation.activeWeeks`, en orden.
+
+## 2b. Diseñar la semana
+
+El capítulo **Diseñar la semana** de `/guia/#pedagogia` es la referencia completa. En resumen:
+
+- Define la activación en `weeks[].opening` (`question`, `participation`, `durationMinutes` de 1 a 3) antes de generar la semana.
+- Después de la activación, escribe la «Ruta de la semana»: qué se aprenderá, relación con semanas anteriores, conceptos y problemas, cómo participar, qué se podrá demostrar y dónde consultar la presentación.
+- Diseña actividades para Zoom o Teams con alternativa por chat u oral, y tres recorridos (sincrónico, asincrónico guiado y autónomo) con resultados equivalentes; no los presentes como modalidades oficiales.
+- Investiga con fuentes verificables; integra de 0 a 3 videos de 5 a 10 minutos, cada uno en su propia diapositiva.
+- Usa las Notes como guion docente público; los solucionarios van en `docente/solucionarios/`, nunca en Notes ni en `public/`.
 
 ## 3. Estructura de una diapositiva
 
@@ -96,7 +106,7 @@ Mermaid usa bloques ` ```mermaid ` (consulta los ejemplos funcionando en `labora
 
 ## 7b. Semanas con inteligencia artificial
 
-Usa `docs/IA/INSTRUCCIONES-OPENCLASS.md` (contrato técnico), `docs/IA/PLANTILLA-SEMANAL.md` (datos de la semana) y `docs/IA/PROMPT-CREAR-SEMANA.md` (prompt listo para copiar). Revisa todo lo marcado como «PENDIENTE» antes de la clase.
+Usa `docs/IA/INSTRUCCIONES-OPENCLASS.md` (contrato técnico), `docs/IA/PLANTILLA-SEMANAL.md` (datos de la semana) y `docs/IA/PROMPT-CREAR-SEMANA.md` (prompt maestro pedagógico listo para copiar, con los pasos a seguir después de recibir la respuesta). Revisa todo lo marcado como «PENDIENTE» antes de la clase.
 
 ## 8. Herramientas durante clase
 
@@ -128,6 +138,11 @@ Publica `dist/` en tu alojamiento. En GitHub Pages configura correctamente `SITE
 ## 10. Actualizar el curso
 
 Desde la carpeta que contiene el curso: `npx create-openclass-uniminuto-revealjs@latest <carpeta-curso> --update-theme` (añade `--assets <carpeta>` para reaplicar recursos locales). Este proceso respalda código previo y conserva Markdown y configuración, pero reemplaza infraestructura como CSS/React. Haz backup o commit Git primero.
+
+Las semanas ya elaboradas no se regeneran al actualizar. Para usar la activación de la diapositiva 3,
+añade `weeks[].opening` y copia esa diapositiva desde un curso nuevo; `npm run semana -- N --force-content`
+reemplaza el archivo completo de la semana N, así que úsalo solo antes de elaborar su contenido.
+Novedades de cada versión: `CHANGELOG.md` del generador (<https://www.npmjs.com/package/create-openclass-uniminuto-revealjs>).
 
 ## 11. Problemas frecuentes
 

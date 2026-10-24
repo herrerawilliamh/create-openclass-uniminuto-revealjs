@@ -210,18 +210,18 @@ test('Galería: 13 fichas con miniatura real, copiar y ver ejemplo', { skip: omi
   assert.equal(await pagina.evaluar('document.documentElement.scrollWidth <= window.innerWidth'), true, 'scroll horizontal en móvil');
 });
 
-test('Guía del docente: 19 capítulos, buscador, miniaturas y móvil', { skip: omitir }, async () => {
+test('Guía del docente: 20 capítulos, buscador, miniaturas y móvil', { skip: omitir }, async () => {
   await pagina.viewport(1440, 900);
   await pagina.ir(`${servidor.url}guia/`);
   await pagina.esperarA('document.querySelectorAll("[data-search]").length > 0');
-  assert.equal(await pagina.evaluar('document.querySelectorAll("section.chapter[data-search]").length'), 19);
-  for (const id of ['requisitos', 'instalacion', 'configuracion', 'semanas', 'layouts', 'recursos', 'codigo', 'actividades', 'diagramas', 'ia', 'herramientas', 'pdf', 'publicacion']) {
+  assert.equal(await pagina.evaluar('document.querySelectorAll("section.chapter[data-search]").length'), 20);
+  for (const id of ['requisitos', 'instalacion', 'configuracion', 'semanas', 'pedagogia', 'layouts', 'recursos', 'codigo', 'actividades', 'diagramas', 'ia', 'herramientas', 'pdf', 'publicacion']) {
     assert.ok(await pagina.evaluar(`!!document.getElementById(${JSON.stringify(id)})`), `falta capítulo #${id}`);
   }
   assert.match(await pagina.evaluar('document.getElementById("instalacion").textContent'), /npm create openclass-uniminuto-revealjs@latest mi-curso/);
   await pagina.evaluar('(() => { const s = document.querySelector("[data-guide-search]"); s.value = "paginate"; s.dispatchEvent(new Event("input")); return true; })()');
   const visibles = await pagina.evaluar('[...document.querySelectorAll("section.chapter")].filter(c => !c.hidden).map(c => c.id)');
-  assert.ok(visibles.includes('codigo') && visibles.length < 19, `búsqueda: ${visibles}`);
+  assert.ok(visibles.includes('codigo') && visibles.length < 20, `búsqueda: ${visibles}`);
   await pagina.evaluar('document.querySelectorAll(".thumbs img").forEach(i => { i.loading = "eager"; }), true');
   await pagina.esperarA('[...document.querySelectorAll(".thumbs img")].every(i => i.complete)');
   assert.equal(await pagina.evaluar('[...document.querySelectorAll(".thumbs img")].filter(i => i.naturalWidth > 0).length'), 13);
