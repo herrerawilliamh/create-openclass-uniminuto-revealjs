@@ -1,0 +1,66 @@
+/* OpenClass Live: panel y capas del adaptador local. Fuera de .slides; no altera los layouts institucionales. */
+.oc-live-boton {
+  position: fixed; top: 12px; right: 12px; z-index: 40; font: 600 13px/1 'Atkinson Hyperlegible', Arial, sans-serif;
+  padding: 7px 12px; border-radius: 999px; border: 1px solid #243764; background: #fff; color: #243764; opacity: .45; cursor: pointer;
+}
+.oc-live-boton::before { content: "●"; color: #c0392b; margin-right: 6px; }
+.oc-live-boton:hover, .oc-live-boton:focus-visible { opacity: 1; }
+.oc-live-panel {
+  position: fixed; top: 52px; right: 12px; z-index: 41; width: min(360px, calc(100vw - 24px)); max-height: calc(100vh - 120px); overflow: auto;
+  background: #fff; color: #233660; border: 1px solid #dce3ee; border-radius: 12px; box-shadow: 0 12px 32px rgba(15, 25, 50, .25);
+  padding: 12px 14px; font: 15px/1.4 'Atkinson Hyperlegible', Arial, sans-serif; text-align: left;
+}
+.oc-live-panel[hidden], .oc-live-capa[hidden], .oc-live-banda[hidden] { display: none; }
+.oc-live-cabecera { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+.oc-live-x { border: 0; background: none; font-size: 22px; line-height: 1; cursor: pointer; color: #233660; }
+.oc-live-panel form, .oc-live-fila { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; }
+.oc-live-entrada { flex: 1 1 160px; font: inherit; padding: 7px 9px; border: 1px solid #c8d0de; border-radius: 8px; }
+.oc-live-accion { font: 600 13px/1.2 inherit; font-family: inherit; padding: 7px 10px; border-radius: 8px; border: 1px solid #243764; background: #243764; color: #fff; cursor: pointer; }
+.oc-live-accion.secundaria, .oc-live-accion[aria-pressed=true] { background: #fff; color: #243764; }
+.oc-live-accion:disabled { opacity: .45; cursor: not-allowed; }
+.oc-live-ayuda { font-size: 13px; color: #5b6478; margin: 4px 0; overflow-wrap: anywhere; }
+.oc-live-msg { font-size: 13px; padding: 6px 8px; border-radius: 8px; background: #eef2fa; margin: 4px 0; }
+.oc-live-msg.error { background: #fdecea; color: #b42318; }
+.oc-live-msg.alerta { background: #fff4d6; color: #7a5200; }
+.oc-live-sala b { letter-spacing: .12em; }
+.oc-live-activa { border-top: 1px solid #dce3ee; margin-top: 8px; padding-top: 8px; }
+.oc-live-activa p { margin: 4px 0; }
+.oc-live-enunciado-corto { font-weight: 700; white-space: pre-wrap; overflow-wrap: anywhere; }
+.oc-live-check { display: block; font-size: 13px; margin: 8px 0; }
+
+/* Capa sobre la diapositiva: QR o resultados (visible en la pantalla compartida). */
+.oc-live-capa {
+  position: fixed; inset: 6vh 6vw 14vh; z-index: 35; display: flex; align-items: center; justify-content: center;
+  background: #fff; border-radius: 16px; box-shadow: 0 16px 48px rgba(15, 25, 50, .3);
+  color: #233660; font-family: 'Atkinson Hyperlegible', Arial, sans-serif; text-align: left; padding: 3vh 3vw;
+}
+.oc-live-qr { display: flex; align-items: center; gap: 4vw; }
+.oc-live-qr img { width: min(52vh, 40vw); height: auto; image-rendering: pixelated; background: #fff; }
+.oc-live-titulo { font-size: clamp(18px, 3.2vh, 34px); font-weight: 700; margin: 0 0 1vh; }
+.oc-live-url { font-size: clamp(14px, 2.4vh, 26px); margin: 0 0 2vh; overflow-wrap: anywhere; }
+.oc-live-codigo { font: 700 clamp(36px, 9vh, 96px)/1 ui-monospace, Consolas, monospace; letter-spacing: .14em; margin: 0; color: #243764; }
+.oc-live-resultados { width: 100%; max-height: 100%; overflow: auto; }
+.oc-live-resultados .oc-live-enunciado-corto { font-size: clamp(16px, 2.6vh, 28px); }
+.oc-live-barras { display: grid; gap: 1.4vh; margin-top: 2vh; }
+.oc-live-barra { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: .4vh 1vw; font-size: clamp(14px, 2.3vh, 24px); }
+.oc-live-op { overflow-wrap: anywhere; }
+.oc-live-pct { font-variant-numeric: tabular-nums; font-weight: 700; }
+.oc-live-pista { grid-column: 1 / -1; height: 1.6vh; min-height: 10px; background: #e6e9f0; border-radius: 8px; overflow: hidden; }
+.oc-live-pista > i { display: block; height: 100%; background: #5464bf; transition: width .3s; }
+.oc-live-barra.correcta .oc-live-pista > i { background: #1f7a4d; }
+.oc-live-barra.correcta .oc-live-op::after { content: "  ✓"; color: #1f7a4d; font-weight: 700; }
+.oc-live-explicacion-capa { margin-top: 2vh; font-size: clamp(14px, 2.1vh, 22px); }
+.oc-live-explicacion-capa pre { background: #10172a; color: #e8ecf5; padding: 1vh 1vw; border-radius: 8px; overflow-x: auto; font-size: .85em; }
+
+/* Banda inferior: solo la pregunta de estudiante que el docente decidió proyectar. */
+.oc-live-banda {
+  position: fixed; left: 6vw; right: 6vw; bottom: 11vh; z-index: 36; display: flex; flex-direction: column; gap: 4px;
+  background: #243764; color: #fff; border-radius: 12px; padding: 12px 18px; font: clamp(15px, 2.4vh, 26px)/1.35 'Atkinson Hyperlegible', Arial, sans-serif;
+  box-shadow: 0 10px 30px rgba(15, 25, 50, .35); white-space: pre-wrap; overflow-wrap: anywhere; text-align: left;
+}
+.oc-live-etiqueta { font-size: .7em; color: #ffca05; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; }
+
+/* En la diapositiva: opciones con letras (como en los resultados) y explicación oculta hasta revelarla. */
+.reveal .oc-live-encuesta .oc-live-opciones { list-style-type: upper-alpha; }
+.reveal .oc-live-encuesta .oc-live-explicacion { display: none; }
+html.reveal-print .oc-live-boton, html.reveal-print .oc-live-panel, html.reveal-print .oc-live-capa, html.reveal-print .oc-live-banda { display: none !important; }

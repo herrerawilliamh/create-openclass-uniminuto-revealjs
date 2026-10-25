@@ -1,0 +1,68 @@
+# OpenClass Live — stack para /home/openclass-live/ (Docker Compose plugin; adoptable en Dockhand).
+# Valida antes de levantar:  docker compose config --quiet && docker compose up -d --build
+# No publica puertos en el host: Traefik (red externa «web») es la única entrada, con HTTPS.
+name: openclass-live
+
+services:
+  openclass-live:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: openclass-live:0.1.0
+    container_name: openclass-live
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: "3000"
+      TZ: ${TZ:-America/Bogota}
+      APP_URL: ${APP_URL:?APP_URL is required}
+      SESSION_SECRET: ${SESSION_SECRET:?SESSION_SECRET is required}
+      ADMIN_PASSWORD_HASH: ${ADMIN_PASSWORD_HASH:?ADMIN_PASSWORD_HASH is required}
+      PRESENTER_ORIGINS: ${PRESENTER_ORIGINS:-http://localhost:8613,http://localhost:8600}
+      TRUST_PROXY: ${TRUST_PROXY:-true}
+      TEACHER_SESSION_HOURS: ${TEACHER_SESSION_HOURS:-8}
+      ROOM_TTL_MINUTES: ${ROOM_TTL_MINUTES:-180}
+      MAX_ROOM_PARTICIPANTS: ${MAX_ROOM_PARTICIPANTS:-150}
+      MAX_ROOMS: ${MAX_ROOMS:-20}
+    init: true
+    user: "1000:1000"
+    read_only: true
+    tmpfs:
+      - /tmp:size=16m,mode=1777
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    mem_limit: 256m
+    memswap_limit: 256m
+    cpus: 0.50
+    pids_limit: 128
+    stop_grace_period: 10s
+    expose:
+      - "3000"
+    networks:
+      - web
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/healthz').then((r) => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      start_period: 15s
+      retries: 3
+    logging:
+      driver: json-file
+      options:
+        max-size: "5m"
+        max-file: "3"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=web"
+      - "traefik.http.routers.openclass-live.rule=Host(`${APP_HOST}`)"
+      - "traefik.http.routers.openclass-live.entrypoints=websecure"
+      - "traefik.http.routers.openclass-live.tls=true"
+      - "traefik.http.routers.openclass-live.tls.certresolver=myresolver"
+      - "traefik.http.routers.openclass-live.service=openclass-live-svc"
+      - "traefik.http.services.openclass-live-svc.loadbalancer.server.port=3000"
+
+networks:
+  web:
+    external: true

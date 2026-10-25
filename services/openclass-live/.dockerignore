@@ -1,0 +1,7 @@
+# Solo entran package*.json, src/ y public/ (lista blanca).
+*
+!package.json
+!package-lock.json
+!src/**
+!public/**
+!scripts/hash-password.mjs

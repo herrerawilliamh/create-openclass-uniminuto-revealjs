@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="referrer" content="no-referrer">
+  <meta name="robots" content="noindex, nofollow">
+  <title>OpenClass Live · Panel docente</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/assets/estilos.css">
+  <script src="/socket.io/socket.io.min.js" defer></script>
+  <script type="module" src="/assets/docente.mjs"></script>
+</head>
+<body>
+  <header class="barra">
+    <div>
+      <h1>OpenClass Live · Panel docente</h1>
+      <div class="sub" id="titulo-panel">Encuestas y preguntas en vivo</div>
+    </div>
+    <div class="fila">
+      <span class="estado-conexion" id="conexion" aria-live="polite"></span>
+      <button type="button" class="mini secundario oculto" id="btn-salir">Cerrar sesión</button>
+    </div>
+  </header>
+  <main class="ancho">
+    <section class="tarjeta oculto" id="vista-login" aria-labelledby="t-login">
+      <h2 id="t-login">Acceso docente</h2>
+      <form id="form-login" autocomplete="on">
+        <label for="password">Contraseña</label>
+        <input type="password" id="password" name="password" autocomplete="current-password" required>
+        <div id="error-login" class="aviso error oculto" role="alert"></div>
+        <button type="submit" id="btn-login">Entrar</button>
+      </form>
+      <p class="suave">El enlace o QR de los estudiantes nunca concede acceso a este panel.</p>
+    </section>
+
+    <section id="vista-salas" class="oculto">
+      <div class="tarjeta">
+        <h2>Nueva sesión de clase</h2>
+        <form id="form-sala" class="fila" autocomplete="off">
+          <div class="crece"><label for="titulo-sala">Título visible para los estudiantes (opcional)</label>
+            <input type="text" id="titulo-sala" maxlength="80" placeholder="Ej.: Plataformas de desarrollo · Semana 3"></div>
+          <label class="fila"><input type="checkbox" id="premoderacion" checked> Revisar las preguntas antes de publicarlas</label>
+          <button type="submit">Crear sala</button>
+        </form>
+      </div>
+      <div class="tarjeta">
+        <h2>Salas abiertas</h2>
+        <ul id="lista-salas" class="preguntas"></ul>
+      </div>
+    </section>
+
+    <section id="vista-sala" class="oculto">
+      <div class="rejilla">
+        <aside>
+          <div class="tarjeta">
+            <div class="suave">Código de la sala</div>
+            <div class="codigo-sala" id="codigo-sala"></div>
+            <img class="qr" id="qr" alt="Código QR para unirse a la sala">
+            <p class="texto-plano"><a id="enlace" target="_blank" rel="noopener noreferrer"></a></p>
+            <div class="fila"><button type="button" class="mini secundario" id="btn-copiar">Copiar enlace</button>
+              <span class="suave" id="vence"></span></div>
+            <div class="metricas">
+              <div class="metrica"><b id="m-conectados">0</b><span class="suave">conectados</span></div>
+              <div class="metrica"><b id="m-unidos">0</b><span class="suave">han entrado</span></div>
+            </div>
+          </div>
+          <div class="tarjeta">
+            <h3>Presentación Reveal.js local</h3>
+            <p class="suave">Copie esta clave en el botón «En vivo» de la presentación. Solo controla esta sala y vence con ella. No la comparta con estudiantes.</p>
+            <div class="fila"><button type="button" class="mini" id="btn-clave">Copiar clave de presentador</button>
+              <button type="button" class="mini secundario" id="btn-revocar">Revocar claves</button></div>
+            <div id="aviso-clave" class="aviso oculto" role="status"></div>
+          </div>
+          <div class="tarjeta">
+            <div class="fila"><button type="button" class="secundario" id="btn-volver">← Salas</button>
+              <button type="button" class="peligro" id="btn-finalizar">Finalizar sesión</button></div>
+            <p class="suave">Finalizar elimina del servidor encuestas, respuestas y preguntas de esta sala.</p>
+          </div>
+        </aside>
+        <div>
+          <div class="tarjeta" id="panel-activa" aria-live="polite"></div>
+          <details class="tarjeta" id="composer" open>
+            <summary><b>Nueva encuesta</b></summary>
+            <form id="form-encuesta" autocomplete="off">
+              <label for="enunciado">Enunciado</label>
+              <textarea id="enunciado" maxlength="500" required></textarea>
+              <label for="codigo">Fragmento de código (opcional, se muestra y nunca se ejecuta)</label>
+              <textarea id="codigo" class="codigo" maxlength="1500" spellcheck="false"></textarea>
+              <label for="tipo">Tipo</label>
+              <select id="tipo"><option value="unica">Selección única</option><option value="multiple">Selección múltiple</option></select>
+              <label>Opciones <span class="suave">(marque la correcta si existe; es opcional)</span></label>
+              <div class="lista-opciones" id="opciones"></div>
+              <div class="fila"><button type="button" class="mini secundario" id="btn-mas">+ Opción</button></div>
+              <label for="explicacion">Explicación tras revelar (opcional; use ``` para código)</label>
+              <textarea id="explicacion" maxlength="2000"></textarea>
+              <div id="error-encuesta" class="aviso error oculto" role="alert"></div>
+              <div class="fila"><button type="submit" id="btn-abrir-nueva">Guardar y abrir votación</button>
+                <button type="button" class="secundario" id="btn-guardar">Guardar para después</button></div>
+            </form>
+          </details>
+          <div class="tarjeta">
+            <h2>Encuestas de la sesión</h2>
+            <ul id="historial" class="preguntas"></ul>
+          </div>
+          <div class="tarjeta">
+            <h2>Preguntas de los estudiantes</h2>
+            <div class="fila">
+              <label class="fila"><input type="checkbox" id="q-abiertas"> Recibir preguntas</label>
+              <label class="fila"><input type="checkbox" id="q-premod"> Revisar antes de publicar</label>
+            </div>
+            <p class="suave">Las preguntas pendientes aparecen veladas por si comparte esta ventana. En la presentación solo se muestra la que usted proyecte.</p>
+            <ul id="lista-preguntas" class="preguntas"></ul>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

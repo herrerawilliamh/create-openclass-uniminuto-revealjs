@@ -1,0 +1,97 @@
+/* OpenClass Live: tema neutro (sin recursos institucionales). Móvil primero. */
+:root {
+  --fondo: #f4f6fa; --panel: #ffffff; --texto: #1d2433; --suave: #5b6478; --borde: #d9dee8;
+  --acento: #2f4a8a; --acento-claro: #e7ecf7; --ok: #1f7a4d; --ok-claro: #e3f4ea; --alerta: #a14a00;
+  --alerta-claro: #fff1e0; --error: #b42318; --error-claro: #fdecea; --barra: #4a64a8; --radio: 12px;
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body { margin: 0; background: var(--fondo); color: var(--texto); font: 16px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+main { max-width: 720px; margin: 0 auto; padding: 16px; }
+main.ancho { max-width: 1180px; }
+header.barra { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 16px; background: var(--acento); color: #fff; }
+header.barra h1 { font-size: 1.05rem; margin: 0; font-weight: 650; letter-spacing: .01em; }
+header.barra .sub { opacity: .85; font-size: .9rem; }
+h2 { font-size: 1.15rem; margin: 0 0 12px; }
+h3 { font-size: 1rem; margin: 16px 0 8px; }
+.tarjeta { background: var(--panel); border: 1px solid var(--borde); border-radius: var(--radio); padding: 16px; margin: 0 0 16px; }
+.oculto { display: none !important; }
+.suave { color: var(--suave); font-size: .92rem; }
+label { display: block; font-weight: 600; margin: 12px 0 4px; }
+input[type=text], input[type=password], textarea, select {
+  width: 100%; font: inherit; padding: 10px 12px; border: 1px solid var(--borde); border-radius: 10px; background: #fff; color: var(--texto);
+}
+textarea { min-height: 84px; resize: vertical; }
+textarea.codigo, pre, code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: .9rem; }
+input:focus-visible, textarea:focus-visible, select:focus-visible, button:focus-visible { outline: 3px solid #8aa2dd; outline-offset: 2px; }
+button {
+  font: inherit; font-weight: 600; border: 1px solid var(--acento); background: var(--acento); color: #fff;
+  border-radius: 10px; padding: 10px 16px; cursor: pointer; min-height: 44px;
+}
+button.secundario { background: #fff; color: var(--acento); }
+button.peligro { background: var(--error); border-color: var(--error); }
+button.mini { min-height: 34px; padding: 4px 10px; font-size: .88rem; }
+button:disabled { opacity: .5; cursor: not-allowed; }
+.fila { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.fila > .crece { flex: 1 1 200px; }
+.aviso { padding: 10px 12px; border-radius: 10px; margin: 8px 0; background: var(--acento-claro); }
+.aviso.ok { background: var(--ok-claro); color: var(--ok); }
+.aviso.alerta { background: var(--alerta-claro); color: var(--alerta); }
+.aviso.error { background: var(--error-claro); color: var(--error); }
+.codigo-sala { font: 700 2.2rem/1 ui-monospace, Menlo, Consolas, monospace; letter-spacing: .18em; }
+.chip { display: inline-block; padding: 2px 10px; border-radius: 999px; font-size: .82rem; font-weight: 600; background: var(--acento-claro); color: var(--acento); }
+.chip.abierta { background: var(--ok-claro); color: var(--ok); }
+.chip.cerrada { background: var(--alerta-claro); color: var(--alerta); }
+pre { background: #10172a; color: #e8ecf5; padding: 12px; border-radius: 10px; overflow-x: auto; white-space: pre; margin: 8px 0; }
+.enunciado { font-size: 1.1rem; font-weight: 600; white-space: pre-wrap; margin: 0 0 8px; }
+.texto-plano { white-space: pre-wrap; overflow-wrap: anywhere; }
+
+/* Opciones de la encuesta (estudiante) */
+.opciones { list-style: none; padding: 0; margin: 12px 0; display: grid; gap: 8px; }
+.opcion label { display: flex; gap: 12px; align-items: flex-start; margin: 0; font-weight: 500; padding: 12px; border: 2px solid var(--borde); border-radius: 12px; background: #fff; cursor: pointer; }
+.opcion input { width: 22px; height: 22px; margin: 2px 0 0; flex: none; accent-color: var(--acento); }
+.opcion input:checked + span { font-weight: 650; }
+.opcion label:has(input:checked) { border-color: var(--acento); background: var(--acento-claro); }
+.opcion.correcta label, .opcion.correcta label:has(input:checked) { border-color: var(--ok); background: var(--ok-claro); }
+.opcion .letra { font-weight: 700; color: var(--acento); }
+
+/* Resultados */
+.resultados { display: grid; gap: 8px; margin: 8px 0; }
+.res-fila { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 8px; align-items: center; }
+.res-texto { overflow-wrap: anywhere; }
+.res-dato { font-variant-numeric: tabular-nums; color: var(--suave); font-size: .9rem; }
+.res-barra { grid-column: 1 / -1; height: 12px; background: #e6e9f0; border-radius: 6px; overflow: hidden; }
+.res-barra > i { display: block; height: 100%; background: var(--barra); border-radius: 6px; transition: width .3s; }
+.res-fila.correcta .res-barra > i { background: var(--ok); }
+.res-fila.correcta .res-texto::after { content: "  ✓ correcta"; color: var(--ok); font-weight: 700; }
+table.comparar { width: 100%; border-collapse: collapse; font-size: .92rem; }
+table.comparar th, table.comparar td { border-bottom: 1px solid var(--borde); padding: 6px; text-align: left; }
+table.comparar td.num { text-align: right; font-variant-numeric: tabular-nums; }
+
+/* Pestañas (estudiante) */
+.pestanas { display: flex; gap: 8px; margin: 0 0 12px; }
+.pestanas button { flex: 1; background: #fff; color: var(--acento); }
+.pestanas button[aria-selected=true] { background: var(--acento); color: #fff; }
+
+/* Preguntas */
+.preguntas { list-style: none; padding: 0; margin: 0; display: grid; gap: 8px; }
+.pregunta { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 8px 12px; align-items: start; padding: 12px; border: 1px solid var(--borde); border-radius: 12px; background: #fff; }
+.pregunta .votos { min-width: 52px; text-align: center; }
+.pregunta .votos button { min-height: 40px; padding: 4px 8px; width: 100%; background: #fff; color: var(--acento); }
+.pregunta .votos button[aria-pressed=true] { background: var(--acento); color: #fff; }
+.pregunta.respondida { opacity: .7; }
+.pregunta.oculta { opacity: .55; background: #f6f6f6; }
+.pregunta .acciones { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 6px; }
+.pregunta .velo { filter: blur(5px); user-select: none; }
+
+/* Panel docente */
+.rejilla { display: grid; gap: 16px; grid-template-columns: 1fr; }
+@media (min-width: 980px) { .rejilla { grid-template-columns: 360px minmax(0, 1fr); } }
+.qr { width: 100%; max-width: 240px; aspect-ratio: 1; display: block; background: #fff; border: 1px solid var(--borde); border-radius: 8px; }
+.lista-opciones { display: grid; gap: 8px; }
+.lista-opciones .fila input[type=text] { flex: 1 1 200px; }
+.metricas { display: flex; flex-wrap: wrap; gap: 16px; }
+.metrica b { display: block; font-size: 1.6rem; line-height: 1.1; }
+.estado-conexion { font-size: .85rem; }
+.estado-conexion.offline { color: #ffd7a8; }

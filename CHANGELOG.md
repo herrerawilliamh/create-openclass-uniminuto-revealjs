@@ -3,6 +3,20 @@
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/); versiones según
 [SemVer](https://semver.org/lang/es/). Entre paréntesis, la suite que acredita cada punto.
 
+## [Sin versión] — OpenClass Live (en desarrollo)
+
+No se publica en npm hasta aprobar el adaptador local; no altera la versión del paquete.
+
+- Nuevo servicio `services/openclass-live/` (fuera de `files` del paquete): encuestas en dos rondas y
+  preguntas moderadas en tiempo real con Socket.IO 4; los estudiantes entran con QR o código y nunca
+  cargan la presentación; estado solo en memoria con vencimiento; Docker + Traefik para la VPS
+  (`cd services/openclass-live && npm test`, `npm run test:navegador`).
+- Plantilla: adaptador local `src/plugins/live.mjs` (botón «En vivo», tecla L), **apagado** por defecto
+  en `fase2.mjs` (`LIVE.activa`); no hace ninguna petición hasta que el docente se conecta y solo envía
+  la encuesta que abre (`npm run test:navegador` del servicio, Chrome real).
+- Corrección: la carga heredada de Questions usaba `window.RevealQuestions`; el plugin vendorizado se
+  registra como `window.RevealQnA`.
+
 ## [1.1.0] — sin publicar
 
 Compatible con cursos creados con 1.0.0: no cambia la estructura de `openclass.config.json` (el bloque

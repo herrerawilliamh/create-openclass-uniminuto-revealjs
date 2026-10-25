@@ -6,7 +6,7 @@
  *   cargan con <script> y no con import.
  * - Mermaid y Chart.js se importan solo si el Markdown los usa.
  * - Código (./codigo.mjs): botón copiar y desplazamiento seguro del layout oc-l-code.
- * - Fase 2 (Seminar, Poll, Questions): preparada y apagada en ./fase2.mjs.
+ * - Fase 2 (OpenClass Live o Seminar/Poll/Questions): preparada y apagada en ./fase2.mjs.
  * Las herramientas de Custom Controls van en el pie azul, a lado y lado del logo 70 años (theme.css).
  */
 import './compat-math.mjs';
