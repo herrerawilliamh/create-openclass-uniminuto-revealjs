@@ -31,7 +31,7 @@ export function crearApp(config, { log = crearLog(), ahora } = {}) {
   });
   const servidor = createServer({ requestTimeout: 15_000, headersTimeout: 10_000 }, manejar);
   servidor.keepAliveTimeout = 65_000;
-  const sockets = crearSockets(servidor, { config, almacen, firmador, sesiones, log });
+  const sockets = crearSockets(servidor, { config, almacen, firmador, sesiones, log, ...(ahora ? { ahora } : {}) });
 
   return {
     servidor, almacen, sockets, firmador, sesiones,

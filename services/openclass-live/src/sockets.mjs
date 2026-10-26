@@ -8,6 +8,11 @@
  *   presentador ligada a UNA sala, orígenes PRESENTER_ORIGINS). Ningún evento de participante otorga
  *   permisos docentes ni controla la navegación de las diapositivas.
  * Todos los eventos usan acuse: ack({ ok: true, ... }) o ack({ ok: false, error, mensaje }).
+ *
+ * Temporizador de votación: el servidor programa UN temporizador por sala al vencimiento absoluto de
+ * la ronda abierta y difunde el estado una sola vez al cerrarla (nunca un mensaje por segundo: los
+ * clientes cuentan hacia atrás con `cierra` y la hora del servidor `servidor`). Un barrido periódico
+ * cubre cualquier temporizador perdido; no depende del navegador del docente.
  */
 import { Server } from 'socket.io';
 import { sesionDesdeCookie } from './http.mjs';
@@ -36,7 +41,7 @@ function conSala(datos) {
   return { salaId: V.id(salaId, 'salaId'), resto };
 }
 
-export function crearSockets(servidorHttp, { config, almacen, firmador, sesiones, log }) {
+export function crearSockets(servidorHttp, { config, almacen, firmador, sesiones, log, ahora = Date.now }) {
   const io = new Server(servidorHttp, {
     serveClient: true,
     maxHttpBufferSize: 16 * 1024,
@@ -79,7 +84,27 @@ export function crearSockets(servidorHttp, { config, almacen, firmador, sesiones
     }, 120);
   }
 
+  // ---------- Cierre automático de votaciones (un temporizador por sala) ----------
+  const temporizadores = new Map();
+  function programarCierre(salaId) {
+    clearTimeout(temporizadores.get(salaId));
+    temporizadores.delete(salaId);
+    const cierra = almacen.proximoCierre(salaId);
+    if (cierra === null) return;
+    const t = setTimeout(() => {
+      temporizadores.delete(salaId);
+      if (!almacen.existe(salaId)) return;
+      almacen.vencerVotaciones(salaId);
+      // Si una lectura ya aplicó el vencimiento, igual hay que avisar a todos una vez.
+      if (almacen.proximoCierre(salaId) === null) { difundir(salaId); log('votacion_vencida', { sala: salaId.slice(0, 6) }); } else programarCierre(salaId);
+    }, Math.max(50, cierra - ahora() + 20));
+    t.unref?.();
+    temporizadores.set(salaId, t);
+  }
+
   function cerrarSala(salaId, motivo) {
+    clearTimeout(temporizadores.get(salaId));
+    temporizadores.delete(salaId);
     const aviso = { motivo };
     participantes.to(`sala:${salaId}`).emit('sala:cerrada', aviso);
     docentes.to(`doc:${salaId}`).emit('sala:cerrada', { salaId, ...aviso });
@@ -203,12 +228,12 @@ export function crearSockets(servidorHttp, { config, almacen, firmador, sesiones
 
     const claveDe = (salaId) => {
       const sala = almacen.resumenSala(salaId);
-      const segundos = Math.max(60, Math.floor((sala.vence - Date.now()) / 1000));
+      const segundos = Math.max(60, Math.floor((sala.vence - ahora()) / 1000));
       return firmador.firmar({ t: 'presentador', s: salaId, v: sala.versionPresentador }, segundos);
     };
 
     const on = (nombre, manejador) => socket.on(nombre, evento(socket, limiteEventosDocente, manejador));
-    const conEstado = (salaId, extra = {}) => { difundir(salaId); return extra; };
+    const conEstado = (salaId, extra = {}) => { difundir(salaId); programarCierre(salaId); return extra; };
 
     if (rol === 'presentador') {
       socket.join([`doc:${socket.data.salaId}`, `pres:${socket.data.salaId}`]);
@@ -271,6 +296,13 @@ export function crearSockets(servidorHttp, { config, almacen, firmador, sesiones
     accionEncuesta('encuesta:publicar', almacen.publicarResultados);
     accionEncuesta('encuesta:revelar', almacen.revelarCorrecta);
     accionEncuesta('encuesta:segundaRonda', almacen.segundaRonda);
+    accionEncuesta('encuesta:extender', almacen.extenderVotacion);
+
+    on('sala:ajustar', (datos) => {
+      const { salaId, resto } = conSala(datos);
+      autorizar(salaId);
+      return conEstado(salaId, { ajustes: almacen.ajustarSala(salaId, V.ajustesSala(resto)) });
+    });
 
     on('encuesta:retirar', (datos) => {
       const { salaId, resto } = conSala(datos);
@@ -313,12 +345,20 @@ export function crearSockets(servidorHttp, { config, almacen, firmador, sesiones
   // ---------- Vencimiento automático y limpieza de memoria ----------
   const reloj = setInterval(() => {
     for (const id of almacen.purgar()) { cerrarSala(id, 'vencida'); log('sala_vencida', { sala: id.slice(0, 6) }); }
+    for (const id of almacen.vencerVotaciones()) difundir(id);
     sesiones.purgar();
     for (const l of [limiteFallidos, limiteUniones, limiteConexionDocente, limiteEventos, limiteEventosDocente]) l.purgar();
   }, 15_000);
   reloj.unref();
 
-  return { io, cerrar: () => { clearInterval(reloj); return new Promise((r) => io.close(() => r())); }, purgarAhora: () => {
+  return { io, cerrar: () => {
+    clearInterval(reloj);
+    for (const t of temporizadores.values()) clearTimeout(t);
+    temporizadores.clear();
+    return new Promise((r) => io.close(() => r()));
+  }, purgarAhora: () => {
     for (const id of almacen.purgar()) cerrarSala(id, 'vencida');
+  }, vencerAhora: () => {
+    for (const id of almacen.vencerVotaciones()) difundir(id);
   } };
 }

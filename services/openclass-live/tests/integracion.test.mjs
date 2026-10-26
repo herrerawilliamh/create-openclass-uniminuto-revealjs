@@ -178,6 +178,46 @@ test('sala finalizada: estudiantes avisados y desconectados; el código deja de 
   assert.equal((await pedir(doc, 'sala:seguir', { salaId: sala.id })).error, 'sala_inexistente');
 });
 
+test('temporizador: el servidor cierra la votación con el docente desconectado, sin publicar; reconexión y +30 s', async (t) => {
+  let ahora = Date.now();
+  const { srv, doc, sala, clave } = await preparar(t, { ahora: () => ahora });
+  const pres = await srv.presentador(clave);
+  const a = await srv.estudiante(sala.codigo);
+  const r = await pedir(pres.s, 'encuesta:crear', { salaId: sala.id, encuesta: ENCUESTA, abrir: true });
+  assert.equal(r.ok, true, r.mensaje);
+  const t0 = ahora;
+  const abierta = await ultimoEstado(a.s, (e) => e.encuesta?.estado === 'abierta');
+  assert.equal(abierta.encuesta.cierra, t0 + 30_000, 'el teléfono recibe el vencimiento absoluto');
+  assert.equal(typeof abierta.servidor, 'number', 'y la hora del servidor');
+  assert.equal((await pedir(pres.s, 'encuesta:extender', { salaId: sala.id, encuestaId: r.encuesta.id })).encuesta.rondas[0].cierra, t0 + 60_000);
+  // Una preferencia nueva no altera la ronda en curso.
+  assert.equal((await pedir(pres.s, 'sala:ajustar', { salaId: sala.id, duracionVotacion: 15 })).ajustes.duracionVotacion, 15);
+  assert.equal(srv.app.almacen.proximoCierre(sala.id), t0 + 60_000);
+  assert.equal((await pedir(pres.s, 'sala:ajustar', { salaId: sala.id, duracionVotacion: 45 })).error, 'validacion');
+
+  // El docente se va: el cierre no depende de su navegador.
+  pres.s.disconnect();
+  await pedir(doc, 'sala:seguir', { salaId: sala.id });
+  ahora = t0 + 59_900;
+  await pedir(doc, 'preguntas:ajustar', { salaId: sala.id, abiertas: true }); // reprograma el temporizador real (≥ 50 ms)
+  const cerrada = ultimoEstado(a.s, (e) => e.encuesta?.estado === 'cerrada');
+  await esperar(150);
+  ahora = t0 + 60_000;
+  const fin = await cerrada;
+  assert.equal(fin.encuesta.rondas, undefined, 'sin resultados para estudiantes');
+  assert.equal(fin.encuesta.correctas, undefined, 'sin respuesta correcta');
+  assert.equal(srv.app.almacen.encuestaDocente(sala.id, r.encuesta.id).rondas[0].cierre, 'tiempo');
+  assert.ok(srv.lineas.some((l) => l.includes('votacion_vencida')));
+
+  // Reconexión del docente: recibe el estado cerrado y puede continuar (segunda ronda con 15 s).
+  const pres2 = await srv.presentador(clave);
+  assert.equal(pres2.sesion.estado.activa.estado, 'cerrada');
+  const r2 = await pedir(pres2.s, 'encuesta:segundaRonda', { salaId: sala.id, encuestaId: r.encuesta.id });
+  assert.equal(r2.encuesta.rondas[1].cierra, ahora + 15_000);
+  assert.equal((await pedir(pres2.s, 'encuesta:cerrar', { salaId: sala.id, encuestaId: r.encuesta.id })).ok, true);
+  assert.equal((await pedir(pres2.s, 'encuesta:cerrar', { salaId: sala.id, encuestaId: r.encuesta.id })).error, 'no_abierta', 'cierre único');
+});
+
 test('vencimiento automático por TTL: aviso, desconexión y borrado', async (t) => {
   let ahora = Date.now();
   const { srv, doc, sala, clave } = await preparar(t, { ahora: () => ahora, env: { ROOM_TTL_MINUTES: '5' } });

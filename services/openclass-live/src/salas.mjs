@@ -5,9 +5,15 @@
  * Privacidad: no guarda IP ni datos personales; el alias es opcional; los tokens de participante se
  * guardan como hash SHA-256. Al finalizar o vencer una sala se elimina todo su contenido.
  * Un reinicio del proceso pierde las salas abiertas (documentado en el README).
+ *
+ * Tiempo de votación: UNA preferencia por sala (`duracionVotacion`, 30 s por omisión; 0 = sin límite).
+ * Cada ronda guarda su vencimiento absoluto (`cierra`, ms del servidor) al abrirse: cambiar la
+ * preferencia solo afecta a las rondas siguientes. El cierre por tiempo ocurre una sola vez y nunca
+ * publica resultados ni revela respuestas. Toda lectura de la sala aplica los vencimientos pendientes,
+ * así ninguna respuesta tardía entra aunque el temporizador del proceso se retrase.
  */
 import { randomBytes, randomInt, createHash } from 'node:crypto';
-import { ALFABETO_CODIGO } from './validar.mjs';
+import { ALFABETO_CODIGO, DURACION_PREDETERMINADA } from './validar.mjs';
 
 export class ErrorSala extends Error {
   constructor(codigo, mensaje) { super(mensaje); this.codigo = codigo; }
@@ -22,6 +28,8 @@ export const LIMITES_SALA = Object.freeze({
   preguntas: 300,
   preguntasPorParticipante: 5,
   intervaloPreguntaMs: 15_000,
+  extensionMs: 30_000,
+  restanteMaxMs: 10 * 60_000,
 });
 
 export function crearAlmacen({ ttlMin, maxParticipantes, maxSalas, ahora = () => Date.now() }) {
@@ -41,8 +49,29 @@ export function crearAlmacen({ ttlMin, maxParticipantes, maxSalas, ahora = () =>
     const s = salas.get(id);
     if (!s) return falla('sala_inexistente', 'La sala no existe o ya finalizó');
     if (s.vence <= ahora()) { eliminar(id); return falla('sala_vencida', 'La sala venció'); }
+    vencerRondas(s);
     return s;
   }
+
+  /** Cierra la ronda abierta de la sala si ya pasó su vencimiento. Devuelve true solo en la transición. */
+  function vencerRondas(s) {
+    const e = s.activa ? s.encuestas.get(s.activa) : null;
+    const r = e?.rondas.length ? rondaActual(e) : null;
+    return Boolean(r?.abierta && r.cierra !== null && r.cierra <= ahora() && cerrarRonda(r, 'tiempo'));
+  }
+
+  /** Cierre único: solo la primera llamada cambia el estado (tiempo, docente o retiro). */
+  function cerrarRonda(r, motivo) {
+    if (!r.abierta) return false;
+    r.abierta = false;
+    r.cierre = motivo;
+    return true;
+  }
+
+  const nuevaRonda = (s, numero) => ({
+    numero, abierta: true, respuestas: new Map(), cierre: null,
+    cierra: s.duracionVotacion ? ahora() + s.duracionVotacion * 1000 : null,
+  });
 
   function eliminar(id) {
     const s = salas.get(id);
@@ -55,7 +84,7 @@ export function crearAlmacen({ ttlMin, maxParticipantes, maxSalas, ahora = () =>
   }
 
   const encuesta = (s, eid) => s.encuestas.get(eid) ?? falla('encuesta_inexistente', 'La encuesta no existe');
-  const rondaActual = (e) => e.rondas[e.rondas.length - 1];
+  function rondaActual(e) { return e.rondas[e.rondas.length - 1]; }
 
   function participante(s, pid) {
     const p = s.participantes.get(pid);
@@ -77,6 +106,8 @@ export function crearAlmacen({ ttlMin, maxParticipantes, maxSalas, ahora = () =>
     return {
       numero: r.numero,
       estado: r.abierta ? 'abierta' : 'cerrada',
+      cierra: r.cierra,
+      ...(r.cierre ? { cierre: r.cierre } : {}),
       respondientes: n,
       conteos,
       porcentajes: conteos.map((c) => (n ? Math.round((c / n) * 1000) / 10 : 0)),
@@ -104,6 +135,7 @@ export function crearAlmacen({ ttlMin, maxParticipantes, maxSalas, ahora = () =>
     const vista = {
       id: e.id, enunciado: e.def.enunciado, codigo: e.def.codigo, tipo: e.def.tipo, opciones: e.def.opciones,
       estado: estadoEncuesta(e), ronda: e.rondas.length,
+      cierra: r?.abierta ? r.cierra : null,
       miSeleccion: r?.respuestas.get(pid) ?? [],
       resultadosPublicados: e.resultadosPublicados, correctaRevelada: e.correctaRevelada,
     };
@@ -132,7 +164,7 @@ export function crearAlmacen({ ttlMin, maxParticipantes, maxSalas, ahora = () =>
       if (salas.size >= maxSalas) falla('limite_salas', 'Se alcanzó el máximo de salas simultáneas');
       const s = {
         id: nuevoId(16), codigo: generarCodigo(), titulo, creada: ahora(), vence: ahora() + ttlMin * 60_000,
-        versionPresentador: 1,
+        versionPresentador: 1, duracionVotacion: DURACION_PREDETERMINADA,
         participantes: new Map(), tokens: new Map(),
         encuestas: new Map(), activa: null,
         preguntas: new Map(), preguntasAbiertas: true, preModeracion, proyectada: null,
@@ -146,7 +178,8 @@ export function crearAlmacen({ ttlMin, maxParticipantes, maxSalas, ahora = () =>
       const s = sala(id);
       return { id: s.id, codigo: s.codigo, titulo: s.titulo, creada: s.creada, vence: s.vence,
         participantes: s.participantes.size, conectados: conectados(s),
-        preguntasAbiertas: s.preguntasAbiertas, preModeracion: s.preModeracion, versionPresentador: s.versionPresentador };
+        preguntasAbiertas: s.preguntasAbiertas, preModeracion: s.preModeracion, versionPresentador: s.versionPresentador,
+        duracionVotacion: s.duracionVotacion };
     },
 
     listarSalas: () => [...salas.keys()].filter((id) => salas.get(id).vence > ahora()).map((id) => api.resumenSala(id)),
@@ -195,7 +228,7 @@ export function crearAlmacen({ ttlMin, maxParticipantes, maxSalas, ahora = () =>
       const otra = s.activa && s.activa !== eid ? s.encuestas.get(s.activa) : null;
       if (otra && estadoEncuesta(otra) === 'abierta') falla('otra_abierta', 'Cierre primero la votación abierta');
       if (e.rondas.length) falla('ya_abierta', 'La encuesta ya se abrió; use «Segunda ronda» para repetirla');
-      e.rondas.push({ numero: 1, abierta: true, respuestas: new Map() });
+      e.rondas.push(nuevaRonda(s, 1));
       s.activa = eid;
       return vistaEncuestaDocente(e);
     },
@@ -216,8 +249,20 @@ export function crearAlmacen({ ttlMin, maxParticipantes, maxSalas, ahora = () =>
     cerrarEncuesta(salaId, eid) {
       const e = encuesta(sala(salaId), eid);
       const r = e.rondas.length ? rondaActual(e) : null;
-      if (!r?.abierta) falla('no_abierta', 'La votación no está abierta');
-      r.abierta = false;
+      if (!r?.abierta) falla('no_abierta', 'La votación ya está cerrada');
+      cerrarRonda(r, 'docente');
+      return vistaEncuestaDocente(e);
+    },
+
+    /** «+30 segundos» sobre la ronda abierta (sin efecto en salas sin límite). */
+    extenderVotacion(salaId, eid) {
+      const e = encuesta(sala(salaId), eid);
+      const r = e.rondas.length ? rondaActual(e) : null;
+      if (!r?.abierta) falla('no_abierta', 'La votación ya está cerrada');
+      if (r.cierra === null) falla('sin_limite', 'Esta votación no tiene límite de tiempo');
+      const cierra = Math.max(r.cierra, ahora()) + LIMITES_SALA.extensionMs;
+      if (cierra - ahora() > LIMITES_SALA.restanteMaxMs) falla('limite_tiempo', 'La votación no puede durar más de 10 minutos desde ahora');
+      r.cierra = cierra;
       return vistaEncuestaDocente(e);
     },
 
@@ -242,7 +287,7 @@ export function crearAlmacen({ ttlMin, maxParticipantes, maxSalas, ahora = () =>
       if (estadoEncuesta(e) !== 'cerrada') falla('no_cerrada', 'Cierre la primera ronda antes de repetir');
       if (e.rondas.length >= 2) falla('max_rondas', 'La encuesta ya tuvo dos rondas');
       if (e.correctaRevelada) falla('revelada', 'Ya se reveló la respuesta: una segunda ronda no aportaría evidencia');
-      e.rondas.push({ numero: 2, abierta: true, respuestas: new Map() });
+      e.rondas.push(nuevaRonda(s, 2));
       e.resultadosPublicados = false;
       s.activa = eid;
       return vistaEncuestaDocente(e);
@@ -252,7 +297,7 @@ export function crearAlmacen({ ttlMin, maxParticipantes, maxSalas, ahora = () =>
     retirarEncuesta(salaId) {
       const s = sala(salaId);
       const e = s.activa ? s.encuestas.get(s.activa) : null;
-      if (e && estadoEncuesta(e) === 'abierta') rondaActual(e).abierta = false;
+      if (e && estadoEncuesta(e) === 'abierta') cerrarRonda(rondaActual(e), 'docente');
       s.activa = null;
     },
 
@@ -311,6 +356,27 @@ export function crearAlmacen({ ttlMin, maxParticipantes, maxSalas, ahora = () =>
       return vistaPreguntaDocente(s, q);
     },
 
+    /** Preferencias de la sesión: afectan a las rondas que se abran después, nunca a la ronda en curso. */
+    ajustarSala(salaId, { duracionVotacion }) {
+      const s = sala(salaId);
+      s.duracionVotacion = duracionVotacion;
+      return { duracionVotacion: s.duracionVotacion };
+    },
+
+    /** Vencimiento (ms del servidor) de la ronda abierta de la sala, o null. */
+    proximoCierre(salaId) {
+      const s = salas.get(salaId);
+      const e = s?.activa ? s.encuestas.get(s.activa) : null;
+      const r = e?.rondas.length ? rondaActual(e) : null;
+      return r?.abierta ? r.cierra : null;
+    },
+
+    /** Aplica los vencimientos pendientes (de una sala o de todas); devuelve las salas que cambiaron. */
+    vencerVotaciones(salaId) {
+      const ids = salaId ? [salaId] : [...salas.keys()];
+      return ids.filter((id) => { const s = salas.get(id); return s && s.vence > ahora() && vencerRondas(s); });
+    },
+
     ajustarPreguntas(salaId, { abiertas, preModeracion }) {
       const s = sala(salaId);
       if (abiertas !== undefined) s.preguntasAbiertas = abiertas;
@@ -344,6 +410,7 @@ export function crearAlmacen({ ttlMin, maxParticipantes, maxSalas, ahora = () =>
     estadoDocente(salaId) {
       const s = sala(salaId);
       return {
+        servidor: ahora(),
         sala: api.resumenSala(salaId),
         activa: s.activa ? vistaEncuestaDocente(s.encuestas.get(s.activa)) : null,
         historial: api.historial(salaId),
@@ -356,6 +423,7 @@ export function crearAlmacen({ ttlMin, maxParticipantes, maxSalas, ahora = () =>
       const s = sala(salaId);
       const p = s.participantes.get(pid);
       return {
+        servidor: ahora(),
         sala: { codigo: s.codigo, titulo: s.titulo, vence: s.vence, preguntasAbiertas: s.preguntasAbiertas, preModeracion: s.preModeracion },
         yo: { alias: p?.alias ?? '', bloqueado: !!p?.bloqueado },
         encuesta: s.activa ? vistaEncuestaParticipante(s.encuestas.get(s.activa), pid) : null,

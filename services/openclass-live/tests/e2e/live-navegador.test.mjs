@@ -7,7 +7,12 @@
  *  4. una clase = una sala: QR real en portada, temática y cada encuesta (nunca antes de conectar),
  *     A entra al inicio, B llega tarde a la pregunta 1, C entra con el QR de la pregunta 2; dos rondas,
  *     revelación, QR junto a los resultados, sin solapes a 1920×1080, 1920×945 y 1536×730, PDF sin
- *     capas, pregunta proyectada y la presentación solo envió las encuestas abiertas.
+ *     capas, pregunta proyectada y la presentación solo envió las encuestas abiertas;
+ *  5. UX docente v0.2: control «En vivo» en el pie (sin botón flotante), menú contextual también desde el
+ *     QR, orientación descartable, teclado (L, Esc), tiempo global de 30 s en preguntas consecutivas,
+ *     preferencia que solo afecta a rondas futuras, cierre automático con la presentación desconectada,
+ *     +30 s, tendencias privadas en el panel (proyección explícita, sin la correcta) y formulario
+ *     improvisado plegado.
  * Variables: OPENCLASS_LIVE_DIST=<dist ya compilado> para no recompilar; OPENCLASS_CAPTURAS=<dir> guarda PNG.
  */
 import test from 'node:test';
@@ -194,6 +199,9 @@ test('OpenClass Live en Chrome: una sala para toda la clase, QR integrado y tres
     navigator.clipboard.writeText = async (t) => { window.__clave = t; };
     document.getElementById('titulo-sala').value = 'Plataformas de desarrollo · prueba'; document.getElementById('form-sala').requestSubmit();`);
   await panel.esperarA(`/^[A-Z2-9]{6}$/.test(document.getElementById('codigo-sala').textContent)`);
+  assert.equal(await panel.evaluar(`document.getElementById('composer').open`), false, '«Crear pregunta improvisada» plegado por defecto');
+  assert.equal(await panel.evaluar(`document.getElementById('configuracion').open`), false, 'configuración secundaria plegada');
+  assert.match(await panel.evaluar(`document.getElementById('resumen-config').textContent`), /30 s/, 'tiempo de votación global de 30 s');
   await panel.esperarA(`document.getElementById('qr').complete && document.getElementById('qr').naturalWidth > 0`);
   const codigo = await panel.evaluar(`document.getElementById('codigo-sala').textContent`);
   await capturar(panel, '02-panel-sala');
@@ -232,13 +240,16 @@ test('OpenClass Live en Chrome: una sala para toda la clase, QR integrado y tres
   });
   await deck.send('Network.enable');
   await deck.ir(`${estatico.url}general/`);
-  await deck.esperarA(`window.OpenClass?.deck?.isReady?.() && document.querySelector('.oc-live-boton')`);
+  await deck.esperarA(`window.OpenClass?.deck?.isReady?.() && document.querySelector('.oc-live-control')`);
+  assert.equal(await deck.evaluar(`document.querySelectorAll('.oc-live-boton').length`), 0, 'sin botón flotante superior');
   await esperar(500);
   assert.equal(peticiones.filter((p) => p.url.startsWith(APP)).length, 0, 'sin ninguna petición a OpenClass Live antes de conectar');
   assert.equal(await deck.evaluar(`document.querySelectorAll('.oc-live-participa').length`), 0, 'sin sala conectada no hay QR (ni falso)');
 
-  const abrirPanel = () => deck.evaluar(`if (document.querySelector('.oc-live-panel').hidden) document.querySelector('.oc-live-boton').click()`);
-  const cerrarPanel = () => deck.evaluar(`document.querySelector('.oc-live-panel').hidden = true`);
+  const menuVisible = `!document.querySelector('.oc-live-menu').hidden`;
+  const abrirPanel = () => deck.evaluar(`if (document.querySelector('.oc-live-menu').hidden) document.querySelector('.oc-live-control').click()`);
+  const cerrarPanel = () => deck.evaluar(`if (!document.querySelector('.oc-live-menu').hidden) document.querySelector('.oc-live-control').click()`);
+  const momento = () => deck.evaluar(`window.OpenClassLive.momento()`);
   const irA = async (destino) => {
     const nodo = typeof destino === 'number' ? `window.OpenClass.deck.getSlides()[${destino}]` : `document.getElementById(${JSON.stringify(destino)})`;
     await deck.evaluar(`(() => { const d = window.OpenClass.deck; const i = d.getIndices(${nodo}); d.slide(i.h, i.v); })()`);
@@ -249,9 +260,48 @@ test('OpenClass Live en Chrome: una sala para toda la clase, QR integrado y tres
   };
   const qrListo = `document.querySelector('.reveal .slides section.present > .oc-live-participa img')?.complete && document.querySelector('.reveal .slides section.present > .oc-live-participa img').naturalWidth > 0`;
 
+  // Control «En vivo» en el pie azul: dentro del hueco libre X 862–1110 (portada: hueco de «anterior»).
+  const controlEn = async () => deck.evaluar(`(() => { const c = document.querySelector('.oc-live-control').getBoundingClientRect(); const s = window.OpenClass.deck.getCurrentSlide().getBoundingClientRect();
+    const k = s.width / 1280; const otros = [...document.querySelectorAll('.reveal .controls button.enabled, #customcontrols li button, .reveal .slide-number, .oc-inicio, .back-link')].filter((b) => b.offsetParent).map((b) => b.getBoundingClientRect());
+    const choca = otros.some((o) => o.width && c.left < o.right && o.left < c.right && c.top < o.bottom && o.top < c.bottom);
+    return { x: (c.left - s.left) / k, derecha: (c.right - s.left) / k, y: (c.top - s.top) / k, choca, ayuda: document.querySelector('.oc-live-control').dataset.ayuda }; })()`);
+  await irA(2);
+  let pie = await controlEn();
+  assert.ok(pie.x >= 855 && pie.derecha <= 1112 && pie.y >= 700 && !pie.choca, `control en el pie azul sin tocar otros botones ${JSON.stringify(pie)}`);
+  assert.match(pie.ayuda, /tecla L/, 'ayuda al pasar el mouse o enfocar');
+  await irA(0);
+  pie = await controlEn();
+  assert.ok(!pie.choca, `portada: control sin solapes ${JSON.stringify(pie)}`);
+
+  // Teclado: L abre el menú con el foco en la clave; la orientación inicial es breve y descartable; Esc cierra.
+  await deck.tecla('l', { code: 'KeyL', keyCode: 76 });
+  await deck.esperarA(menuVisible);
+  assert.equal(await deck.evaluar(`document.activeElement.id`), 'oc-live-clave', 'foco en la clave');
+  assert.match(await deck.evaluar(`document.querySelector('.oc-live-menu').textContent`), /Copiar clave de presentador/, 'orientación con los tres pasos');
+  await capturar(deck, '16-presentacion-conectar');
+  await pulsar(deck, 'Entendido');
+  assert.equal(await deck.evaluar(`localStorage.getItem('openclass-live:orientacion')`), 'vista', 'la orientación no vuelve a aparecer');
+  assert.equal(await deck.evaluar(`!!document.querySelector('.oc-live-guia')`), false);
+  await deck.evaluar(`document.getElementById('oc-live-clave').focus()`);
+  await deck.tecla('Escape', { code: 'Escape', keyCode: 27 });
+  await deck.esperarA(`document.querySelector('.oc-live-menu').hidden && document.activeElement === document.querySelector('.oc-live-control')`);
+  assert.equal(await deck.evaluar(`window.OpenClass.deck.isOverview()`), false, 'Esc cierra el menú sin abrir la vista general');
+
   await abrirPanel();
-  await deck.evaluar(`const p = document.querySelector('.oc-live-panel'); p.querySelector('input[type=password]').value = ${JSON.stringify(clave)}; p.querySelector('form').requestSubmit();`);
-  await deck.esperarA(`document.querySelector('.oc-live-sala b')?.textContent === ${JSON.stringify(codigo)}`);
+  await deck.evaluar(`document.getElementById('oc-live-clave').value = 'clave-mal-copiada'; document.getElementById('oc-live-clave').form.requestSubmit();`);
+  await deck.esperarA(`/no es válida o venció/.test(document.querySelector('.oc-live-menu').textContent)`);
+  await deck.evaluar(`document.getElementById('oc-live-clave').value = ${JSON.stringify(clave)}; document.getElementById('oc-live-clave').form.requestSubmit();`);
+  await deck.esperarA(`window.OpenClassLive.sala()?.codigo === ${JSON.stringify(codigo)}`);
+  await deck.esperarA(`/Sala conectada/.test(document.querySelector('.oc-live-menu').textContent)`);
+  await cerrarPanel();
+
+  // Pulsar el QR de la diapositiva abre el MISMO menú (no hay un segundo panel).
+  await irA(0);
+  await deck.esperarA(qrListo);
+  await deck.evaluar(`document.querySelector('section.present > .oc-live-participa').click()`);
+  await deck.esperarA(menuVisible);
+  assert.equal(await deck.evaluar(`document.querySelectorAll('.oc-live-menu, .oc-live-panel').length`), 1, 'un único menú');
+  assert.equal(await momento(), 'sin-encuesta');
   await cerrarPanel();
 
   // ---------- QR en portada, temática y pregunta, a tres tamaños de ventana ----------
@@ -293,14 +343,26 @@ test('OpenClass Live en Chrome: una sala para toda la clase, QR integrado y tres
   await deck.evaluar(`document.querySelector('section.present .oc-live-p-ocultar').click()`);
   await deck.esperarA(`!document.querySelector('.oc-live-participa')`);
   await abrirPanel();
-  await pulsar(deck, 'Mostrar QR en esta diapositiva');
+  await pulsar(deck, 'Mostrar QR aquí');
   await deck.esperarA(qrListo);
+  await cerrarPanel();
+  await deck.evaluar(`document.querySelector('section.present .oc-live-p-abrir').click()`);
+  await deck.esperarA(menuVisible);
+  assert.equal(await momento(), 'lista', 'en la diapositiva con pregunta: «Iniciar votación»');
   assert.equal(await deck.evaluar(`getComputedStyle(document.querySelector('#encuesta-live .oc-live-explicacion')).display`), 'none', 'la explicación no se ve en la diapositiva');
 
-  // ---------- Pregunta 1: se abre desde Reveal.js (autoría única en el Markdown) ----------
-  await pulsar(deck, 'Abrir encuesta de esta diapositiva');
+  // ---------- Pregunta 1: se abre desde Reveal.js (autoría única en el Markdown) con el tiempo global ----------
+  await pulsar(deck, 'Iniciar votación · 30 s');
   await deck.esperarA(`window.OpenClassLive.estado()?.activa?.estado === 'abierta'`);
+  const duracionRonda = (n) => deck.evaluar(`(() => { const e = window.OpenClassLive.estado(); return Math.round((e.activa.rondas[${n}].cierra - e.servidor) / 1000); })()`);
+  assert.ok(Math.abs(await duracionRonda(0) - 30) <= 1, 'pregunta 1: 30 s sin configurar la pregunta');
+  assert.equal(await deck.evaluar(`document.querySelector('.oc-live-capa').hidden`), true, 'durante la votación ninguna capa tapa la diapositiva');
+  await deck.esperarA(`/^0:[0-3]\\d · 0 resp\\.$/.test(document.querySelector('section.present .oc-live-p-estado')?.textContent ?? '')`);
+  await deck.esperarA(`/Votación\\s*0:[0-3]\\d/.test(document.querySelector('.oc-live-control').textContent)`);
+  const b1 = await deck.evaluar(BLOQUE);
+  assert.deepEqual(b1.choques, [], 'la tarjeta con cuenta regresiva no cubre texto ni medios');
   await opciones(A, 3);
+  await A.esperarA(`/Quedan 0:[0-3]\\d/.test(document.getElementById('tiempo-restante')?.textContent ?? '')`);
   await capturar(A, '04-estudiante-encuesta');
   await responder(A, [0]);
   await capturar(A, '05-estudiante-registrada');
@@ -312,30 +374,77 @@ test('OpenClass Live en Chrome: una sala para toda la clase, QR integrado y tres
   await deck.esperarA(`window.OpenClassLive.estado().activa.rondas[0].respondientes === 2`);
   unaSala();
   assert.equal(await deck.evaluar(`document.querySelectorAll('.oc-live-barra').length`), 0, 'con la votación abierta no se proyecta la distribución');
-  assert.equal(await deck.evaluar(`document.querySelector('.oc-live-capa .oc-live-qr-lateral img')?.naturalWidth > 0`), true, 'QR de la sala durante la votación');
+  // Tendencias privadas: el panel las ve en vivo, sin marcar la correcta; los estudiantes no.
+  await panel.esperarA(`document.querySelectorAll('#panel-activa .res-fila').length === 3 && /50% \\(1\\)/.test(document.querySelector('#panel-activa .resultados').textContent)`);
+  assert.equal(await panel.evaluar(`document.querySelectorAll('#panel-activa .res-fila.correcta').length`), 0, 'panel: sin la correcta durante la votación');
+  assert.match(await panel.evaluar(`document.querySelector('#panel-activa .reloj')?.textContent ?? ''`), /^0:[0-3]\d$/, 'panel: tiempo restante');
+  await capturar(panel, '17-panel-tendencias');
+  for (const p of [A, B]) assert.equal(await p.evaluar(`document.querySelectorAll('#panel-encuesta .res-fila').length`), 0, 'el estudiante no ve estadísticas anticipadas');
+  // Proyectar tendencias: acción explícita, sin la correcta; se apaga de nuevo.
+  await abrirPanel();
+  await pulsar(deck, 'Proyectar tendencias');
+  await deck.esperarA(`document.querySelectorAll('.oc-live-barra').length === 3 && /Tendencia en vivo/.test(document.querySelector('.oc-live-capa').textContent)`);
+  assert.equal(await deck.evaluar(`document.querySelectorAll('.oc-live-barra.correcta').length`), 0, 'las tendencias proyectadas no revelan la correcta');
+  assert.equal(await deck.evaluar(`document.querySelector('.oc-live-capa .oc-live-qr-lateral img')?.naturalWidth > 0`), true, 'QR de la sala junto a las tendencias');
+  await capturar(deck, '18-presentacion-tendencias');
+  await pulsar(deck, 'Dejar de proyectar tendencias');
+  await deck.esperarA(`document.querySelector('.oc-live-capa').hidden`);
+  // +30 s y cambio de preferencia: la ronda en curso conserva su vencimiento + 30 s; la siguiente usará 15 s.
+  const cierra1 = await deck.evaluar(`window.OpenClassLive.estado().activa.rondas[0].cierra`);
+  await pulsar(deck, '+30 segundos');
+  await deck.esperarA(`window.OpenClassLive.estado().activa.rondas[0].cierra === ${cierra1 + 30_000}`);
+  await deck.evaluar(`document.querySelector('.oc-live-config > summary').click()`);
+  await deck.evaluar(`document.querySelector('.oc-live-menu input[name=oc-live-duracion][value="15"]').click()`);
+  await deck.esperarA(`window.OpenClassLive.estado().sala.duracionVotacion === 15`);
+  assert.equal(await deck.evaluar(`window.OpenClassLive.estado().activa.rondas[0].cierra`), cierra1 + 30_000, 'la votación en curso no cambia en silencio');
+  assert.match(await deck.evaluar(`document.querySelector('.oc-live-menu .oc-live-msg').textContent`), /próximas votaciones durarán 15 s.*conserva su tiempo/);
 
   // Reconexión: A recarga la página y conserva su respuesta.
   await A.ir(`${APP}/join/${codigo}`);
   await A.esperarA(`document.querySelectorAll('#panel-encuesta input[name=opcion]')[0]?.checked === true`);
 
-  await pulsar(deck, 'Cerrar votación');
+  await pulsar(deck, 'Cerrar ahora');
   await deck.esperarA(`window.OpenClassLive.estado().activa.estado === 'cerrada'`);
-  await pulsar(deck, 'Publicar resultados');
+  assert.equal(await momento(), 'finalizada');
+  assert.equal(await deck.evaluar(`document.querySelector('.oc-live-capa').hidden`), true, 'cerrar no muestra resultados');
+  assert.equal(await B.evaluar(`document.querySelectorAll('#panel-encuesta .res-fila').length`), 0, 'cerrar no publica resultados');
+  await pulsar(deck, 'Mostrar resultados');
   await deck.esperarA(`document.querySelectorAll('.oc-live-barra').length === 3`);
   assert.equal(await deck.evaluar(`document.querySelectorAll('.oc-live-barra.correcta').length`), 0, 'publicar no revela la correcta');
   await B.esperarA(`document.querySelectorAll('#panel-encuesta .res-fila').length === 3`);
 
-  // Segunda ronda tras la discusión: ambos eligen B.
-  await pulsar(deck, 'Segunda ronda');
+  // Segunda ronda tras la discusión (15 s, la preferencia vigente): ambos eligen B.
+  await pulsar(deck, 'Discutir y repetir');
   await deck.esperarA(`window.OpenClassLive.estado().activa.ronda === 2 && window.OpenClassLive.estado().activa.estado === 'abierta'`);
+  assert.ok(Math.abs(await duracionRonda(1) - 15) <= 1, 'la segunda ronda usa la preferencia vigente (15 s)');
+  const ids = await deck.evaluar(`({ sala: window.OpenClassLive.sala().id, encuesta: window.OpenClassLive.estado().activa.id })`);
   for (const p of [A, B]) {
     await p.esperarA(`/Segunda ronda/.test(document.getElementById('panel-encuesta').textContent)`);
     await responder(p, [1]);
   }
-  await deck.esperarA(`window.OpenClassLive.estado().activa.rondas[1].respondientes === 2`);
-  await pulsar(deck, 'Cerrar votación');
-  await deck.esperarA(`window.OpenClassLive.estado().activa.estado === 'cerrada'`);
-  await pulsar(deck, 'Revelar respuesta');
+  // El docente se desconecta (cierra la presentación): el servidor cierra solo, sin publicar.
+  await deck.ir('about:blank');
+  await A.esperarA(`/Votación cerrada/.test(document.getElementById('panel-encuesta').textContent)`, { timeout: 30_000 });
+  const r2 = app.almacen.encuestaDocente(ids.sala, ids.encuesta);
+  assert.equal(r2.rondas[1].cierre, 'tiempo', 'cierre automático por el servidor');
+  assert.equal(r2.resultadosPublicados, false, 'el cierre automático no publica');
+  assert.equal(r2.correctaRevelada, false, 'ni revela');
+  assert.equal(r2.rondas[1].respondientes, 2);
+  // Reconexión: la misma pestaña recupera la sala (clave de la sesión) y continúa donde quedó.
+  await deck.ir(`${estatico.url}general/#/encuesta-live`);
+  await deck.esperarA(`window.OpenClassLive?.sala()?.codigo === ${JSON.stringify(codigo)} && window.OpenClassLive.momento() === 'finalizada'`);
+  await deck.esperarA(qrListo);
+  assert.match(await deck.evaluar(`document.querySelector('section.present .oc-live-p-estado').textContent`), /Votación finalizada/);
+  await abrirPanel();
+  assert.match(await deck.evaluar(`document.querySelector('.oc-live-menu').textContent`), /se acabó el tiempo/);
+  await capturar(deck, '19-presentacion-finalizada');
+  // La preferencia vuelve a 30 s para las preguntas siguientes.
+  await deck.evaluar(`document.querySelector('.oc-live-config > summary').click()`);
+  await deck.evaluar(`document.querySelector('.oc-live-menu input[name=oc-live-duracion][value="30"]').click()`);
+  await deck.esperarA(`window.OpenClassLive.estado().sala.duracionVotacion === 30`);
+  await pulsar(deck, 'Mostrar resultados');
+  await deck.esperarA(`window.OpenClassLive.momento() === 'resultados'`);
+  await pulsar(deck, 'Revelar explicación');
   await deck.esperarA(`document.querySelectorAll('.oc-live-barra.correcta').length === 1 && /socket\\.join/.test(document.querySelector('.oc-live-capa').textContent)`);
   assert.match(await deck.evaluar(`document.querySelector('.oc-live-capa').textContent`), /ronda 1: 50%/, 'comparación con la primera ronda');
   // QR y resultados conviven sin solaparse.
@@ -366,8 +475,9 @@ test('OpenClass Live en Chrome: una sala para toda la clase, QR integrado y tres
   assert.deepEqual(b2.choques, [], 'pregunta 2: el QR no cubre el enunciado ni las opciones');
   assert.equal(b2.qr.src, `${APP}/qr/${codigo}.svg`, 'pregunta 2: QR de la misma sala');
   await abrirPanel();
-  await pulsar(deck, 'Abrir encuesta de esta diapositiva');
+  await pulsar(deck, 'Iniciar votación · 30 s');
   await deck.esperarA(`/Qué datos salen/.test(window.OpenClassLive.estado()?.activa?.enunciado) && window.OpenClassLive.estado().activa.estado === 'abierta'`);
+  assert.ok(Math.abs(await duracionRonda(0) - 30) <= 1, 'pregunta 2: de nuevo 30 s, sin configurar la pregunta');
   for (const p of [A, B]) await opciones(p, 4);
   const C = await entrar(2);
   await opciones(C, 4);
@@ -377,9 +487,11 @@ test('OpenClass Live en Chrome: una sala para toda la clase, QR integrado y tres
   await deck.esperarA(`window.OpenClassLive.estado().activa.rondas[0].respondientes === 3`);
   assert.equal(await deck.evaluar(`window.OpenClassLive.estado().sala.conectados`), 3, 'A, B y C conectados');
   unaSala();
-  await pulsar(deck, 'Cerrar votación');
+  await pulsar(deck, 'Cerrar ahora');
   await deck.esperarA(`window.OpenClassLive.estado().activa.estado === 'cerrada'`);
-  await pulsar(deck, 'Revelar respuesta');
+  await pulsar(deck, 'Mostrar resultados');
+  await deck.esperarA(`window.OpenClassLive.momento() === 'resultados'`);
+  await pulsar(deck, 'Revelar explicación');
   await deck.esperarA(`document.querySelectorAll('.oc-live-barra').length === 4 && document.querySelectorAll('.oc-live-barra.correcta').length === 2`);
   await cerrarPanel();
   await capturar(deck, '15-presentacion-pregunta2-resultados');
@@ -392,8 +504,9 @@ test('OpenClass Live en Chrome: una sala para toda la clase, QR integrado y tres
   assert.deepEqual(b3.choques, [], 'pregunta 3: el QR no cubre el enunciado, el código ni las opciones');
   assert.equal(await deck.evaluar(`window.OpenClassLive.estado().activa.estado`), 'cerrada', 'llegar a la diapositiva no abre la votación');
   await abrirPanel();
-  await pulsar(deck, 'Abrir encuesta de esta diapositiva');
+  await pulsar(deck, 'Iniciar votación · 30 s');
   await deck.esperarA(`/Qué imprime/.test(window.OpenClassLive.estado()?.activa?.enunciado) && window.OpenClassLive.estado().activa.estado === 'abierta'`);
+  assert.ok(Math.abs(await duracionRonda(0) - 30) <= 1, 'pregunta 3: 30 s');
   for (const p of [A, B, C]) await opciones(p, 3);
   await responder(A, [2]);
   await responder(B, [0]);
@@ -402,9 +515,11 @@ test('OpenClass Live en Chrome: una sala para toda la clase, QR integrado y tres
   await C.esperarA(`document.querySelectorAll('#panel-encuesta input[name=opcion]')[2]?.checked === true`);
   await deck.esperarA(`window.OpenClassLive.estado().activa.rondas[0].respondientes === 3`);
   unaSala();
-  await pulsar(deck, 'Cerrar votación');
+  await pulsar(deck, 'Cerrar ahora');
   await deck.esperarA(`window.OpenClassLive.estado().activa.estado === 'cerrada'`);
-  await pulsar(deck, 'Revelar respuesta');
+  await pulsar(deck, 'Mostrar resultados');
+  await deck.esperarA(`window.OpenClassLive.momento() === 'resultados'`);
+  await pulsar(deck, 'Revelar explicación');
   await deck.esperarA(`document.querySelectorAll('.oc-live-barra.correcta').length === 1 && document.querySelector('.oc-live-capa .oc-live-qr-lateral img')?.naturalWidth > 0`);
   for (const p of [A, C]) await p.esperarA(`/Su respuesta fue correcta/.test(document.getElementById('panel-encuesta').textContent)`);
 
@@ -455,7 +570,7 @@ test('OpenClass Live en Chrome: una sala para toda la clase, QR integrado y tres
   await pdf.ir(`${estatico.url}general/?print-pdf`);
   await pdf.esperarA(`window.OpenClass?.deck?.isReady?.() && document.documentElement.classList.contains('reveal-print')`, { timeout: 30000 });
   await esperar(1500);
-  assert.equal(await pdf.evaluar(`document.querySelectorAll('.oc-live-participa, .oc-live-boton, .oc-live-capa, .oc-live-banda, .oc-live-panel').length`), 0, 'PDF sin QR ni capas de OpenClass Live');
+  assert.equal(await pdf.evaluar(`document.querySelectorAll('.oc-live-participa, .oc-live-control, .oc-live-capa, .oc-live-banda, .oc-live-menu').length`), 0, 'PDF sin QR ni capas de OpenClass Live');
   assert.equal(pdfPeticiones.filter((u) => u.startsWith(APP)).length, 0, 'el PDF no contacta OpenClass Live');
   const { data } = await pdf.send('Page.printToPDF', { printBackground: true, preferCSSPageSize: true });
   assert.ok(data.length > 1000, 'PDF generado');
@@ -464,7 +579,7 @@ test('OpenClass Live en Chrome: una sala para toda la clase, QR integrado y tres
   // ---------- Fin de sesión ----------
   await pulsar(panel, 'Finalizar sesión');
   for (const p of [A, B, C]) await p.esperarA(`!document.getElementById('vista-fin').classList.contains('oculto')`);
-  await deck.esperarA(`!document.querySelector('.oc-live-sala') && !document.querySelector('.oc-live-participa')`);
+  await deck.esperarA(`!window.OpenClassLive.sala() && !document.querySelector('.oc-live-participa')`);
   assert.equal(app.almacen.tamano, 0, 'datos eliminados del servidor');
   for (const p of [panel, deck, A, B, C, pdf]) assert.deepEqual(p.errores, [], 'sin excepciones de JavaScript');
 });

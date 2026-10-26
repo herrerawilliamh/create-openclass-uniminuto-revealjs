@@ -17,6 +17,10 @@ export const LIMITES = Object.freeze({
   pregunta: 280,
 });
 
+/** Tiempo de votación de la sala, en segundos (0 = sin límite). Una sola preferencia por sala. */
+export const DURACIONES_VOTACION = Object.freeze([15, 30, 60, 90, 0]);
+export const DURACION_PREDETERMINADA = 30;
+
 export class ErrorValidacion extends Error {}
 
 const falla = (mensaje) => { throw new ErrorValidacion(mensaje); };
@@ -137,4 +141,10 @@ export function ajustesPreguntas(valor) {
   if (v.abiertas !== undefined) { if (typeof v.abiertas !== 'boolean') falla('ajustes: abiertas debe ser booleano'); salida.abiertas = v.abiertas; }
   if (v.preModeracion !== undefined) { if (typeof v.preModeracion !== 'boolean') falla('ajustes: preModeracion debe ser booleano'); salida.preModeracion = v.preModeracion; }
   return salida;
+}
+
+export function ajustesSala(valor) {
+  const v = objeto(valor, ['duracionVotacion'], 'ajustes');
+  if (!DURACIONES_VOTACION.includes(v.duracionVotacion)) falla(`ajustes: duración admitida ${DURACIONES_VOTACION.join(', ')} (0 = sin límite)`);
+  return { duracionVotacion: v.duracionVotacion };
 }

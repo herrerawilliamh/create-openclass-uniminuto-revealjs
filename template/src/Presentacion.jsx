@@ -15,6 +15,10 @@ import weekly from 'virtual:openclass-semanas';
 const BASE = import.meta.env.BASE_URL;
 // data-presentation de cada página HTML → Markdown fijo; las semanas se resuelven por número.
 const FIJAS = { general: mainMd, demo: demoMd, laboratorio: labMd, completa: completaMd };
+// Vistas previas (?receiver: Build Tech y las notas clásicas de Reveal.js): ningún iframe carga su contenido
+// (YouTube, actividades, sitios externos); src/plugins/buildtech.mjs muestra en su lugar un aviso local.
+const PREVIA = /receiver/i.test(location.search);
+const sinIframes = (md) => md.replace(/(<iframe\b[^>]*?\s)(?:data-)?src=/gi, '$1data-oc-previa-src=');
 
 /** «Diapositiva X / Y». Cuenta en el DOM porque Reveal formatea el número durante su
  *  inicialización, antes de que exista la instancia del deck. */
@@ -79,8 +83,8 @@ export function Presentacion({ kind, week, config }) {
   const number = Number(week);
   const nombre = config.course?.fullName;
   const raw = FIJAS[kind] ?? protegerCurso(weekly[number], nombre);
-  const markdown = paginarMarkdown((raw || `# Semana ${number} no encontrada`)
-    .replaceAll('{{BASE_URL}}', BASE));
+  const fuente = (raw || `# Semana ${number} no encontrada`).replaceAll('{{BASE_URL}}', BASE);
+  const markdown = paginarMarkdown(PREVIA ? sinIframes(fuente) : fuente);
 
   // <Deck> lee sus plugins solo al montarse: se monta cuando los scripts vendorizados ya cargaron.
   const [extensiones, setExtensiones] = useState(null);
@@ -116,6 +120,8 @@ export function Presentacion({ kind, week, config }) {
       // y la pizarra falla sin diapositiva actual. En el teléfono se ve el mismo lienzo escalado, con gestos.
       scrollActivationWidth: null,
       transition: 'slide',
+      // PDF del estudiante: una página 16:9 por diapositiva, con los fragmentos visibles y sin cortes.
+      pdfSeparateFragments: false, pdfMaxPagesPerSlide: 1,
       ...extensiones.config,
     }}>
       <Markdown markdown={markdown} options={{ smartypants: true }}/>

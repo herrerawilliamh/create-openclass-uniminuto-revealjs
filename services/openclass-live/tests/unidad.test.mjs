@@ -57,6 +57,63 @@ test('flujo Freeman: ronda 1 → cerrar → resultados → ronda 2 → comparar 
   assert.equal(fin.rondas.length, 2);
 });
 
+test('temporizador global: 30 s por omisión, cierre único sin publicar, preferencia para rondas futuras, +30 s y sin límite', () => {
+  const { a, r } = nuevo();
+  const sala = a.crearSala({});
+  assert.equal(sala.duracionVotacion, 30, 'cada sala nace con 30 s');
+  const p = a.unir(sala.codigo, {});
+  const e = a.crearEncuesta(sala.id, encuesta());
+  const t0 = r.ahora();
+  a.abrirEncuesta(sala.id, e.id);
+  assert.equal(a.encuestaDocente(sala.id, e.id).rondas[0].cierra, t0 + 30_000, 'vencimiento absoluto del servidor');
+  assert.equal(a.estadoParticipante(sala.id, p.pid).encuesta.cierra, t0 + 30_000, 'el estudiante recibe el mismo vencimiento');
+  assert.equal(a.estadoParticipante(sala.id, p.pid).servidor, t0, 'y la hora del servidor para sincronizar');
+
+  // Cambiar la preferencia no altera la ronda en curso.
+  a.ajustarSala(sala.id, { duracionVotacion: 60 });
+  assert.equal(a.proximoCierre(sala.id), t0 + 30_000);
+  r.avanzar(29_000);
+  a.responder(sala.id, p.pid, { encuestaId: e.id, ronda: 1, seleccion: [1] });
+  r.avanzar(1_000);
+  assert.throws(() => a.responder(sala.id, p.pid, { encuestaId: e.id, ronda: 1, seleccion: [0] }), /cerrada/, 'ninguna respuesta tardía entra');
+  const doc = a.encuestaDocente(sala.id, e.id);
+  assert.equal(doc.estado, 'cerrada');
+  assert.equal(doc.rondas[0].cierre, 'tiempo');
+  assert.equal(doc.resultadosPublicados, false, 'el cierre automático no publica resultados');
+  assert.equal(doc.correctaRevelada, false, 'ni revela la respuesta');
+  const vista = a.estadoParticipante(sala.id, p.pid).encuesta;
+  assert.equal(vista.rondas, undefined);
+  assert.equal(vista.correctas, undefined);
+  assert.deepEqual(a.vencerVotaciones(), [], 'cierre único: no hay segunda transición');
+  assert.throws(() => a.cerrarEncuesta(sala.id, e.id), /ya está cerrada/);
+
+  // La segunda ronda usa la preferencia vigente (60 s) y admite «+30 s».
+  a.segundaRonda(sala.id, e.id);
+  const t1 = r.ahora();
+  assert.equal(a.proximoCierre(sala.id), t1 + 60_000);
+  a.extenderVotacion(sala.id, e.id);
+  assert.equal(a.proximoCierre(sala.id), t1 + 90_000);
+  r.avanzar(90_000);
+  assert.deepEqual(a.vencerVotaciones(), [sala.id], 'el barrido periódico detecta el vencimiento una vez');
+  assert.deepEqual(a.vencerVotaciones(), []);
+
+  // Sin límite: no vence ni se extiende.
+  a.ajustarSala(sala.id, { duracionVotacion: 0 });
+  const e2 = a.crearEncuesta(sala.id, encuesta({ enunciado: 'Otra pregunta sin límite' }));
+  a.abrirEncuesta(sala.id, e2.id);
+  assert.equal(a.proximoCierre(sala.id), null);
+  assert.throws(() => a.extenderVotacion(sala.id, e2.id), /límite/);
+  r.avanzar(30 * 60_000);
+  assert.equal(a.encuestaDocente(sala.id, e2.id).estado, 'abierta');
+  a.cerrarEncuesta(sala.id, e2.id);
+  assert.equal(a.encuestaDocente(sala.id, e2.id).rondas[0].cierre, 'docente');
+
+  assert.throws(() => V.ajustesSala({ duracionVotacion: 45 }), V.ErrorValidacion);
+  assert.throws(() => V.ajustesSala({ duracionVotacion: '30' }), V.ErrorValidacion);
+  assert.throws(() => V.ajustesSala({ duracionVotacion: 30, extra: 1 }), V.ErrorValidacion);
+  assert.deepEqual(V.ajustesSala({ duracionVotacion: 90 }), { duracionVotacion: 90 });
+});
+
 test('solo una votación abierta a la vez y selección múltiple', () => {
   const { a } = nuevo();
   const s = a.crearSala();

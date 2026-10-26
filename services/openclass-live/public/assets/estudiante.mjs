@@ -4,7 +4,7 @@
  * teléfono se bloquea o se recarga la página, vuelve como el mismo participante y conserva su respuesta.
  * Esta vista no controla la presentación del docente: solo responde, pregunta y vota preguntas.
  */
-import { el, letra, textoConCodigo, barras, comparar, MENSAJES_ERROR } from './comun.mjs';
+import { el, letra, textoConCodigo, barras, comparar, MENSAJES_ERROR, crearCuenta, formatoTiempo } from './comun.mjs';
 
 const $ = (id) => document.getElementById(id);
 const CLAVE = (codigo) => `oclive:${codigo}`;
@@ -94,8 +94,12 @@ function fin(texto) {
 }
 
 // ---------------- Pintado ----------------
+const cuenta = crearCuenta();
+let tic = null;
+
 function pintar(e) {
   estado = e;
+  cuenta.sincronizar(e.servidor);
   $('titulo-sala').textContent = e.sala.titulo || 'Participación en clase';
   pintarEncuesta(e.encuesta);
   pintarPreguntas(e);
@@ -104,6 +108,7 @@ function pintar(e) {
 function pintarEncuesta(enc) {
   const panel = $('panel-encuesta');
   panel.replaceChildren();
+  clearInterval(tic);
   if (!enc) {
     panel.append(el('h2', { texto: 'Esperando la próxima pregunta' }),
       el('p', { clase: 'suave', texto: 'Cuando el docente abra una encuesta aparecerá aquí. Mantenga esta página abierta.' }));
@@ -117,7 +122,8 @@ function pintarEncuesta(enc) {
 
   panel.append(el('div', { clase: 'fila' },
     el('span', { clase: `chip ${enc.estado}`, texto: abierta ? 'Votación abierta' : 'Votación cerrada' }),
-    enc.ronda === 2 ? el('span', { clase: 'chip', texto: 'Segunda ronda' }) : null));
+    enc.ronda === 2 ? el('span', { clase: 'chip', texto: 'Segunda ronda' }) : null,
+    abierta && enc.cierra ? el('span', { clase: 'chip tiempo', role: 'timer', id: 'tiempo-restante' }) : null));
   panel.append(el('p', { clase: 'enunciado', texto: enc.enunciado }));
   if (enc.codigo) panel.append(el('pre', {}, el('code', { texto: enc.codigo })));
   if (enc.tipo === 'multiple') panel.append(el('p', { clase: 'suave', texto: 'Puede elegir varias opciones.' }));
@@ -157,6 +163,18 @@ function pintarEncuesta(enc) {
     });
   });
   if (abierta) panel.append(el('div', { clase: 'fila' }, botonEnviar), estadoEnvio);
+  // Cuenta regresiva local (el servidor cierra la votación; aquí solo se muestra el tiempo).
+  const reloj = $('tiempo-restante');
+  if (reloj) {
+    const paso = () => {
+      const ms = cuenta.restante(enc.cierra);
+      reloj.textContent = ms > 0 ? `Quedan ${formatoTiempo(ms)}` : 'Tiempo terminado';
+      reloj.classList.toggle('urgente', ms <= 10_000);
+      if (ms <= 0) { clearInterval(tic); botonEnviar.disabled = true; }
+    };
+    paso();
+    tic = setInterval(paso, 250);
+  }
   if (abierta && enviada) { estadoEnvio.className = 'aviso ok'; estadoEnvio.textContent = 'Respuesta registrada. Puede cambiarla mientras la votación siga abierta.'; }
   if (!abierta) {
     panel.append(el('p', { clase: 'aviso', texto: enviada ? 'Votación cerrada. Su respuesta quedó registrada.' : 'Votación cerrada.' }));

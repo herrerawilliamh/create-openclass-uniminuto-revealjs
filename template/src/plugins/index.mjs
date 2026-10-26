@@ -7,6 +7,8 @@
  * - Mermaid y Chart.js se importan solo si el Markdown los usa.
  * - Código (./codigo.mjs): botón copiar y desplazamiento seguro del layout oc-l-code.
  * - Fase 2 (OpenClass Live o Seminar/Poll/Questions): preparada y apagada en ./fase2.mjs.
+ * - Build Tech (./buildtech.mjs): vista privada del docente para el segundo monitor, desde «Vista del presentador».
+ * - «Exportar a PDF»: abre ?print-pdf en otra pestaña con el diálogo de impresión del navegador.
  * Las herramientas de Custom Controls van en el pie azul, a lado y lado del logo 70 años (theme.css).
  */
 import './compat-math.mjs';
@@ -19,6 +21,7 @@ import RevealMath from 'reveal.js/plugin/math';
 import { OpenClassMermaid } from './mermaid.mjs';
 import { OpenClassCodigo } from './codigo.mjs';
 import { cargarFase2 } from './fase2.mjs';
+import { OpenClassBuildTech } from './buildtech.mjs';
 
 const VENDOR = `${import.meta.env.BASE_URL}vendor/reveal.js-plugins/`;
 const PALETA = ['#243764', '#ffca05', '#5464bf', '#f0a800', '#6b79a8', '#40547d'];
@@ -55,6 +58,8 @@ const icono = (trazo) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentCo
 
 // Custom Controls inserta `action` como atributo onclick: solo llamadas a window.OpenClass.
 const HERRAMIENTAS = [
+  { id: 'oc-h-pdf', title: 'Exportar a PDF', action: 'OpenClass.exportarPdf()',
+    icon: icono('<path d="M7 9V3h10v6"/><rect x="3" y="9" width="18" height="8" rx="1"/><path d="M7 14h10v7H7z"/>') },
   { id: 'oc-h-pizarra', title: 'Pizarra (B)', action: 'OpenClass.pizarra()',
     icon: icono('<rect x="3" y="4" width="18" height="12" rx="1"/><path d="M8 20l4-4 4 4"/>') },
   { id: 'oc-h-anotar', title: 'Anotar sobre la diapositiva (C)', action: 'OpenClass.anotar()',
@@ -63,7 +68,7 @@ const HERRAMIENTAS = [
     icon: icono('<path d="M5 15l8-8 6 6-5 5H9z"/><path d="M9 20h11"/>') },
   { id: 'oc-h-buscar', title: 'Buscar (Ctrl+Shift+F)', action: 'OpenClass.buscar()',
     icon: icono('<circle cx="10.5" cy="10.5" r="6"/><path d="M15 15l5 5"/>') },
-  { id: 'oc-h-presentador', title: 'Vista del presentador (S)', action: 'OpenClass.presentador()',
+  { id: 'oc-h-presentador', title: 'Vista del presentador: Build Tech (T) o notas clásicas (S)', action: 'OpenClass.vistas()',
     icon: icono('<rect x="4" y="3" width="16" height="18" rx="1"/><path d="M8 8h8M8 12h8M8 16h5"/>') },
   { id: 'oc-h-vista', title: 'Vista general (Esc)', action: 'OpenClass.vistaGeneral()',
     icon: icono('<rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/>') },
@@ -75,6 +80,9 @@ const HERRAMIENTAS = [
 const OpenClassHerramientas = () => ({
   id: 'oc-herramientas',
   init(deck) {
+    // Nombre accesible explícito (el título también es la ayuda al pasar el mouse); el de vistas abre un menú.
+    for (const b of document.querySelectorAll('#customcontrols li > button[title]')) b.setAttribute('aria-label', b.title);
+    document.querySelector('#oc-h-presentador > button')?.setAttribute('aria-haspopup', 'menu');
     window.OpenClass = {
       deck,
       pizarra: () => window.RevealChalkboard?.toggleChalkboard(),
@@ -82,6 +90,8 @@ const OpenClassHerramientas = () => ({
       borrar: () => window.RevealChalkboard?.clear(),
       buscar: () => deck.getPlugin('search')?.toggle(),
       presentador: () => deck.getPlugin('notes')?.open(),
+      // Pestaña aparte con todas las diapositivas (sin notas, QR, controles ni capas); el docente elige el destino.
+      exportarPdf: () => window.open(`${location.pathname}?print-pdf&oc-imprimir`, '_blank', 'noopener'),
       vistaGeneral: () => deck.toggleOverview(),
       pantallaCompleta: () => (document.fullscreenElement
         ? document.exitFullscreen()
@@ -141,7 +151,7 @@ export function cargarPlugins(markdown) {
     return {
       plugins: [
         OpenClassMermaid, OpenClassCodigo, RevealMarkdown, RevealHighlight, RevealNotes, RevealSearch, RevealZoom,
-        RevealMath.KaTeX, ...chalkboard, ...controles, ...chart, OpenClassHerramientas, ...fase2.plugins,
+        RevealMath.KaTeX, ...chalkboard, ...controles, ...chart, OpenClassHerramientas, ...fase2.plugins, OpenClassBuildTech(),
       ],
       config: { ...config, ...fase2.config },
     };

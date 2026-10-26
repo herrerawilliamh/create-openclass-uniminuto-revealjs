@@ -4,7 +4,18 @@ Socket.IO 4 (WebSocket con respaldo HTTP long-polling). Todos los eventos del cl
 `socket.emit(evento, datos, (r) => …)` con `r = { ok: true, … }` o `{ ok: false, error, mensaje }`.
 Un evento sin función de acuse se ignora. El servidor es la única fuente de verdad: los resultados se calculan allí.
 
-Códigos de error frecuentes: `validacion`, `frecuencia`, `sala_inexistente`, `sala_vencida`, `sala_llena`, `bloqueado`, `prohibido`, `clave`, `no_autenticado`, `no_activa`, `cerrada`, `ronda`, `otra_abierta`, `no_cerrada`, `revelada`, `preguntas_cerradas`, `limite_*`.
+Códigos de error frecuentes: `validacion`, `frecuencia`, `sala_inexistente`, `sala_vencida`, `sala_llena`, `bloqueado`, `prohibido`, `clave`, `no_autenticado`, `no_activa`, `cerrada`, `ronda`, `otra_abierta`, `no_abierta`, `no_cerrada`, `revelada`, `sin_limite`, `limite_tiempo`, `preguntas_cerradas`, `limite_*`.
+
+## Tiempo de votación
+
+Una sola preferencia por sala: `sala.duracionVotacion` en segundos (`15`, `30` por omisión, `60`, `90`; `0` = sin límite).
+Al abrir una ronda el servidor fija su vencimiento absoluto `cierra` (ms del reloj del servidor; `null` sin límite);
+cambiar la preferencia solo afecta a las rondas siguientes. Cada `estado` incluye `servidor` (hora del servidor en ms)
+para que los clientes cuenten hacia atrás sin depender del reloj del equipo: **el servidor no emite un mensaje por
+segundo**. Al vencer, el servidor cierra la ronda una sola vez (`cierre: 'tiempo'`; `'docente'` si se cerró a mano o se
+retiró) y difunde el estado; nunca publica resultados ni revela la respuesta. Toda lectura aplica los vencimientos
+pendientes, así ninguna respuesta tardía entra aunque el temporizador se retrase. El estado es en memoria: un reinicio
+del servicio pierde las salas (sin base de datos).
 
 ## Espacio `/participante` (estudiantes)
 
@@ -20,7 +31,7 @@ Rechazos (`connect_error.message`): `origen`, `frecuencia`, `validacion`, `sala_
 | Dirección | Evento | Datos | Respuesta / efecto |
 | --- | --- | --- | --- |
 | S→C | `sesion` | `{ token, reconectado, estado }` | Guardar `token` para reconectarse. |
-| S→C | `estado` | vista del participante | Encuesta activa **sin** `correctas` ni `explicacion` hasta revelarlas; `rondas` solo tras publicar resultados. |
+| S→C | `estado` | vista del participante | `servidor` (ms). Encuesta activa con `cierra` (ronda abierta) y **sin** `correctas` ni `explicacion` hasta revelarlas; `rondas` solo tras publicar resultados. |
 | C→S | `estado:solicitar` | `{}` | `{ estado }` |
 | C→S | `encuesta:responder` | `{ encuestaId, ronda, seleccion: [índices] }` | `{ respuesta }`. Reemplaza la respuesta previa de la misma ronda. |
 | C→S | `pregunta:enviar` | `{ texto }` (3–280) | `{ pregunta: { id, estado } }` (`pendiente` con premoderación). |
@@ -42,7 +53,7 @@ Rechazos: `origen`, `frecuencia`, `no_autenticado`, `clave`.
 | Evento | Datos | Rol | Respuesta |
 | --- | --- | --- | --- |
 | `sesion` (S→C) | `{ rol, salas }` o `{ rol: 'presentador', salaId, estado }` | — | — |
-| `estado` (S→C) | estado docente de la sala seguida | — | Sala, encuesta activa con rondas, historial, preguntas (todas), proyectada. |
+| `estado` (S→C) | estado docente de la sala seguida | — | `servidor` (ms), sala (con `duracionVotacion`), encuesta activa con rondas (`conteos`, `porcentajes`, `respondientes`, `cierra`, `cierre`), historial, preguntas (todas), proyectada. |
 | `sala:crear` | `{ titulo?, preModeracion? }` | docente | `{ sala, enlace, qr, clave }` |
 | `sala:listar` | `{}` | docente | `{ salas }` |
 | `sala:seguir` | `{ salaId }` | ambos | `{ estado, enlace, qr }` |
@@ -50,9 +61,11 @@ Rechazos: `origen`, `frecuencia`, `no_autenticado`, `clave`.
 | `sala:revocarClaves` | `{ salaId }` | docente | `{ clave }` nueva; desconecta presentadores. |
 | `encuesta:crear` | `{ salaId, encuesta: { enunciado, codigo?, tipo, opciones, correctas?, explicacion? }, abrir? }` | ambos | `{ encuesta }` |
 | `encuesta:abrir` | `{ salaId, encuestaId }` | ambos | Abre la ronda 1. Solo una votación abierta por sala. |
-| `encuesta:cerrar` | `{ salaId, encuestaId }` | ambos | Cierra la ronda actual. |
+| `encuesta:cerrar` | `{ salaId, encuestaId }` | ambos | «Cerrar ahora»: cierra la ronda actual (`no_abierta` si ya cerró). |
+| `encuesta:extender` | `{ salaId, encuestaId }` | ambos | «+30 segundos» sobre la ronda abierta (`sin_limite` en salas sin límite; máximo 10 min desde ahora). |
+| `sala:ajustar` | `{ salaId, duracionVotacion }` | ambos | Tiempo de votación de la sala para las rondas siguientes. |
 | `encuesta:publicar` | `{ salaId, encuestaId }` | ambos | Los estudiantes ven la distribución (sin la correcta). |
-| `encuesta:segundaRonda` | `{ salaId, encuestaId }` | ambos | Ronda 2 vacía; no disponible tras revelar. |
+| `encuesta:segundaRonda` | `{ salaId, encuestaId }` | ambos | Ronda 2 vacía con el tiempo vigente de la sala; no disponible tras revelar. |
 | `encuesta:revelar` | `{ salaId, encuestaId }` | ambos | Con la votación cerrada: correctas + explicación a todos. |
 | `encuesta:retirar` | `{ salaId }` | ambos | Quita la encuesta de las pantallas (queda en el historial). |
 | `pregunta:moderar` | `{ salaId, preguntaId, accion }` | ambos | `aprobar`, `ocultar`, `respondida`, `proyectar`, `quitarProyeccion`, `bloquearAutor`. |
@@ -60,7 +73,7 @@ Rechazos: `origen`, `frecuencia`, `no_autenticado`, `clave`.
 | `sala:finalizar` | `{ salaId }` | docente | Avisa, desconecta y borra todo. |
 | `sala:cerrada` (S→C) | `{ salaId, motivo }` | — | — |
 
-Flujo de aprendizaje activo (Freeman): `crear/abrir` → respuestas individuales → `cerrar` → (`publicar`) → discusión → `segundaRonda` → `cerrar` → `revelar`. Las vistas incluyen `porcentajeCorrecto` por ronda cuando hay respuesta correcta.
+Flujo de aprendizaje activo (Freeman): `crear/abrir` → respuestas individuales → cierre por tiempo o `cerrar` → `publicar` → discusión → `segundaRonda` → cierre → `revelar`. Las vistas incluyen `porcentajeCorrecto` por ronda cuando hay respuesta correcta.
 
 ## HTTP
 
@@ -76,3 +89,12 @@ Flujo de aprendizaje activo (Freeman): `crear/abrir` → respuestas individuales
 | `GET /socket.io/socket.io.min.js` | Cliente Socket.IO (lo carga el adaptador al conectar). |
 
 Cualquier otra ruta responde 404: el servidor no tiene fondos, imágenes, Markdown ni presentaciones.
+
+## Build Tech (puente local, no es parte de este protocolo)
+
+Build Tech (vista privada del docente) no abre ningún socket: habla con la presentación dentro del
+navegador por `window.postMessage` (mismo origen, ventana verificada, órdenes de una lista cerrada; ver
+`template/src/plugins/puente.mjs`) y la presentación ejecuta las acciones con su única conexión de
+presentador (`encuesta:*`, `encuesta:retirar`, `pregunta:moderar`, `sala:ajustar`). El servidor no
+distingue si una acción se pulsó en el menú «En vivo» o en Build Tech; ni las notas ni el estado de Build
+Tech llegan al servidor.
