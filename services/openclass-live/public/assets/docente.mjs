@@ -18,6 +18,16 @@ const desveladas = new Set();
 const cuenta = crearCuenta();
 const DURACIONES = [15, 30, 60, 90];
 
+// Solución de las preguntas improvisadas aquí: vive SOLO en esta pestaña (memoria + sessionStorage,
+// que sobrevive a recargar pero se borra al cerrar la pestaña) y viaja únicamente con «Revelar».
+// Las preguntas de la presentación guardan su solución en el computador del docente: este panel no la conoce.
+const CLAVE_SOLUCIONES = 'openclass-live:soluciones';
+const soluciones = new Map((() => { try { return Object.entries(JSON.parse(sessionStorage.getItem(CLAVE_SOLUCIONES) ?? '{}')); } catch { return []; } })());
+function recordarSolucion(id, solucion) {
+  if (solucion) soluciones.set(id, solucion); else soluciones.delete(id);
+  try { sessionStorage.setItem(CLAVE_SOLUCIONES, JSON.stringify(Object.fromEntries(soluciones))); } catch { /* solo en memoria */ }
+}
+
 function mostrar(vista) {
   for (const id of ['vista-login', 'vista-salas', 'vista-sala']) $(id).classList.toggle('oculto', id !== vista);
   $('btn-salir').classList.toggle('oculto', vista === 'vista-login');
@@ -199,7 +209,9 @@ function pintarActiva(enc, sala) {
   const titulo = abierta ? (enc.ronda === 2 ? 'Segunda ronda abierta' : 'Votación abierta')
     : enc.correctaRevelada ? 'Respuesta revelada' : enc.resultadosPublicados ? 'Resultados mostrados' : `Votación finalizada${ronda?.cierre === 'tiempo' ? ' · se acabó el tiempo' : ''}`;
   // Con la votación abierta las barras no marcan la correcta (esta ventana podría estar compartida).
-  const correctasVisibles = abierta ? [] : enc.correctas;
+  const local = enc.correctaRevelada ? null : soluciones.get(enc.id) ?? null;
+  const correctasVisibles = abierta ? [] : enc.correctas ?? local?.correctas ?? [];
+  const explicacion = enc.explicacion || local?.explicacion;
   panel.append(...[
     el('div', { clase: 'fila entre' }, el('h2', { texto: titulo }),
       el('div', { clase: 'fila' }, enc.ronda ? el('span', { clase: 'chip', texto: `Ronda ${enc.ronda}` }) : null,
@@ -211,18 +223,18 @@ function pintarActiva(enc, sala) {
       abierta ? el('div', { clase: 'metrica' }, ronda?.cierra ? el('b', { clase: 'reloj', role: 'timer', 'data-cierra': String(ronda.cierra), texto: formatoTiempo(cuenta.restante(ronda.cierra)) }) : el('b', { texto: 'Sin límite' }),
         el('span', { clase: 'suave', texto: 'tiempo restante' })) : null,
       el('div', { clase: 'metrica' }, el('b', { id: 'm-respuestas', texto: String(ronda?.respondientes ?? 0) }), el('span', { clase: 'suave', id: 'm-respuestas-de', texto: `respuestas de ${sala.conectados} conectados` })),
-      !abierta && ronda?.porcentajeCorrecto !== undefined ? el('div', { clase: 'metrica' }, el('b', { id: 'm-acierto', texto: `${ronda.porcentajeCorrecto}%` }), el('span', { clase: 'suave', texto: 'acierto (solo usted lo ve)' })) : null),
+      !abierta && ronda?.porcentajeCorrecto !== undefined ? el('div', { clase: 'metrica' }, el('b', { id: 'm-acierto', texto: `${ronda.porcentajeCorrecto}%` }), el('span', { clase: 'suave', texto: 'acierto' })) : null),
     el('h3', { texto: abierta ? 'Tendencias en vivo · solo en este panel' : 'Distribución de respuestas' }),
     barras(enc.opciones, ronda, correctasVisibles),
     abierta ? el('p', { clase: 'suave', texto: 'La presentación no proyecta estas barras salvo que usted pulse «Proyectar tendencias» en «En vivo». Los estudiantes no las ven.' }) : null].filter(Boolean));
 
   const tabla = comparar(enc.opciones, enc.rondas, correctasVisibles);
   if (tabla) panel.append(el('h3', { texto: 'Primera vs. segunda ronda' }), tabla);
-  if (enc.explicacion) panel.append(el('details', {}, el('summary', { texto: 'Explicación preparada (privada hasta revelarla)' }), textoConCodigo(enc.explicacion)));
+  if (explicacion) panel.append(el('details', {}, el('summary', { texto: enc.correctaRevelada ? 'Explicación revelada' : 'Explicación preparada (solo en esta pestaña hasta revelarla)' }), textoConCodigo(explicacion)));
 
   // Controles del momento: una acción principal y, como mucho, las alternativas de ese paso.
   const botones = el('div', { clase: 'fila acciones-momento' });
-  const puedeRevelar = !enc.correctaRevelada && (enc.correctas.length || enc.explicacion);
+  const puedeRevelar = Boolean(local && (local.correctas.length || local.explicacion));
   if (abierta) {
     botones.append(el('button', { type: 'button', id: 'btn-cerrar', texto: 'Cerrar ahora', onclick: accion('encuesta:cerrar', enc.id, { silencio: ['no_abierta'] }) }));
     if (ronda?.cierra) botones.append(el('button', { type: 'button', clase: 'secundario', id: 'btn-extender', texto: '+30 segundos', onclick: accion('encuesta:extender', enc.id) }));
@@ -230,11 +242,22 @@ function pintarActiva(enc, sala) {
     botones.append(el('button', { type: 'button', id: 'btn-publicar', texto: 'Mostrar resultados', onclick: accion('encuesta:publicar', enc.id, { exito: 'Resultados visibles en los teléfonos. En la presentación: «En vivo» → «Mostrar resultados».' }) }));
   } else {
     if (enc.ronda === 1 && !enc.correctaRevelada) botones.append(el('button', { type: 'button', id: 'btn-ronda2', texto: 'Discutir y repetir', onclick: accion('encuesta:segundaRonda', enc.id) }));
-    if (puedeRevelar) botones.append(el('button', { type: 'button', clase: enc.ronda === 1 ? 'secundario' : '', id: 'btn-revelar', texto: 'Revelar explicación', onclick: accion('encuesta:revelar', enc.id) }));
+    if (puedeRevelar) botones.append(el('button', { type: 'button', clase: enc.ronda === 1 ? 'secundario' : '', id: 'btn-revelar', texto: 'Revelar explicación', onclick: () => revelar(enc.id, local) }));
   }
   botones.append(el('button', { type: 'button', clase: 'secundario', id: 'btn-retirar', texto: 'Retirar de las pantallas', onclick: accion('encuesta:retirar') }));
   panel.append(botones);
+  if (!abierta && !enc.correctaRevelada && !local) {
+    panel.append(el('p', { clase: 'suave', id: 'revelar-en-presentacion', texto: 'La solución de esta pregunta no está en este navegador. Si la pregunta viene de la presentación, revélela allí: «En vivo» → «Revelar explicación» (o desde Build Tech).' }));
+  }
   if (foco) $(foco)?.focus();
+}
+
+/** La solución sale de esta pestaña solo aquí, con la votación ya cerrada; el servidor la valida y la revela de una vez. */
+async function revelar(encuestaId, solucion) {
+  const r = await emitir('encuesta:revelar', { salaId, encuestaId, solucion });
+  if (!r.ok && r.error !== 'ya_revelada') return avisoSala(r.mensaje, 'error');
+  recordarSolucion(encuestaId, null);
+  avisoSala('');
 }
 
 function refrescarActiva(enc, sala) {
@@ -334,15 +357,20 @@ $('btn-mas').addEventListener('click', () => { if ($('opciones').children.length
 function leerComposer() {
   const filas = [...$('opciones').children].map((f) => ({ texto: f.querySelector('input[type=text]').value.trim(), correcta: f.querySelector('input[type=checkbox]').checked }))
     .filter((o) => o.texto);
+  const correctas = filas.flatMap((o, i) => (o.correcta ? [i] : []));
+  const explicacion = $('explicacion').value.trim();
   return {
-    enunciado: $('enunciado').value, codigo: $('codigo').value || undefined, tipo: $('tipo').value,
-    opciones: filas.map((o) => o.texto), correctas: filas.flatMap((o, i) => (o.correcta ? [i] : [])),
-    explicacion: $('explicacion').value || undefined,
+    encuesta: { enunciado: $('enunciado').value, codigo: $('codigo').value || undefined, tipo: $('tipo').value, opciones: filas.map((o) => o.texto) },
+    solucion: correctas.length || explicacion ? { correctas, explicacion } : null,
   };
 }
 async function guardarEncuesta(abrir) {
-  const r = await emitir('encuesta:crear', { salaId, encuesta: leerComposer(), abrir });
+  const { encuesta, solucion } = leerComposer();
+  if (solucion && encuesta.tipo === 'unica' && solucion.correctas.length > 1) return aviso('error-encuesta', 'Una pregunta de selección única admite una sola respuesta correcta.', 'error');
+  // Al servidor solo viaja la pregunta; la solución se queda en esta pestaña hasta revelarla.
+  const r = await emitir('encuesta:crear', { salaId, encuesta, abrir });
   if (!r.ok) return aviso('error-encuesta', r.mensaje, 'error');
+  if (solucion) recordarSolucion(r.encuesta.id, solucion);
   aviso('error-encuesta', '');
   reiniciarComposer();
   avisoSala(abrir ? 'Votación abierta.' : 'Pregunta guardada en «Preguntas de esta sesión».');

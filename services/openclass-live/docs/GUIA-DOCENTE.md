@@ -83,11 +83,11 @@ En el Markdown de la semana:
 ```
 
 - `data-tipo="multiple"` permite varias respuestas; `data-correctas="A,C"` marca varias.
-- La explicación no se ve en la diapositiva: aparece solo cuando usted la revela.
-- Al iniciar la votación, **solo** este bloque sale de su computador; el resto de la presentación, las notas y las imágenes no.
+- La explicación no se ve en la diapositiva ni en el PDF (con OpenClass Live encendido o apagado): aparece solo cuando usted la revela.
+- Al iniciar la votación salen de su computador **solo** el enunciado, el código y las opciones; la respuesta correcta y la explicación se quedan en él hasta que pulse **Revelar explicación**. El resto de la presentación, las notas y las imágenes nunca salen.
 - No hay que indicar el tiempo: todas las preguntas usan el tiempo de la sesión (30 s por omisión).
 
-Para una pregunta que surja en clase: en el panel, **Crear pregunta improvisada** (plegado por omisión).
+Para una pregunta que surja en clase: en el panel, **Crear pregunta improvisada** (plegado por omisión). La correcta y la explicación que marque ahí se guardan solo en esa pestaña del navegador (sobreviven a recargarla; se pierden si la cierra antes de revelar) y se revelan desde el mismo panel.
 
 ## 6. Votar
 
@@ -119,7 +119,7 @@ Secuencia recomendada: **pregunta → respuesta individual → discusión en par
 
 1. **Mostrar resultados**: barras en la pantalla y en los teléfonos, todavía sin la correcta.
 2. **Discutir y repetir**: tras conversar en parejas, abre la segunda ronda con el mismo tiempo de la sesión.
-3. **Revelar explicación**: marca la correcta, muestra la explicación y la comparación con la primera ronda.
+3. **Revelar explicación**: marca la correcta, muestra la explicación y la comparación con la primera ronda. Se pulsa donde está la solución: en la presentación («En vivo» o Build Tech) para las preguntas de las diapositivas; en el panel para las improvisadas. El panel no conoce la solución de una pregunta de la presentación y lo indica. El porcentaje de acierto aparece solo después de revelar.
 
 ![Resultados en la presentación](capturas/06-presentacion-resultados.png)
 

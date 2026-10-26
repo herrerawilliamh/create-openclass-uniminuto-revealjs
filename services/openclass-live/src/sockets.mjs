@@ -294,9 +294,21 @@ export function crearSockets(servidorHttp, { config, almacen, firmador, sesiones
     accionEncuesta('encuesta:abrir', almacen.abrirEncuesta);
     accionEncuesta('encuesta:cerrar', almacen.cerrarEncuesta);
     accionEncuesta('encuesta:publicar', almacen.publicarResultados);
-    accionEncuesta('encuesta:revelar', almacen.revelarCorrecta);
     accionEncuesta('encuesta:segundaRonda', almacen.segundaRonda);
     accionEncuesta('encuesta:extender', almacen.extenderVotacion);
+
+    // La solución viaja SOLO aquí, desde quien la creó (presentación local o navegador del panel).
+    // Validación y revelación ocurren en el mismo turno síncrono: nada se intercala entre ambas.
+    on('encuesta:revelar', (datos) => {
+      const { salaId, resto } = conSala(datos);
+      autorizar(salaId);
+      const { encuestaId, solucion, ...otros } = resto;
+      if (Object.keys(otros).length) throw new V.ErrorValidacion('mensaje: campos no admitidos');
+      const eid = V.id(encuestaId, 'encuestaId');
+      const e = almacen.revelarCorrecta(salaId, eid, V.solucion(solucion, almacen.encuestaDocente(salaId, eid)));
+      log('encuesta_revelada', { sala: salaId.slice(0, 6) });
+      return conEstado(salaId, { encuesta: e });
+    });
 
     on('sala:ajustar', (datos) => {
       const { salaId, resto } = conSala(datos);

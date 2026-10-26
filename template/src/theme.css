@@ -304,6 +304,13 @@ html.reveal-print :is(.back-link, .oc-inicio, #customcontrols) {
   display: none !important;
 }
 
+/*
+ * Solución privada de una pregunta (`.oc-live-encuesta`): oculta siempre, en pantalla y en el PDF,
+ * con OpenClass Live encendido o apagado (live.css solo se carga con LIVE.activa). Solo se revela por
+ * OpenClass Live o en la vista privada de Build Tech. Otras explicaciones pedagógicas no se tocan.
+ */
+.oc-live-encuesta .oc-live-explicacion { display: none !important; }
+
 /* Fondo anclado al lienzo. Reveal escala 1280x720 con
    S = round(min(0.94·W/1280, 0.94·H/720) acotado a [0.2, 2], 0.01), es decir, un lienzo de
    ancho round(min(94vw, 94vh·16/9), 12.8px). El fondo es ese lienzo más el margen de 0.06,

@@ -10,9 +10,11 @@ import { iniciar, evento, rechazo, pedir, esperar, PRESENTADOR } from './ayuda.m
 const ENCUESTA = {
   enunciado: '¿Qué estructura usa un servidor Socket.IO para agrupar sockets?',
   codigo: 'io.to("sala").emit("evento", datos);',
-  tipo: 'unica', opciones: ['Namespace', 'Room', 'Adapter', 'Engine'], correctas: [1],
-  explicacion: 'Las rooms agrupan sockets dentro de un namespace.\n```js\nsocket.join("sala");\n```',
+  tipo: 'unica', opciones: ['Namespace', 'Room', 'Adapter', 'Engine'],
 };
+// La solución la conserva quien creó la encuesta y solo viaja con «encuesta:revelar».
+const SOLUCION = { correctas: [1], explicacion: 'Las rooms agrupan sockets dentro de un namespace.\n```js\nsocket.join("sala");\n```' };
+const MARCA = 'Las rooms agrupan sockets';
 
 async function preparar(t, opciones) {
   const srv = await iniciar(opciones);
@@ -72,7 +74,7 @@ test('multicliente: 40 estudiantes responden a la vez; servidor agrega; segunda 
   assert.deepEqual(ronda1.conteos, [10, 10, 10, 10]);
   assert.equal(ronda1.respondientes, 40);
   assert.deepEqual(ronda1.porcentajes, [25, 25, 25, 25]);
-  assert.equal(ronda1.porcentajeCorrecto, 25);
+  assert.equal(ronda1.porcentajeCorrecto, undefined, 'sin solución en el servidor no hay acierto');
   assert.equal(seguir.estado.sala.conectados, 40);
 
   const publicados = ultimoEstado(alumnos[5].s, (e) => e.encuesta?.resultadosPublicados);
@@ -89,13 +91,94 @@ test('multicliente: 40 estudiantes responden a la vez; servidor agrega; segunda 
   await pedir(doc, 'encuesta:cerrar', { salaId: sala.id, encuestaId: eid });
 
   const revelada = ultimoEstado(alumnos[0].s, (e) => e.encuesta?.correctaRevelada);
-  const rev = await pedir(doc, 'encuesta:revelar', { salaId: sala.id, encuestaId: eid });
-  assert.equal(rev.ok, true);
+  await pedir(doc, 'encuesta:publicar', { salaId: sala.id, encuestaId: eid });
+  const rev = await pedir(doc, 'encuesta:revelar', { salaId: sala.id, encuestaId: eid, solucion: SOLUCION });
+  assert.equal(rev.ok, true, rev.mensaje);
+  assert.equal(rev.encuesta.rondas[0].porcentajeCorrecto, 25);
   assert.equal(rev.encuesta.rondas[1].porcentajeCorrecto, 75);
   const fin = await revelada;
   assert.deepEqual(fin.encuesta.correctas, [1]);
   assert.match(fin.encuesta.explicacion, /socket\.join/);
   assert.equal(fin.encuesta.rondas.length, 2, 'el estudiante ve la comparación de rondas');
+});
+
+test('revelación: ninguna ruta (difusión, acuses, historial, reconexión, registros) expone la solución antes de revelar', async (t) => {
+  const { srv, doc, sala, clave } = await preparar(t);
+  const recibido = [];
+  const espiar = (s, quien) => s.onAny((nombre, datos) => recibido.push({ quien, nombre, json: JSON.stringify(datos) }));
+  espiar(doc, 'panel');
+  const a = await srv.estudiante(sala.codigo);
+  const b = await srv.estudiante(sala.codigo);
+  espiar(a.s, 'a'); espiar(b.s, 'b');
+  const { s: pres } = await srv.presentador(clave);
+  espiar(pres, 'presentador');
+  const acuses = [];
+  const pedirEspiado = async (s, ev, datos) => { const r = await pedir(s, ev, datos); acuses.push({ ev, json: JSON.stringify(r) }); return r; };
+
+  // Crear con la solución adjunta se rechaza entero: no se crea nada.
+  const conSolucion = await pedirEspiado(pres, 'encuesta:crear', { salaId: sala.id, encuesta: { ...ENCUESTA, ...SOLUCION }, abrir: true });
+  assert.equal(conSolucion.error, 'validacion');
+  assert.match(conSolucion.mensaje, /se transmite solo al revelar/);
+  assert.equal((await pedir(doc, 'sala:seguir', { salaId: sala.id })).estado.historial.length, 0);
+
+  const { encuesta } = await pedirEspiado(pres, 'encuesta:crear', { salaId: sala.id, encuesta: ENCUESTA, abrir: true });
+  const eid = encuesta.id;
+  await pedirEspiado(a.s, 'encuesta:responder', { encuestaId: eid, ronda: 1, seleccion: [1] }); // B, la correcta
+  await pedirEspiado(b.s, 'encuesta:responder', { encuestaId: eid, ronda: 1, seleccion: [0] });
+  assert.equal((await pedirEspiado(pres, 'encuesta:revelar', { salaId: sala.id, encuestaId: eid, solucion: SOLUCION })).error, 'no_cerrada', 'no se revela con la votación abierta');
+  await pedirEspiado(pres, 'encuesta:cerrar', { salaId: sala.id, encuestaId: eid });
+  const publicados = ultimoEstado(a.s, (e) => e.encuesta?.resultadosPublicados);
+  await pedirEspiado(pres, 'encuesta:publicar', { salaId: sala.id, encuestaId: eid });
+  await publicados;
+  // Reconexión e historial antes de revelar.
+  a.s.disconnect();
+  const a2 = await srv.estudiante(sala.codigo, { token: a.sesion.token });
+  espiar(a2.s, 'a2');
+  recibido.push({ quien: 'a2', nombre: 'sesion', json: JSON.stringify(a2.sesion) });
+  acuses.push({ ev: 'sala:seguir', json: JSON.stringify(await pedir(doc, 'sala:seguir', { salaId: sala.id })) });
+  acuses.push({ ev: 'estado:solicitar', json: JSON.stringify(await pedir(a2.s, 'estado:solicitar', {})) });
+  await esperar(250);
+
+  const prohibido = new RegExp(`porcentajeCorrecto|"correctas"|"explicacion"|${MARCA}`);
+  for (const m of [...recibido, ...acuses]) assert.doesNotMatch(m.json, prohibido, `${m.quien ?? 'acuse'} ${m.nombre ?? m.ev}`);
+  assert.ok(recibido.some((m) => m.quien === 'a2' && /"rondas"/.test(m.json)), 'la sonda sí recibió la distribución publicada');
+
+  // Validación de la solución contra ESTA encuesta y del mensaje completo.
+  for (const [datos, error] of [
+    [{ solucion: { correctas: [7] } }, 'validacion'],
+    [{ solucion: { correctas: [0, 1] } }, 'validacion'],
+    [{ solucion: {} }, 'validacion'],
+    [{ solucion: SOLUCION, extra: true }, 'validacion'],
+    [{ solucion: { ...SOLUCION, enunciado: 'x' } }, 'validacion'],
+  ]) assert.equal((await pedir(pres, 'encuesta:revelar', { salaId: sala.id, encuestaId: eid, ...datos })).error, error, JSON.stringify(datos));
+  const otra = (await pedir(doc, 'encuesta:crear', { salaId: sala.id, encuesta: { ...ENCUESTA, enunciado: 'Otra pregunta' } })).encuesta;
+  assert.equal((await pedir(pres, 'encuesta:revelar', { salaId: sala.id, encuestaId: otra.id, solucion: SOLUCION })).error, 'no_activa', 'no se revela otra encuesta');
+
+  // Carrera panel ↔ presentador: exactamente una revelación.
+  const revelada = ultimoEstado(a2.s, (e) => e.encuesta?.correctaRevelada);
+  const [r1, r2] = await Promise.all([
+    pedir(pres, 'encuesta:revelar', { salaId: sala.id, encuestaId: eid, solucion: SOLUCION }),
+    pedir(doc, 'encuesta:revelar', { salaId: sala.id, encuestaId: eid, solucion: { correctas: [0] } }),
+  ]);
+  assert.deepEqual([r1.ok, r2.ok].sort(), [false, true]);
+  assert.equal((r1.ok ? r2 : r1).error, 'ya_revelada');
+  const fin = await revelada;
+  assert.deepEqual(fin.encuesta.correctas, r1.ok ? [1] : [0]);
+  assert.equal(fin.encuesta.rondas[0].porcentajeCorrecto, 50, 'una de dos respuestas coincide con la solución revelada');
+  // Reconexión después: recibe la solución revelada.
+  const a3 = await srv.estudiante(sala.codigo, { token: a.sesion.token });
+  assert.equal(a3.sesion.estado.encuesta.correctaRevelada, true);
+  assert.ok(srv.lineas.some((l) => l.includes('encuesta_revelada')));
+  assert.ok(!srv.lineas.join('\n').includes(MARCA), 'los registros nunca contienen la explicación');
+
+  // Revocación: la clave anterior ya no revela nada.
+  const e3 = (await pedir(doc, 'encuesta:crear', { salaId: sala.id, encuesta: { ...ENCUESTA, enunciado: 'Tercera pregunta' }, abrir: true })).encuesta;
+  await pedir(doc, 'encuesta:cerrar', { salaId: sala.id, encuestaId: e3.id });
+  const fuera = evento(pres, 'disconnect');
+  await pedir(doc, 'sala:revocarClaves', { salaId: sala.id });
+  await fuera;
+  assert.equal(await rechazo(srv.conectar('/docente', { origen: PRESENTADOR, auth: { clave } })), 'clave');
+  assert.equal(srv.app.almacen.encuestaDocente(sala.id, e3.id).correctaRevelada, false);
 });
 
 test('transporte de respaldo: un estudiante solo con HTTP long-polling participa', async (t) => {

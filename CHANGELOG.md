@@ -55,6 +55,17 @@ No se publica en npm hasta aprobar el adaptador local; no altera la versión del
   `?print-pdf&oc-imprimir` en otra pestaña con el diálogo del navegador; una página 16:9 por diapositiva
   (`pdfSeparateFragments: false`, `pdfMaxPagesPerSlide: 1`), sin notas, soluciones, QR, controles ni
   capas; cada iframe se imprime como su título y su enlace (`npm run test:navegador`: 8 herramientas).
+- **Seguridad v0.2 (auditoría de 46ed512)**: (1) la solución ya no sale al crear la encuesta: la
+  presentación envía solo enunciado, código, tipo y opciones y conserva correctas y explicación hasta
+  «Revelar explicación», que las transmite en el evento `encuesta:revelar` (validado contra la encuesta
+  activa, con la votación cerrada, una sola vez y atómico); el servidor rechaza `correctas`/`explicacion`
+  al crear. Las preguntas improvisadas del panel guardan su solución en la pestaña (`sessionStorage`).
+  (2) Los estudiantes nunca reciben `porcentajeCorrecto` antes de revelar (resúmenes de ronda con lista
+  blanca; distribución solo tras publicar). (3) La regla que oculta `.oc-live-encuesta
+  .oc-live-explicacion` pasa a `theme.css` (siempre cargado): oculta en pantalla y en el PDF también con
+  `LIVE.activa = false` (servicio `npm test`, `npm run test:navegador`: Live, Build Tech y
+  `pdf-privacidad-navegador`). Hotfix mínimo del acierto para v0.1, preparado y sin desplegar:
+  `services/openclass-live/hotfix/`.
 
 ## [1.1.0] — sin publicar
 

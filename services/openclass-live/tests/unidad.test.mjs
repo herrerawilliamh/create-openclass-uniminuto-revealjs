@@ -9,7 +9,10 @@ import { crearLimitador } from '../src/limites.mjs';
 
 const reloj = () => { let t = Date.parse('2026-10-24T08:00:00-05:00'); return { ahora: () => t, avanzar: (ms) => { t += ms; } }; };
 const nuevo = (opciones = {}) => { const r = reloj(); return { r, a: crearAlmacen({ ttlMin: 60, maxParticipantes: 5, maxSalas: 3, ahora: r.ahora, ...opciones }) }; };
-const encuesta = (extra = {}) => V.definicionEncuesta({ enunciado: '¿Qué imprime console.log(typeof null)?', tipo: 'unica', opciones: ['null', 'object', 'undefined'], correctas: [1], explicacion: 'Herencia histórica:\n```js\ntypeof null // "object"\n```', ...extra });
+const encuesta = (extra = {}) => V.definicionEncuesta({ enunciado: '¿Qué imprime console.log(typeof null)?', tipo: 'unica', opciones: ['null', 'object', 'undefined'], ...extra });
+// La solución nunca forma parte de la encuesta: la conserva quien la creó y solo viaja al revelar.
+const SOLUCION = { correctas: [1], explicacion: 'Herencia histórica:\n```js\ntypeof null // "object"\n```' };
+const solucion = (e, a, salaId, valor = SOLUCION) => V.solucion(valor, a.encuestaDocente(salaId, e.id));
 
 test('flujo Freeman: ronda 1 → cerrar → resultados → ronda 2 → comparar → revelar', () => {
   const { a } = nuevo();
@@ -23,7 +26,7 @@ test('flujo Freeman: ronda 1 → cerrar → resultados → ronda 2 → comparar 
   assert.equal(vista.correctas, undefined, 'la respuesta correcta no viaja antes de revelarla');
   assert.equal(vista.explicacion, undefined);
   assert.equal(vista.rondas, undefined, 'sin resultados para estudiantes mientras no se publiquen');
-  assert.throws(() => a.revelarCorrecta(sala.id, e.id), ErrorSala, 'no se revela con la votación abierta');
+  assert.throws(() => a.revelarCorrecta(sala.id, e.id, solucion(e, a, sala.id)), ErrorSala, 'no se revela con la votación abierta');
 
   a.responder(sala.id, p1.pid, { encuestaId: e.id, ronda: 1, seleccion: [0] });
   a.responder(sala.id, p2.pid, { encuestaId: e.id, ronda: 1, seleccion: [0] });
@@ -32,7 +35,8 @@ test('flujo Freeman: ronda 1 → cerrar → resultados → ronda 2 → comparar 
   let r1 = a.encuestaDocente(sala.id, e.id).rondas[0];
   assert.deepEqual(r1.conteos, [1, 1, 1]);
   assert.equal(r1.respondientes, 3);
-  assert.equal(r1.porcentajeCorrecto, 33.3);
+  assert.equal(r1.porcentajeCorrecto, undefined, 'el servidor no conoce la correcta: no hay acierto antes de revelar');
+  assert.equal(a.encuestaDocente(sala.id, e.id).correctas, undefined, 'ni siquiera en la vista docente');
 
   a.cerrarEncuesta(sala.id, e.id);
   assert.throws(() => a.responder(sala.id, p1.pid, { encuestaId: e.id, ronda: 1, seleccion: [1] }), /cerrada/);
@@ -47,14 +51,17 @@ test('flujo Freeman: ronda 1 → cerrar → resultados → ronda 2 → comparar 
   a.cerrarEncuesta(sala.id, e.id);
   const doc = a.encuestaDocente(sala.id, e.id);
   assert.equal(doc.rondas.length, 2);
-  assert.equal(doc.rondas[1].porcentajeCorrecto, 100);
+  assert.equal(doc.rondas[1].porcentajeCorrecto, undefined);
   assert.throws(() => a.segundaRonda(sala.id, e.id), /dos rondas/);
+  a.publicarResultados(sala.id, e.id);
 
-  a.revelarCorrecta(sala.id, e.id);
+  a.revelarCorrecta(sala.id, e.id, solucion(e, a, sala.id));
   const fin = a.estadoParticipante(sala.id, p1.pid).encuesta;
   assert.deepEqual(fin.correctas, [1]);
   assert.match(fin.explicacion, /typeof null/);
   assert.equal(fin.rondas.length, 2);
+  assert.deepEqual(fin.rondas.map((x) => x.porcentajeCorrecto), [33.3, 100], 'el acierto aparece tras revelar');
+  assert.equal(a.encuestaDocente(sala.id, e.id).rondas[1].porcentajeCorrecto, 100);
 });
 
 test('temporizador global: 30 s por omisión, cierre único sin publicar, preferencia para rondas futuras, +30 s y sin límite', () => {
@@ -119,7 +126,7 @@ test('solo una votación abierta a la vez y selección múltiple', () => {
   const s = a.crearSala();
   const p = a.unir(s.codigo, {});
   const e1 = a.crearEncuesta(s.id, encuesta());
-  const e2 = a.crearEncuesta(s.id, V.definicionEncuesta({ enunciado: 'Elija lenguajes tipados', tipo: 'multiple', opciones: ['TS', 'JS', 'Rust'], correctas: [0, 2] }));
+  const e2 = a.crearEncuesta(s.id, V.definicionEncuesta({ enunciado: 'Elija lenguajes tipados', tipo: 'multiple', opciones: ['TS', 'JS', 'Rust'] }));
   a.abrirEncuesta(s.id, e1.id);
   assert.throws(() => a.abrirEncuesta(s.id, e2.id), /Cierre primero/);
   a.cerrarEncuesta(s.id, e1.id);
@@ -129,7 +136,9 @@ test('solo una votación abierta a la vez y selección múltiple', () => {
   assert.throws(() => V.respuesta({ encuestaId: e2.id, ronda: 1, seleccion: [0, 0] }, def), V.ErrorValidacion);
   assert.throws(() => V.respuesta({ encuestaId: e2.id, ronda: 1, seleccion: [9] }, def), V.ErrorValidacion);
   a.responder(s.id, p.pid, V.respuesta({ encuestaId: e2.id, ronda: 1, seleccion: [2, 0] }, def));
-  assert.equal(a.encuestaDocente(s.id, e2.id).rondas[0].porcentajeCorrecto, 100);
+  a.cerrarEncuesta(s.id, e2.id);
+  a.revelarCorrecta(s.id, e2.id, V.solucion({ correctas: [0, 2] }, def));
+  assert.equal(a.encuestaDocente(s.id, e2.id).rondas[0].porcentajeCorrecto, 100, 'múltiple: acierto exacto tras revelar');
   assert.throws(() => V.respuesta({ encuestaId: e1.id, ronda: 1, seleccion: [0, 1] }, a.encuestaDocente(s.id, e1.id)), /exactamente una/);
 });
 
@@ -214,13 +223,79 @@ test('validación: campos desconocidos, tamaños y caracteres de control', () =>
   assert.throws(() => V.definicionEncuesta({ enunciado: 'Hola mundo', opciones: ['a', 'b'], markdown: '# Diapositivas' }), /no admitido «markdown»/);
   assert.throws(() => V.definicionEncuesta({ enunciado: 'Hola mundo', opciones: ['a'] }), /entre 2 y 8/);
   assert.throws(() => V.definicionEncuesta({ enunciado: 'x'.repeat(501), opciones: ['a', 'b'] }), /supera 500/);
-  assert.throws(() => V.definicionEncuesta({ enunciado: 'Hola mundo', opciones: ['a', 'b'], correctas: [0, 1], tipo: 'unica' }), /una sola/);
+  assert.throws(() => V.solucion({ correctas: [0, 1] }, { tipo: 'unica', opciones: ['a', 'b'] }), /una sola/);
   assert.equal(V.limpiarTexto('a\u0000b‮c  d', { max: 10, campo: 't' }), 'abc d');
   assert.equal(V.limpiarTexto('l1\r\nl2\n\n\n\nl3', { max: 50, campo: 't', multilinea: true }), 'l1\nl2\n\nl3');
   assert.throws(() => V.codigoSala('ABC0EF'), /inválido/, 'alfabeto sin 0/O/1/I/L');
   assert.equal(V.codigoSala('abcdef'), 'ABCDEF');
   assert.throws(() => V.union({ codigo: 'ABCDEF', rol: 'docente' }), /no admitido «rol»/);
   assert.throws(() => V.id('../../etc'), /inválido/);
+});
+
+test('soluciones privadas: la encuesta se crea sin solución y la revelación es explícita, validada, única y de la activa', () => {
+  // La carga de creación con solución se rechaza entera (no se descarta en silencio).
+  for (const privado of [{ correctas: [1] }, { explicacion: 'x' }, { correctas: [] }]) {
+    assert.throws(() => V.definicionEncuesta({ enunciado: 'Hola mundo', opciones: ['a', 'b'], ...privado }), /se transmite solo al revelar/);
+  }
+  const def = { tipo: 'unica', opciones: ['a', 'b', 'c'] };
+  assert.throws(() => V.solucion({ correctas: [3] }, def), /índice inválido/);
+  assert.throws(() => V.solucion({}, def), /correcta o una explicación/);
+  assert.throws(() => V.solucion({ correctas: [0], extra: 1 }, def), /no admitido «extra»/);
+  assert.deepEqual(V.solucion({ explicacion: 'Solo explicación' }, def), { correctas: [], explicacion: 'Solo explicación' });
+
+  const { a } = nuevo();
+  const s = a.crearSala();
+  const p = a.unir(s.codigo, {});
+  const e = a.crearEncuesta(s.id, encuesta());
+  const otra = a.crearEncuesta(s.id, encuesta({ enunciado: 'Otra pregunta' }));
+  assert.equal('correctas' in e || 'explicacion' in e, false, 'el acuse de creación no trae solución');
+  a.abrirEncuesta(s.id, e.id);
+  a.responder(s.id, p.pid, { encuestaId: e.id, ronda: 1, seleccion: [1] });
+  a.cerrarEncuesta(s.id, e.id);
+  assert.throws(() => a.revelarCorrecta(s.id, otra.id, solucion(otra, a, s.id)), (x) => x.codigo === 'no_activa', 'no se revela otra encuesta');
+  assert.throws(() => a.revelarCorrecta(s.id, e.id, { correctas: [], explicacion: '' }), (x) => x.codigo === 'sin_correcta');
+  a.revelarCorrecta(s.id, e.id, solucion(e, a, s.id));
+  assert.throws(() => a.revelarCorrecta(s.id, e.id, solucion(e, a, s.id, { correctas: [0] })), (x) => x.codigo === 'ya_revelada', 'sin duplicados ni reescrituras');
+  assert.deepEqual(a.encuestaDocente(s.id, e.id).correctas, [1], 'la primera revelación prevalece');
+
+  // Retirada de las pantallas: ya no es la activa, no se puede revelar.
+  const e3 = a.crearEncuesta(s.id, encuesta({ enunciado: 'Tercera pregunta' }));
+  a.abrirEncuesta(s.id, e3.id);
+  a.cerrarEncuesta(s.id, e3.id);
+  a.retirarEncuesta(s.id);
+  assert.throws(() => a.revelarCorrecta(s.id, e3.id, solucion(e3, a, s.id)), (x) => x.codigo === 'no_activa', 'nada se revela tras retirarla');
+  assert.equal(a.encuestaDocente(s.id, e3.id).correctaRevelada, false);
+});
+
+test('sonda Codex: respuesta B, resultados publicados, sin revelar → ningún campo identifica la correcta', () => {
+  const { a } = nuevo();
+  const s = a.crearSala();
+  const p = a.unir(s.codigo, {});
+  const p2 = a.unir(s.codigo, {});
+  const e = a.crearEncuesta(s.id, encuesta());
+  a.abrirEncuesta(s.id, e.id);
+  a.responder(s.id, p.pid, { encuestaId: e.id, ronda: 1, seleccion: [1] }); // B
+  a.responder(s.id, p2.pid, { encuestaId: e.id, ronda: 1, seleccion: [0] });
+  a.cerrarEncuesta(s.id, e.id);
+  a.publicarResultados(s.id, e.id);
+  const prohibidos = /porcentajeCorrecto|correctas|explicacion|acierto/;
+  for (const salida of [a.estadoParticipante(s.id, p.pid), a.estadoParticipante(s.id, p2.pid), a.estadoDocente(s.id), a.historial(s.id)]) {
+    const json = JSON.stringify(salida);
+    assert.doesNotMatch(json, prohibidos, `sin rastro de la solución: ${json.slice(0, 120)}`);
+  }
+  const v = a.estadoParticipante(s.id, p.pid).encuesta;
+  assert.equal(v.correctaRevelada, false);
+  assert.deepEqual(Object.keys(v.rondas[0]).sort(), ['cierre', 'conteos', 'estado', 'numero', 'porcentajes', 'respondientes'], 'lista blanca de la ronda publicada');
+  // Segunda ronda: los resultados vuelven a ocultarse hasta publicarlos de nuevo.
+  a.segundaRonda(s.id, e.id);
+  assert.equal(a.estadoParticipante(s.id, p.pid).encuesta.rondas, undefined);
+  a.cerrarEncuesta(s.id, e.id);
+  assert.equal(a.estadoParticipante(s.id, p.pid).encuesta.rondas, undefined, 'cerrar no publica');
+  // Revelar sin publicar: correcta y explicación sí, distribución no.
+  a.revelarCorrecta(s.id, e.id, solucion(e, a, s.id));
+  const rev = a.estadoParticipante(s.id, p.pid).encuesta;
+  assert.deepEqual(rev.correctas, [1]);
+  assert.equal(rev.rondas, undefined, 'la distribución exige publicación explícita');
 });
 
 test('auth: scrypt, tokens firmados con tipo y vencimiento, sesiones revocables', () => {

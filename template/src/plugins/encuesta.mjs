@@ -1,7 +1,8 @@
 /**
  * Encuesta de una diapositiva (`.oc-live-encuesta`), única fuente de autoría. La usan OpenClass Live
- * (carga mínima que sale del computador al abrir la votación) y Build Tech (solución privada del
- * docente, que nunca sale del computador). Sin dependencias ni estilos: se importa aunque Live esté apagado.
+ * (carga pública que sale del computador al abrir la votación; la solución sale solo al revelarla) y
+ * Build Tech (solución privada del docente). Sin dependencias: se importa aunque Live esté apagado.
+ * Las reglas que ocultan `.oc-live-explicacion` en pantalla y en el PDF están en theme.css (siempre cargado).
  *
  *   <div class="oc-live-encuesta" data-tipo="unica" data-correctas="B">
  *     <p class="oc-live-enunciado">¿…?</p>
@@ -24,8 +25,8 @@ export function textoDe(nodo) {
 }
 
 /**
- * Construye la carga mínima de una encuesta a partir de su elemento. Es la ÚNICA información de la
- * presentación que sale del computador del docente, y solo al abrir la votación.
+ * Lee la encuesta completa de su elemento, solución incluida (correctas y explicación). Esta lectura
+ * NUNCA se envía tal cual: `separarSolucion()` decide qué sale y cuándo.
  */
 export function extraerEncuesta(elemento) {
   const enunciadoNodo = elemento.querySelector('.oc-live-enunciado');
@@ -47,4 +48,13 @@ export function extraerEncuesta(elemento) {
     correctas: [...new Set(correctas)],
     ...(explicacion ? { explicacion } : {}),
   };
+}
+
+/**
+ * Separa la carga pública (enunciado, código, tipo y opciones: lo único que sale del computador al
+ * abrir la votación) de la solución, que se queda aquí hasta que el docente pulsa «Revelar».
+ * `solucion` es null si la diapositiva no define correcta ni explicación.
+ */
+export function separarSolucion({ correctas = [], explicacion = '', ...publica }) {
+  return { publica, solucion: correctas.length || explicacion ? { correctas, explicacion } : null };
 }

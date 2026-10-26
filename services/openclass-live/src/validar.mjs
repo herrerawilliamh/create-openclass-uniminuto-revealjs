@@ -68,24 +68,36 @@ export function codigoSala(valor) {
   return c;
 }
 
+/**
+ * Encuesta al crearla: SOLO enunciado, código, tipo y opciones. La solución (correctas y explicación)
+ * se queda en la presentación o en el navegador que la creó y viaja únicamente con `encuesta:revelar`.
+ */
 export function definicionEncuesta(valor) {
-  const v = objeto(valor, ['enunciado', 'codigo', 'tipo', 'opciones', 'correctas', 'explicacion'], 'encuesta');
+  for (const privado of ['correctas', 'explicacion']) {
+    if (valor && typeof valor === 'object' && Object.hasOwn(valor, privado)) falla(`encuesta: «${privado}» no se envía al crear; se transmite solo al revelar`);
+  }
+  const v = objeto(valor, ['enunciado', 'codigo', 'tipo', 'opciones'], 'encuesta');
   const tipo = v.tipo ?? 'unica';
   if (tipo !== 'unica' && tipo !== 'multiple') falla('encuesta: tipo debe ser «unica» o «multiple»');
   if (!Array.isArray(v.opciones) || v.opciones.length < LIMITES.opcionesMin || v.opciones.length > LIMITES.opcionesMax) {
     falla(`encuesta: entre ${LIMITES.opcionesMin} y ${LIMITES.opcionesMax} opciones`);
   }
-  const opciones = v.opciones.map((o, i) => limpiarTexto(o, { max: LIMITES.opcion, min: 1, campo: `opción ${i + 1}` }));
-  const correctas = v.correctas === undefined || v.correctas === null ? [] : indices(v.correctas, opciones.length, 'correctas');
-  if (tipo === 'unica' && correctas.length > 1) falla('encuesta: una pregunta de selección única admite una sola respuesta correcta');
   return {
     enunciado: limpiarTexto(v.enunciado, { max: LIMITES.enunciado, min: 3, campo: 'enunciado', multilinea: true }),
     codigo: v.codigo ? limpiarTexto(v.codigo, { max: LIMITES.codigo, campo: 'código', multilinea: true }) : '',
     tipo,
-    opciones,
-    correctas,
-    explicacion: v.explicacion ? limpiarTexto(v.explicacion, { max: LIMITES.explicacion, campo: 'explicación', multilinea: true }) : '',
+    opciones: v.opciones.map((o, i) => limpiarTexto(o, { max: LIMITES.opcion, min: 1, campo: `opción ${i + 1}` })),
   };
+}
+
+/** Solución enviada al revelar, validada contra la encuesta que se revela (opciones y tipo). */
+export function solucion(valor, encuesta) {
+  const v = objeto(valor, ['correctas', 'explicacion'], 'solución');
+  const correctas = v.correctas === undefined || v.correctas === null ? [] : indices(v.correctas, encuesta.opciones.length, 'correctas');
+  if (encuesta.tipo === 'unica' && correctas.length > 1) falla('solución: una pregunta de selección única admite una sola respuesta correcta');
+  const explicacion = v.explicacion ? limpiarTexto(v.explicacion, { max: LIMITES.explicacion, campo: 'explicación', multilinea: true }) : '';
+  if (!correctas.length && !explicacion) falla('solución: indique la respuesta correcta o una explicación');
+  return { correctas, explicacion };
 }
 
 export function respuesta(valor, encuesta) {

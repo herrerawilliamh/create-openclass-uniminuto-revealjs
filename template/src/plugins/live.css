@@ -223,8 +223,7 @@ html:has(.reveal .slides>section.present.oc-l-cover) .oc-live-control:is(:hover,
 }
 .oc-live-etiqueta { font-size: .7em; color: #ffca05; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; }
 
-/* En la diapositiva: opciones con letras (como en los resultados) y explicación oculta hasta revelarla. */
+/* En la diapositiva: opciones con letras (como en los resultados). La explicación se oculta en theme.css, siempre cargado. */
 .reveal .oc-live-encuesta .oc-live-opciones { list-style-type: upper-alpha; }
-.reveal .oc-live-encuesta .oc-live-explicacion { display: none; }
 html.reveal-print .oc-live-control, html.reveal-print .oc-live-menu, html.reveal-print .oc-live-capa, html.reveal-print .oc-live-banda,
 html.reveal-print .oc-live-participa { display: none !important; }

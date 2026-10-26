@@ -11,6 +11,10 @@
  * preferencia solo afecta a las rondas siguientes. El cierre por tiempo ocurre una sola vez y nunca
  * publica resultados ni revela respuestas. Toda lectura de la sala aplica los vencimientos pendientes,
  * así ninguna respuesta tardía entra aunque el temporizador del proceso se retrase.
+ *
+ * Soluciones: el servidor NO conoce la respuesta correcta ni la explicación hasta la revelación
+ * explícita (`revelarCorrecta`), que valida y guarda la solución en una sola operación síncrona. Antes
+ * de ese momento ninguna vista (docente, presentador o estudiante) puede contenerla ni derivarla.
  */
 import { randomBytes, randomInt, createHash } from 'node:crypto';
 import { ALFABETO_CODIGO, DURACION_PREDETERMINADA } from './validar.mjs';
@@ -94,10 +98,11 @@ export function crearAlmacen({ ttlMin, maxParticipantes, maxSalas, ahora = () =>
   }
 
   // ---------- Resultados (calculados siempre aquí, nunca en el navegador) ----------
+  // El acierto solo existe tras revelar: antes el servidor no tiene con qué calcularlo.
   function resumenRonda(e, r) {
     const conteos = e.def.opciones.map(() => 0);
     let correctos = 0;
-    const clave = e.def.correctas.join(',');
+    const clave = e.solucion?.correctas.join(',') ?? '';
     for (const seleccion of r.respuestas.values()) {
       for (const i of seleccion) conteos[i]++;
       if (clave && seleccion.join(',') === clave) correctos++;
@@ -111,8 +116,15 @@ export function crearAlmacen({ ttlMin, maxParticipantes, maxSalas, ahora = () =>
       respondientes: n,
       conteos,
       porcentajes: conteos.map((c) => (n ? Math.round((c / n) * 1000) / 10 : 0)),
-      ...(e.def.correctas.length ? { porcentajeCorrecto: n ? Math.round((correctos / n) * 1000) / 10 : 0 } : {}),
+      ...(clave ? { porcentajeCorrecto: n ? Math.round((correctos / n) * 1000) / 10 : 0 } : {}),
     };
+  }
+
+  /** Resumen para estudiantes: lista blanca de campos; el acierto, solo con la respuesta ya revelada. */
+  function resumenParticipante(e, r) {
+    const { numero, estado, respondientes, conteos, porcentajes, cierre, porcentajeCorrecto } = resumenRonda(e, r);
+    return { numero, estado, respondientes, conteos, porcentajes, ...(cierre ? { cierre } : {}),
+      ...(e.correctaRevelada && porcentajeCorrecto !== undefined ? { porcentajeCorrecto } : {}) };
   }
 
   function estadoEncuesta(e) {
@@ -125,11 +137,15 @@ export function crearAlmacen({ ttlMin, maxParticipantes, maxSalas, ahora = () =>
     return {
       id: e.id, ...e.def, estado: estadoEncuesta(e), ronda: e.rondas.length,
       resultadosPublicados: e.resultadosPublicados, correctaRevelada: e.correctaRevelada,
+      ...(e.correctaRevelada && e.solucion ? { correctas: e.solucion.correctas, explicacion: e.solucion.explicacion } : {}),
       rondas: e.rondas.map((r) => resumenRonda(e, r)),
     };
   }
 
-  /** Lo que recibe un estudiante: sin respuesta correcta ni explicación hasta que el docente las revele. */
+  /**
+   * Lo que recibe un estudiante: sin respuesta correcta, explicación ni acierto hasta que el docente
+   * las revele; la distribución por opciones solo cuando el docente publica los resultados.
+   */
   function vistaEncuestaParticipante(e, pid) {
     const r = e.rondas.length ? rondaActual(e) : null;
     const vista = {
@@ -139,8 +155,8 @@ export function crearAlmacen({ ttlMin, maxParticipantes, maxSalas, ahora = () =>
       miSeleccion: r?.respuestas.get(pid) ?? [],
       resultadosPublicados: e.resultadosPublicados, correctaRevelada: e.correctaRevelada,
     };
-    if (e.resultadosPublicados || e.correctaRevelada) vista.rondas = e.rondas.filter((x) => !x.abierta).map((x) => resumenRonda(e, x));
-    if (e.correctaRevelada) { vista.correctas = e.def.correctas; vista.explicacion = e.def.explicacion; }
+    if (e.resultadosPublicados) vista.rondas = e.rondas.filter((x) => !x.abierta).map((x) => resumenParticipante(e, x));
+    if (e.correctaRevelada && e.solucion) { vista.correctas = e.solucion.correctas; vista.explicacion = e.solucion.explicacion; }
     return vista;
   }
 
@@ -217,7 +233,7 @@ export function crearAlmacen({ ttlMin, maxParticipantes, maxSalas, ahora = () =>
     crearEncuesta(salaId, def) {
       const s = sala(salaId);
       if (s.encuestas.size >= LIMITES_SALA.encuestas) falla('limite_encuestas', 'Se alcanzó el máximo de encuestas de la sesión');
-      const e = { id: nuevoId(9), def, rondas: [], resultadosPublicados: false, correctaRevelada: false, creada: ahora() };
+      const e = { id: nuevoId(9), def, rondas: [], resultadosPublicados: false, correctaRevelada: false, solucion: null, creada: ahora() };
       s.encuestas.set(e.id, e);
       return vistaEncuestaDocente(e);
     },
@@ -273,10 +289,19 @@ export function crearAlmacen({ ttlMin, maxParticipantes, maxSalas, ahora = () =>
       return vistaEncuestaDocente(e);
     },
 
-    revelarCorrecta(salaId, eid) {
-      const e = encuesta(sala(salaId), eid);
+    /**
+     * Revelación explícita y atómica: la solución llega aquí por primera vez (validada por el llamador
+     * contra esta misma encuesta) y solo se acepta para la encuesta activa, con la votación cerrada y una
+     * única vez. Una segunda petición (otro presentador, reintento) falla sin cambiar nada.
+     */
+    revelarCorrecta(salaId, eid, solucion) {
+      const s = sala(salaId);
+      const e = encuesta(s, eid);
+      if (s.activa !== eid) falla('no_activa', 'Solo se revela la pregunta activa en las pantallas');
       if (estadoEncuesta(e) !== 'cerrada') falla('no_cerrada', 'No se revela la respuesta con la votación abierta');
-      if (!e.def.correctas.length && !e.def.explicacion) falla('sin_correcta', 'La encuesta no tiene respuesta correcta ni explicación');
+      if (e.correctaRevelada) falla('ya_revelada', 'La respuesta de esta pregunta ya se reveló');
+      if (!solucion?.correctas?.length && !solucion?.explicacion) falla('sin_correcta', 'La encuesta no tiene respuesta correcta ni explicación');
+      e.solucion = { correctas: [...(solucion.correctas ?? [])], explicacion: solucion.explicacion ?? '' };
       e.correctaRevelada = true;
       return vistaEncuestaDocente(e);
     },

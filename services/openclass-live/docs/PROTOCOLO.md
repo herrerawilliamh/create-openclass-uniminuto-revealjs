@@ -31,7 +31,7 @@ Rechazos (`connect_error.message`): `origen`, `frecuencia`, `validacion`, `sala_
 | Dirección | Evento | Datos | Respuesta / efecto |
 | --- | --- | --- | --- |
 | S→C | `sesion` | `{ token, reconectado, estado }` | Guardar `token` para reconectarse. |
-| S→C | `estado` | vista del participante | `servidor` (ms). Encuesta activa con `cierra` (ronda abierta) y **sin** `correctas` ni `explicacion` hasta revelarlas; `rondas` solo tras publicar resultados. |
+| S→C | `estado` | vista del participante | `servidor` (ms). Encuesta activa con `cierra` (ronda abierta) y **sin** `correctas`, `explicacion` ni `porcentajeCorrecto` hasta revelarlas; `rondas` (lista blanca: `numero`, `estado`, `respondientes`, `conteos`, `porcentajes`, `cierre`) solo tras publicar resultados; `porcentajeCorrecto` solo si además se reveló. |
 | C→S | `estado:solicitar` | `{}` | `{ estado }` |
 | C→S | `encuesta:responder` | `{ encuestaId, ronda, seleccion: [índices] }` | `{ respuesta }`. Reemplaza la respuesta previa de la misma ronda. |
 | C→S | `pregunta:enviar` | `{ texto }` (3–280) | `{ pregunta: { id, estado } }` (`pendiente` con premoderación). |
@@ -59,21 +59,29 @@ Rechazos: `origen`, `frecuencia`, `no_autenticado`, `clave`.
 | `sala:seguir` | `{ salaId }` | ambos | `{ estado, enlace, qr }` |
 | `sala:clave` | `{ salaId }` | docente | `{ clave }` |
 | `sala:revocarClaves` | `{ salaId }` | docente | `{ clave }` nueva; desconecta presentadores. |
-| `encuesta:crear` | `{ salaId, encuesta: { enunciado, codigo?, tipo, opciones, correctas?, explicacion? }, abrir? }` | ambos | `{ encuesta }` |
+| `encuesta:crear` | `{ salaId, encuesta: { enunciado, codigo?, tipo, opciones }, abrir? }` | ambos | `{ encuesta }`. Incluir `correctas` o `explicacion` se rechaza (`validacion`): la solución no viaja al crear. |
 | `encuesta:abrir` | `{ salaId, encuestaId }` | ambos | Abre la ronda 1. Solo una votación abierta por sala. |
 | `encuesta:cerrar` | `{ salaId, encuestaId }` | ambos | «Cerrar ahora»: cierra la ronda actual (`no_abierta` si ya cerró). |
 | `encuesta:extender` | `{ salaId, encuestaId }` | ambos | «+30 segundos» sobre la ronda abierta (`sin_limite` en salas sin límite; máximo 10 min desde ahora). |
 | `sala:ajustar` | `{ salaId, duracionVotacion }` | ambos | Tiempo de votación de la sala para las rondas siguientes. |
 | `encuesta:publicar` | `{ salaId, encuestaId }` | ambos | Los estudiantes ven la distribución (sin la correcta). |
 | `encuesta:segundaRonda` | `{ salaId, encuestaId }` | ambos | Ronda 2 vacía con el tiempo vigente de la sala; no disponible tras revelar. |
-| `encuesta:revelar` | `{ salaId, encuestaId }` | ambos | Con la votación cerrada: correctas + explicación a todos. |
+| `encuesta:revelar` | `{ salaId, encuestaId, solucion: { correctas?, explicacion? } }` | ambos | Única entrada de la solución al servidor. Validada contra esa encuesta (índices, una sola en `unica`, al menos una de las dos) y aplicada en la misma operación síncrona. Errores: `no_activa` (no es la encuesta en pantalla o fue retirada), `no_cerrada`, `ya_revelada` (duplicado o carrera: la primera prevalece), `validacion`. |
 | `encuesta:retirar` | `{ salaId }` | ambos | Quita la encuesta de las pantallas (queda en el historial). |
 | `pregunta:moderar` | `{ salaId, preguntaId, accion }` | ambos | `aprobar`, `ocultar`, `respondida`, `proyectar`, `quitarProyeccion`, `bloquearAutor`. |
 | `preguntas:ajustar` | `{ salaId, abiertas?, preModeracion? }` | ambos | Abrir/cerrar recepción; premoderación. |
 | `sala:finalizar` | `{ salaId }` | docente | Avisa, desconecta y borra todo. |
 | `sala:cerrada` (S→C) | `{ salaId, motivo }` | — | — |
 
-Flujo de aprendizaje activo (Freeman): `crear/abrir` → respuestas individuales → cierre por tiempo o `cerrar` → `publicar` → discusión → `segundaRonda` → cierre → `revelar`. Las vistas incluyen `porcentajeCorrecto` por ronda cuando hay respuesta correcta.
+Flujo de aprendizaje activo (Freeman): `crear/abrir` → respuestas individuales → cierre por tiempo o `cerrar` → `publicar` → discusión → `segundaRonda` → cierre → `revelar`.
+
+Soluciones (v0.2): el servidor no conoce la correcta ni la explicación hasta `encuesta:revelar`. La presentación
+local las conserva en su diapositiva y el panel, para una pregunta improvisada, en la pestaña que la creó
+(`sessionStorage`: sobrevive a recargar, se pierde al cerrar la pestaña). Por eso no hay acierto
+(`porcentajeCorrecto`) antes de revelar, ni siquiera en la vista docente; el panel remoto no puede revelar una
+pregunta de la presentación (indica hacerlo desde «En vivo» o Build Tech). Tras revelar, las vistas incluyen
+`correctas`, `explicacion` y `porcentajeCorrecto` por ronda. Un adaptador v0.1 (que envía la solución al crear)
+no es compatible con este servidor.
 
 ## HTTP
 

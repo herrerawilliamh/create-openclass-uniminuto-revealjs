@@ -1,0 +1,63 @@
+diff --git a/services/openclass-live/src/salas.mjs b/services/openclass-live/src/salas.mjs
+index 2c62060..b3449ae 100644
+--- a/services/openclass-live/src/salas.mjs
++++ b/services/openclass-live/src/salas.mjs
+@@ -98,7 +98,13 @@ export function crearAlmacen({ ttlMin, maxParticipantes, maxSalas, ahora = () =>
+     };
+   }
+ 
+-  /** Lo que recibe un estudiante: sin respuesta correcta ni explicación hasta que el docente las revele. */
++  /** Resumen para estudiantes: el acierto identifica la correcta, así que solo viaja tras revelarla. */
++  function resumenParticipante(e, r) {
++    const { porcentajeCorrecto, ...resumen } = resumenRonda(e, r);
++    return e.correctaRevelada && porcentajeCorrecto !== undefined ? { ...resumen, porcentajeCorrecto } : resumen;
++  }
++
++  /** Lo que recibe un estudiante: sin respuesta correcta, explicación ni acierto hasta que el docente las revele. */
+   function vistaEncuestaParticipante(e, pid) {
+     const r = e.rondas.length ? rondaActual(e) : null;
+     const vista = {
+@@ -107,7 +113,7 @@ export function crearAlmacen({ ttlMin, maxParticipantes, maxSalas, ahora = () =>
+       miSeleccion: r?.respuestas.get(pid) ?? [],
+       resultadosPublicados: e.resultadosPublicados, correctaRevelada: e.correctaRevelada,
+     };
+-    if (e.resultadosPublicados || e.correctaRevelada) vista.rondas = e.rondas.filter((x) => !x.abierta).map((x) => resumenRonda(e, x));
++    if (e.resultadosPublicados || e.correctaRevelada) vista.rondas = e.rondas.filter((x) => !x.abierta).map((x) => resumenParticipante(e, x));
+     if (e.correctaRevelada) { vista.correctas = e.def.correctas; vista.explicacion = e.def.explicacion; }
+     return vista;
+   }
+diff --git a/services/openclass-live/tests/unidad.test.mjs b/services/openclass-live/tests/unidad.test.mjs
+index 9eb582c..1d1e8d0 100644
+--- a/services/openclass-live/tests/unidad.test.mjs
++++ b/services/openclass-live/tests/unidad.test.mjs
+@@ -153,6 +153,30 @@ test('vencimiento y finalización eliminan todos los datos de la sala', () => {
+   assert.throws(() => a.estadoDocente(s2.id), (e) => e.codigo === 'sala_inexistente');
+ });
+ 
++test('sonda: respuesta B, resultados publicados, sin revelar → ningún campo identifica la correcta', () => {
++  const { a } = nuevo();
++  const s = a.crearSala();
++  const p = a.unir(s.codigo, {});
++  const p2 = a.unir(s.codigo, {});
++  const e = a.crearEncuesta(s.id, encuesta());
++  a.abrirEncuesta(s.id, e.id);
++  a.responder(s.id, p.pid, { encuestaId: e.id, ronda: 1, seleccion: [1] }); // B, la correcta
++  a.responder(s.id, p2.pid, { encuestaId: e.id, ronda: 1, seleccion: [0] });
++  a.cerrarEncuesta(s.id, e.id);
++  a.publicarResultados(s.id, e.id);
++  for (const pid of [p.pid, p2.pid]) {
++    const v = a.estadoParticipante(s.id, pid).encuesta;
++    assert.equal(v.correctaRevelada, false);
++    assert.deepEqual(v.rondas[0].conteos, [1, 1, 0], 'la distribución publicada sí llega');
++    assert.doesNotMatch(JSON.stringify(v), /porcentajeCorrecto|correctas|explicacion/, 'sin acierto, correcta ni explicación');
++  }
++  assert.equal(a.encuestaDocente(s.id, e.id).rondas[0].porcentajeCorrecto, 50, 'el docente conserva su acierto privado');
++  a.revelarCorrecta(s.id, e.id);
++  const rev = a.estadoParticipante(s.id, p.pid).encuesta;
++  assert.deepEqual(rev.correctas, [1]);
++  assert.equal(rev.rondas[0].porcentajeCorrecto, 50, 'tras revelar, el acierto se comparte');
++});
++
+ test('validación: campos desconocidos, tamaños y caracteres de control', () => {
+   assert.throws(() => V.definicionEncuesta({ enunciado: 'Hola mundo', opciones: ['a', 'b'], markdown: '# Diapositivas' }), /no admitido «markdown»/);
+   assert.throws(() => V.definicionEncuesta({ enunciado: 'Hola mundo', opciones: ['a'] }), /entre 2 y 8/);

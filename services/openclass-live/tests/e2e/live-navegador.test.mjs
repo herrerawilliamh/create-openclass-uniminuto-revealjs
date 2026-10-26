@@ -190,6 +190,9 @@ test('OpenClass Live en Chrome: una sala para toda la clase, QR integrado y tres
 
   // ---------- Panel docente: UNA sala para toda la clase ----------
   const panel = await nDocente.pagina({ ancho: 1366, alto: 900 });
+  const tramasPanel = [];
+  panel.cdp.oyentes.add((m) => { if (m.sessionId === panel.sessionId && m.method === 'Network.webSocketFrameSent') tramasPanel.push(m.params.response.payloadData); });
+  await panel.send('Network.enable');
   await panel.ir(`${APP}/docente/`);
   await panel.esperarA(`!document.getElementById('vista-login').classList.contains('oculto')`);
   await capturar(panel, '01-panel-acceso');
@@ -491,6 +494,9 @@ test('OpenClass Live en Chrome: una sala para toda la clase, QR integrado y tres
   await deck.esperarA(`window.OpenClassLive.estado().activa.estado === 'cerrada'`);
   await pulsar(deck, 'Mostrar resultados');
   await deck.esperarA(`window.OpenClassLive.momento() === 'resultados'`);
+  // El panel remoto no tiene la solución de una pregunta de la presentación: indica dónde revelarla.
+  await panel.esperarA(`document.getElementById('revelar-en-presentacion') && !document.getElementById('btn-revelar')`);
+  assert.doesNotMatch(await panel.evaluar(`document.getElementById('panel-activa').textContent`), /Solo la encuesta abierta/, 'el panel no ve la explicación antes de revelar');
   await pulsar(deck, 'Revelar explicación');
   await deck.esperarA(`document.querySelectorAll('.oc-live-barra').length === 4 && document.querySelectorAll('.oc-live-barra.correcta').length === 2`);
   await cerrarPanel();
@@ -523,6 +529,38 @@ test('OpenClass Live en Chrome: una sala para toda la clase, QR integrado y tres
   await deck.esperarA(`document.querySelectorAll('.oc-live-barra.correcta').length === 1 && document.querySelector('.oc-live-capa .oc-live-qr-lateral img')?.naturalWidth > 0`);
   for (const p of [A, C]) await p.esperarA(`/Su respuesta fue correcta/.test(document.getElementById('panel-encuesta').textContent)`);
 
+  // ---------- Pregunta improvisada en el panel: la solución vive solo en esa pestaña hasta revelarla ----------
+  const EXPLICACION_PANEL = 'EXPLICACION-PANEL-PRIVADA: la solución se queda en la pestaña.';
+  await panel.evaluar(`(() => { document.getElementById('composer').open = true;
+    document.getElementById('enunciado').value = '¿Pregunta improvisada del panel?';
+    const filas = document.getElementById('opciones').children;
+    filas[0].querySelector('input[type=text]').value = 'Primera'; filas[1].querySelector('input[type=text]').value = 'Segunda';
+    filas[1].querySelector('input[type=checkbox]').checked = true;
+    document.getElementById('explicacion').value = ${JSON.stringify(EXPLICACION_PANEL)};
+    document.getElementById('form-encuesta').requestSubmit(); })()`);
+  for (const p of [A, B]) await opciones(p, 2);
+  await responder(A, [1]);
+  await responder(B, [0]);
+  await panel.esperarA(`document.getElementById('m-respuestas')?.textContent === '2'`);
+  await panel.evaluar(`document.getElementById('btn-cerrar').click()`);
+  await panel.esperarA(`document.getElementById('btn-publicar')`);
+  await panel.evaluar(`document.getElementById('btn-publicar').click()`);
+  await panel.esperarA(`document.getElementById('btn-revelar')`);
+  assert.ok(!tramasPanel.join('\n').includes('EXPLICACION-PANEL'), 'la explicación del panel no salió antes de revelar');
+  assert.ok(!/"correctas"/.test(tramasPanel.join('\n')), 'ni la correcta');
+  assert.doesNotMatch(await A.evaluar(`document.getElementById('panel-encuesta').textContent`), /Respuesta correcta|fue correcta|Explicación|EXPLICACION-PANEL/, 'el estudiante no la intuye por los resultados publicados');
+  // Recargar la pestaña conserva la solución (sessionStorage de la pestaña).
+  await panel.evaluar(`location.reload()`);
+  await panel.esperarA(`document.getElementById('btn-revelar')`);
+  await panel.evaluar(`window.confirm = () => true; window.alert = () => {};`); // la recarga quitó los sustitutos del arnés
+  await panel.evaluar(`document.getElementById('btn-revelar').click()`);
+  await A.esperarA(`/Su respuesta fue correcta/.test(document.getElementById('panel-encuesta').textContent) && /EXPLICACION-PANEL-PRIVADA/.test(document.getElementById('panel-encuesta').textContent)`);
+  await B.esperarA(`/Respuesta correcta: B/.test(document.getElementById('panel-encuesta').textContent)`);
+  const revPanel = tramasPanel.filter((x) => x.includes('"encuesta:revelar"')).map((x) => JSON.parse(x.replace(/^42(?:\/[^,[]*,)?\d*/, '')));
+  assert.equal(revPanel.length, 1, 'una sola revelación desde el panel');
+  assert.deepEqual(revPanel[0][1].solucion, { correctas: [1], explicacion: EXPLICACION_PANEL });
+  assert.equal(await panel.evaluar(`sessionStorage.getItem('openclass-live:soluciones')`), '{}', 'tras revelar, la copia local se descarta');
+
   // ---------- Pregunta abierta: moderada antes de llegar a la pantalla compartida ----------
   await B.evaluar(`document.getElementById('tab-preguntas').click(); document.getElementById('texto-pregunta').value = '<b>¿</b>Se puede usar join con varias salas?'; document.getElementById('form-pregunta').requestSubmit();`);
   await B.esperarA(`/docente la apruebe/.test(document.getElementById('aviso-pregunta').textContent)`);
@@ -549,12 +587,21 @@ test('OpenClass Live en Chrome: una sala para toda la clase, QR integrado y tres
   // Formato de trama: 42/docente,<ack>[evento, datos]. Cada pregunta sale UNA vez, tal como está en el Markdown.
   const creadas = salientes.map((x) => JSON.parse(x.replace(/^42(?:\/[^,[]*,)?\d*/, ''))).filter(([ev]) => ev === 'encuesta:crear');
   assert.equal(creadas.length, 3, 'una creación por pregunta');
-  for (const [, datos] of creadas.slice(0, 2)) assert.deepEqual(Object.keys(datos.encuesta).sort(), ['correctas', 'enunciado', 'explicacion', 'opciones', 'tipo']);
+  // Al abrir la votación salen solo enunciado, código, tipo y opciones: la solución se queda en el computador.
+  for (const [, datos] of creadas.slice(0, 2)) assert.deepEqual(Object.keys(datos.encuesta).sort(), ['enunciado', 'opciones', 'tipo']);
   assert.deepEqual(creadas[0][1].encuesta.opciones, ['socket.enter()', 'socket.join()', 'io.attach()']);
-  assert.deepEqual(creadas[0][1].encuesta.correctas, [1]);
-  assert.deepEqual(creadas[1][1].encuesta.correctas, [0, 2]);
   assert.equal(creadas[1][1].encuesta.tipo, 'multiple');
-  assert.deepEqual(creadas[2][1].encuesta, { enunciado: '¿Qué imprime este programa?', codigo: 'console.log((7 / 2) | 0);', tipo: 'unica', opciones: ['3.5', '4', '3'], correctas: [2], explicacion: 'El operador | convierte a entero de 32 bits y descarta la parte decimal: 3.' });
+  assert.deepEqual(creadas[2][1].encuesta, { enunciado: '¿Qué imprime este programa?', codigo: 'console.log((7 / 2) | 0);', tipo: 'unica', opciones: ['3.5', '4', '3'] });
+  // La solución sale UNA vez por pregunta, con «Revelar explicación», y nunca antes.
+  const reveladas = salientes.map((x, i) => [i, x]).filter(([, x]) => x.includes('"encuesta:revelar"'))
+    .map(([i, x]) => [i, JSON.parse(x.replace(/^42(?:\/[^,[]*,)?\d*/, ''))[1]]);
+  assert.equal(reveladas.length, 3, 'una revelación por pregunta');
+  for (const [, d] of reveladas) assert.deepEqual(Object.keys(d).sort(), ['encuestaId', 'salaId', 'solucion']);
+  assert.deepEqual(reveladas.map(([, d]) => d.solucion.correctas), [[1], [0, 2], [2]]);
+  assert.match(reveladas[0][1].solucion.explicacion, /socket\.join agrega/);
+  for (const [i, d] of reveladas) {
+    assert.ok(!salientes.slice(0, i).some((x) => x.includes(d.solucion.explicacion.slice(0, 30))), 'la explicación no salió antes de su revelación');
+  }
   assert.ok(creadas.every(([, d]) => d.salaId === creadas[0][1].salaId), 'las tres preguntas en la misma sala');
   const recursos = peticiones.filter((p) => p.url.startsWith(APP)).map((p) => new URL(p.url).pathname);
   assert.ok(recursos.every((r) => r.startsWith('/socket.io/') || /^\/qr\/[A-Z2-9]{6}\.svg$/.test(r)), `solo cliente Socket.IO y QR: ${[...new Set(recursos)].join(', ')}`);

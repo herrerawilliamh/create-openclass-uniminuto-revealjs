@@ -4,7 +4,9 @@
  * La presentación sigue en el computador del docente; los estudiantes NO la cargan. El adaptador:
  * - no hace ninguna petición al servidor hasta que el docente pulsa «Conectar» con su clave de presentador;
  * - envía SOLO la encuesta de la diapositiva actual cuando el docente la abre expresamente
- *   (enunciado, código, tipo, opciones, correctas y explicación; nunca el Markdown, notas ni imágenes);
+ *   (enunciado, código, tipo y opciones; nunca el Markdown, notas ni imágenes);
+ * - conserva la solución (correctas y explicación) en este computador y la envía únicamente al pulsar
+ *   «Revelar explicación», con la votación ya cerrada (`encuesta:revelar`);
  * - muestra en la pantalla compartida el QR, los resultados y la pregunta que el docente proyecte;
  * - nunca recibe órdenes de navegación: ningún participante controla las diapositivas.
  *
@@ -31,7 +33,7 @@
  * Atajos: tecla L abre o cierra el menú «En vivo»; tecla Q amplía o reduce el QR de la sala; Esc cierra el menú.
  */
 import './live.css';
-import { extraerEncuesta } from './encuesta.mjs';
+import { extraerEncuesta, separarSolucion } from './encuesta.mjs';
 
 export { extraerEncuesta };
 
@@ -188,6 +190,21 @@ export function OpenClassLive({ servidor }) {
     const previa = [...(estado?.historial ?? [])].reverse().find((h) => firmaEncuesta(h) === f) ?? null;
     return { nodo, datos, previa };
   }
+  /**
+   * Solución local de una encuesta del servidor: la de su diapositiva en este mazo (o null). El servidor
+   * no la conoce hasta revelarla; una improvisada del panel guarda la suya en el navegador del panel.
+   */
+  function solucionLocal(enc) {
+    if (!enc) return null;
+    const f = firmaEncuesta(enc);
+    for (const s of deck?.getSlides() ?? []) {
+      for (const n of s.querySelectorAll('.oc-live-encuesta')) {
+        const datos = extraerEncuesta(n);
+        if (firmaEncuesta(datos) === f) return separarSolucion(datos).solucion;
+      }
+    }
+    return null;
+  }
   /** Las encuestas improvisadas del panel no tienen diapositiva: sus resultados se ven en cualquiera. */
   function esDelMazo(enc) {
     if (!enMazo.has(enc.id)) {
@@ -284,7 +301,7 @@ export function OpenClassLive({ servidor }) {
     if (!aqui) return;
     const r = aqui.previa && !aqui.previa.rondas.length
       ? await emitir('encuesta:abrir', { salaId: sala.id, encuestaId: aqui.previa.id })
-      : await emitir('encuesta:crear', { salaId: sala.id, encuesta: aqui.datos, abrir: true });
+      : await emitir('encuesta:crear', { salaId: sala.id, encuesta: separarSolucion(aqui.datos).publica, abrir: true });
     if (!r.ok) return mensaje(r.mensaje, 'error');
     enMazo.set(r.encuesta.id, true);
     vista.qr = false; vista.resultados = false;
@@ -304,7 +321,18 @@ export function OpenClassLive({ servidor }) {
   const extender = accion('encuesta:extender');
   const mostrarResultados = accion('encuesta:publicar', { tras: () => { vista.resultados = true; vista.qr = false; } });
   const segundaRonda = accion('encuesta:segundaRonda', { tras: () => { vista.resultados = false; } });
-  const revelar = accion('encuesta:revelar', { tras: () => { vista.resultados = true; vista.qr = false; } });
+  /** La solución sale de este computador solo aquí; el servidor la valida y la revela una sola vez. */
+  async function revelar() {
+    const activa = estado?.activa;
+    if (!activa || activa.correctaRevelada) return;
+    const solucion = solucionLocal(activa);
+    if (!solucion) return mensaje(esDelMazo(activa) ? 'Esta pregunta no tiene respuesta correcta ni explicación en su diapositiva.' : 'Esta pregunta se creó en el panel docente: su solución está en ese navegador. Revélela desde el panel.', 'error');
+    const r = await emitir('encuesta:revelar', { salaId: sala.id, encuestaId: activa.id, solucion });
+    if (!r.ok && r.error !== 'ya_revelada') return mensaje(r.mensaje, 'error');
+    vista.resultados = true; vista.qr = false;
+    mensaje('');
+    pintar();
+  }
 
   async function cambiarDuracion(segundos) {
     if (segundos === duracion()) return;
@@ -389,12 +417,14 @@ export function OpenClassLive({ servidor }) {
         break;
       case 'resultados': {
         const puedeRepetir = m.activa.ronda === 1;
-        const puedeRevelar = m.activa.correctas.length || m.activa.explicacion;
+        const puedeRevelar = Boolean(solucionLocal(m.activa));
+        const enPanel = !puedeRevelar && !esDelMazo(m.activa);
         agregar(el('p', { clase: 'oc-live-m-titulo', texto: m.activa.ronda === 2 ? 'Resultados de las dos rondas' : 'Resultados en pantalla' }),
           el('div', { clase: 'oc-live-fila' },
             puedeRepetir ? boton('Discutir y repetir', segundaRonda, { primario: true, foco: 'repetir', ayuda: 'Los estudiantes discuten en parejas y votan de nuevo' }) : null,
             puedeRevelar ? boton('Revelar explicación', revelar, { primario: !puedeRepetir, foco: 'revelar', ayuda: 'Muestra la respuesta correcta y la explicación a todos' }) : null),
           ayudaTexto(puedeRepetir ? `«Discutir y repetir» abre una segunda ronda de ${textoDuracion(duracion())} tras conversar en parejas.${puedeRevelar ? ' «Revelar explicación» cierra la pregunta.' : ''}` : puedeRevelar ? 'Compare las dos rondas y revele la explicación.' : 'Listo: avance a la siguiente diapositiva.'),
+          enPanel ? ayudaTexto('Pregunta improvisada: su solución está en el navegador del panel docente; revélela desde allí.') : null,
           boton(vista.resultados ? 'Quitar de la pantalla' : 'Volver a mostrar', () => alternarVista('resultados'), { foco: 'pantalla', 'aria-pressed': String(vista.resultados) }));
         break;
       }
@@ -533,7 +563,7 @@ export function OpenClassLive({ servidor }) {
     }
     // Actualización en el sitio: las barras se deslizan (transición CSS) en lugar de rehacerse con cada voto.
     if (modo === 'resultados' || modo === 'tendencias') {
-      const correctas = activa.correctaRevelada ? activa.correctas : [];
+      const correctas = activa.correctaRevelada ? activa.correctas ?? [] : [];
       const titulo = capa.querySelector('.oc-live-resultados > .oc-live-titulo');
       if (modo === 'tendencias') {
         titulo.replaceChildren('Tendencia en vivo · ', r?.cierra ? el('span', { 'data-oc-cierra': String(r.cierra), texto: formatoTiempo(restante(r.cierra)) }) : 'sin límite', ` · ${r?.respondientes ?? 0} respuestas`);
@@ -704,7 +734,7 @@ export function OpenClassLive({ servidor }) {
         respondientes: ultimaRonda(aqui.previa)?.respondientes ?? 0 } : null,
       activa: a ? { id: a.id, enunciado: a.enunciado, opciones: a.opciones, tipo: a.tipo, estado: a.estado, ronda: a.ronda,
         resultadosPublicados: a.resultadosPublicados, correctaRevelada: a.correctaRevelada, delMazo: esDelMazo(a),
-        puedeRevelar: Boolean(a.correctas?.length || a.explicacion), rondas: a.rondas.map(ronda) } : null,
+        puedeRevelar: !a.correctaRevelada && Boolean(solucionLocal(a)), rondas: a.rondas.map(ronda) } : null,
       vista: { tendencias: vista.tendencias, resultados: vista.resultados, qr: vista.qr, diapositivas: vista.diapositivas },
       preguntas: (estado?.preguntas ?? []).map((q) => ({ id: q.id, texto: q.texto, estado: q.estado, votos: q.votos, proyectada: Boolean(q.proyectada) })),
       mensaje: textoMensaje.texto ? { ...textoMensaje } : null,
