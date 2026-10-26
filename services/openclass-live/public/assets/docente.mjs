@@ -19,9 +19,10 @@ const cuenta = crearCuenta();
 const DURACIONES = [15, 30, 60, 90];
 
 // Solución de las preguntas improvisadas aquí: vive SOLO en esta pestaña (memoria + sessionStorage,
-// que sobrevive a recargar la misma pestaña) y viaja únicamente con «Revelar». Cada entrada recuerda su
-// sala: se descarta al revelar, al cerrar sesión, al finalizar o vencer la sala y cuando el servidor ya
-// no la lista. Las preguntas de la presentación guardan su solución en el computador del docente.
+// que sobrevive a recargar la misma pestaña en la misma sala) y viaja únicamente con «Revelar». Cada
+// entrada recuerda su sala: se descarta al revelar, al cerrar o vencer la sesión, al volver a «Salas» o
+// entrar en otra sala, al finalizar o vencer la sala y cuando el servidor ya no la lista. Las preguntas
+// de la presentación guardan su solución en el computador del docente.
 // Límite: sessionStorage NO es un secreto frente a JavaScript del mismo origen (el panel solo carga sus
 // propios módulos: CSP 'self', COOP same-origin, enlaces noopener) ni frente a «restaurar pestañas» o
 // duplicar la pestaña, que copian su sessionStorage hasta que la limpieza anterior se ejecute.
@@ -56,7 +57,10 @@ function mostrar(vista) {
 }
 function aviso(id, texto, tipo = '') { const n = $(id); n.textContent = texto ?? ''; n.className = `aviso ${tipo}${texto ? '' : ' oculto'}`; }
 const emitir = (evento, datos = {}) => new Promise((resolve) => {
-  socket.timeout(10_000).emit(evento, datos, (err, r) => resolve(err ? { ok: false, mensaje: 'Sin respuesta del servidor' } : r));
+  socket.timeout(10_000).emit(evento, datos, (err, r) => {
+    if (r?.error === 'no_autenticado') terminarSesion(); // vencida o revocada: el servidor cierra después del acuse
+    resolve(err ? { ok: false, mensaje: 'Sin respuesta del servidor' } : r);
+  });
 });
 
 // ---------------- Sesión HTTP ----------------
@@ -69,9 +73,20 @@ async function api(ruta, cuerpo) {
   return { estado: r.status, datos: await r.json().catch(() => ({})) };
 }
 
+/**
+ * Sesión terminada (salir, vencida o rechazada): primero se limpia todo lo privado de esta pestaña
+ * (memoria, la clave propia de sessionStorage y el formulario) y solo después aparece el acceso.
+ */
+function terminarSesion() {
+  socket?.disconnect();
+  socket = null; csrf = '';
+  dejarSala();
+  mostrar('vista-login');
+}
+
 async function iniciar() {
   const { datos } = await api('/api/docente/sesion');
-  if (datos.autenticado) { csrf = datos.csrf; conectar(); } else mostrar('vista-login');
+  if (datos.autenticado) { csrf = datos.csrf; conectar(); } else terminarSesion();
 }
 
 $('form-login').addEventListener('submit', async (ev) => {
@@ -85,14 +100,9 @@ $('form-login').addEventListener('submit', async (ev) => {
 });
 
 $('btn-salir').addEventListener('click', async () => {
+  if (!descartarBorrador()) return;
   await api('/api/docente/logout', {});
-  socket?.disconnect();
-  socket = null; salaId = ''; csrf = ''; firmaActiva = '';
-  olvidarSoluciones();
-  reiniciarComposer(); // también los campos privados a medio escribir (correctas, explicación)
-  $('panel-activa').replaceChildren();
-  history.replaceState(null, '', '/docente/');
-  mostrar('vista-login');
+  terminarSesion();
 });
 
 // ---------------- Socket ----------------
@@ -102,23 +112,21 @@ function conectar() {
   socket.on('connect', () => { $('conexion').textContent = 'Conectado'; $('conexion').classList.remove('offline'); });
   socket.on('disconnect', () => { $('conexion').textContent = 'Reconectando…'; $('conexion').classList.add('offline'); });
   socket.on('connect_error', (e) => {
-    if (e.message === 'no_autenticado') { socket.disconnect(); olvidarSoluciones(); reiniciarComposer(); mostrar('vista-login'); }
+    if (e.message === 'no_autenticado') terminarSesion();
   });
   socket.on('sesion', ({ salas }) => {
     soloSalas(salas); // salas finalizadas o vencidas mientras la pestaña estaba cerrada o sin conexión
     const deRuta = /#sala=([A-Za-z0-9_-]+)/.exec(location.hash)?.[1];
     if (deRuta && salas.some((s) => s.id === deRuta)) seguir(deRuta);
     else if (salaId && salas.some((s) => s.id === salaId)) seguir(salaId);
-    else { salaId = ''; pintarSalas(salas); }
+    else { dejarSala(); pintarSalas(salas); }
   });
   socket.on('estado', (e) => { if (e.sala.id === salaId) pintar(e); });
   socket.io.on('reconnect_attempt', () => { $('conexion').textContent = 'Sin conexión: reintentando…'; $('conexion').classList.add('offline'); });
   socket.on('sala:cerrada', ({ salaId: id, motivo }) => {
     olvidarSoluciones((s) => s !== id);
     if (id !== salaId) return;
-    salaId = ''; firmaActiva = '';
-    reiniciarComposer();
-    history.replaceState(null, '', '/docente/');
+    dejarSala();
     listar().then(() => aviso('aviso-salas', motivo === 'vencida' ? 'La sala venció y sus datos se eliminaron.' : 'Sesión finalizada. Los datos se eliminaron del servidor.', 'ok'));
   });
 }
@@ -153,7 +161,11 @@ $('form-sala').addEventListener('submit', async (ev) => {
 
 async function seguir(id) {
   const r = await emitir('sala:seguir', { salaId: id });
-  if (!r.ok) { history.replaceState(null, '', '/docente/'); return listar(); }
+  if (!r.ok) { dejarSala(); return listar(); }
+  // Otra sala: nada del formulario ni de las soluciones de la anterior. La misma (recarga o
+  // reconexión) conserva su solución y el borrador.
+  if (id !== salaId) reiniciarComposer();
+  olvidarSoluciones((s) => s === id);
   salaId = id;
   history.replaceState(null, '', `/docente/#sala=${id}`);
   $('enlace').href = r.enlace;
@@ -380,6 +392,25 @@ function reiniciarComposer() {
   $('opciones').replaceChildren(...[0, 1, 2, 3].map(() => filaOpcion()));
   renombrar();
 }
+/** Pregunta improvisada a medio escribir (texto, código, opciones, correctas marcadas o explicación). */
+function hayBorrador() {
+  return ['enunciado', 'codigo', 'explicacion'].some((id) => $(id).value.trim())
+    || [...$('opciones').querySelectorAll('input')].some((i) => (i.type === 'checkbox' ? i.checked : i.value.trim()));
+}
+const descartarBorrador = () => !hayBorrador()
+  || confirm('Hay una pregunta improvisada sin guardar. ¿Descartarla? Se borrarán su texto, las correctas marcadas y la explicación.');
+
+/**
+ * Abandonar la sala actual: sus soluciones privadas (memoria y sessionStorage), la tarjeta activa y el
+ * formulario improvisado no pasan a la lista de salas ni a otra sala.
+ */
+function dejarSala() {
+  salaId = ''; firmaActiva = ''; estado = null;
+  olvidarSoluciones();
+  reiniciarComposer();
+  $('panel-activa').replaceChildren();
+  history.replaceState(null, '', '/docente/');
+}
 $('btn-mas').addEventListener('click', () => { if ($('opciones').children.length < 8) { $('opciones').append(filaOpcion()); renombrar(); } });
 
 function leerComposer() {
@@ -408,7 +439,7 @@ $('form-encuesta').addEventListener('submit', (ev) => { ev.preventDefault(); gua
 $('btn-guardar').addEventListener('click', () => guardarEncuesta(false));
 
 // ---------------- Acciones de sala ----------------
-$('btn-volver').addEventListener('click', () => { salaId = ''; firmaActiva = ''; history.replaceState(null, '', '/docente/'); listar(); });
+$('btn-volver').addEventListener('click', () => { if (descartarBorrador()) { dejarSala(); listar(); } });
 $('btn-copiar').addEventListener('click', () => navigator.clipboard?.writeText($('enlace').textContent));
 $('btn-clave').addEventListener('click', async () => {
   const r = await emitir('sala:clave', { salaId });

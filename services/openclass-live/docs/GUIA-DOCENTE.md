@@ -87,7 +87,7 @@ En el Markdown de la semana:
 - Al iniciar la votación salen de su computador **solo** el enunciado, el código y las opciones; la respuesta correcta y la explicación se quedan en él hasta que pulse **Revelar explicación**. El resto de la presentación, las notas y las imágenes nunca salen.
 - No hay que indicar el tiempo: todas las preguntas usan el tiempo de la sesión (30 s por omisión).
 
-Para una pregunta que surja en clase: en el panel, **Crear pregunta improvisada** (plegado por omisión). La correcta y la explicación que marque ahí se guardan solo en esa pestaña del navegador (sobreviven a recargarla; se pierden si la cierra antes de revelar) y se revelan desde el mismo panel.
+Para una pregunta que surja en clase: en el panel, **Crear pregunta improvisada** (plegado por omisión). La correcta y la explicación que marque ahí se guardan solo en esa pestaña del navegador (sobreviven a recargarla mientras siga en la misma sala; se pierden si la cierra, vuelve a «Otras salas», cierra sesión o la sesión vence antes de revelar; si deja a medio escribir una pregunta improvisada, el panel pide confirmación antes de descartarla) y se revelan desde el mismo panel.
 
 ## 6. Votar
 

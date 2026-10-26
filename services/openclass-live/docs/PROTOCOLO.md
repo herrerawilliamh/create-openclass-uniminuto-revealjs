@@ -94,8 +94,12 @@ Flujo de aprendizaje activo (Freeman): `crear/abrir` → respuestas individuales
 Soluciones (v0.2): el servidor no conoce la correcta ni la explicación hasta `encuesta:revelar`. La presentación
 local las conserva en su diapositiva y el panel, para una pregunta improvisada, en la pestaña que la creó
 (`sessionStorage` clave `openclass-live:soluciones`, cada entrada con su `salaId`: sobrevive a recargar la misma
-pestaña y se borra al revelar, al cerrar sesión, al finalizar o vencer la sala y cuando `sesion`/`sala:listar`
-ya no listan esa sala; solo se elimina esa clave, nunca `sessionStorage.clear()`). `sessionStorage` no es un
+pestaña en la misma sala y se borra, de memoria y de almacenamiento, al revelar, al cerrar sesión, cuando la sesión
+docente vence o se rechaza (HTTP `autenticado:false`, `connect_error 'no_autenticado'` o un acuse
+`no_autenticado`, antes de mostrar el acceso), al volver a «Salas» o entrar en otra sala, al finalizar o vencer la
+sala y cuando `sesion`/`sala:listar` ya no listan esa sala; solo se elimina esa clave, nunca
+`sessionStorage.clear()`). Una pregunta improvisada a medio escribir pide confirmación antes de descartarse al
+volver a «Salas» o cerrar sesión. `sessionStorage` no es un
 secreto: lo lee cualquier JavaScript del mismo origen (el panel solo carga sus módulos: CSP `'self'`, COOP
 `same-origin`, enlaces `noopener`) y «restaurar pestañas» o duplicar la pestaña lo copian. Por eso no hay acierto
 (`porcentajeCorrecto`) antes de revelar, ni siquiera en la vista docente; el panel remoto no puede revelar una
