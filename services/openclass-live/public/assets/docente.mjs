@@ -19,14 +19,36 @@ const cuenta = crearCuenta();
 const DURACIONES = [15, 30, 60, 90];
 
 // Solución de las preguntas improvisadas aquí: vive SOLO en esta pestaña (memoria + sessionStorage,
-// que sobrevive a recargar pero se borra al cerrar la pestaña) y viaja únicamente con «Revelar».
-// Las preguntas de la presentación guardan su solución en el computador del docente: este panel no la conoce.
+// que sobrevive a recargar la misma pestaña) y viaja únicamente con «Revelar». Cada entrada recuerda su
+// sala: se descarta al revelar, al cerrar sesión, al finalizar o vencer la sala y cuando el servidor ya
+// no la lista. Las preguntas de la presentación guardan su solución en el computador del docente.
+// Límite: sessionStorage NO es un secreto frente a JavaScript del mismo origen (el panel solo carga sus
+// propios módulos: CSP 'self', COOP same-origin, enlaces noopener) ni frente a «restaurar pestañas» o
+// duplicar la pestaña, que copian su sessionStorage hasta que la limpieza anterior se ejecute.
 const CLAVE_SOLUCIONES = 'openclass-live:soluciones';
-const soluciones = new Map((() => { try { return Object.entries(JSON.parse(sessionStorage.getItem(CLAVE_SOLUCIONES) ?? '{}')); } catch { return []; } })());
-function recordarSolucion(id, solucion) {
-  if (solucion) soluciones.set(id, solucion); else soluciones.delete(id);
-  try { sessionStorage.setItem(CLAVE_SOLUCIONES, JSON.stringify(Object.fromEntries(soluciones))); } catch { /* solo en memoria */ }
+const soluciones = new Map((() => {
+  try {
+    return Object.entries(JSON.parse(sessionStorage.getItem(CLAVE_SOLUCIONES) ?? '{}'))
+      .filter(([, s]) => typeof s?.salaId === 'string' && Array.isArray(s.correctas));
+  } catch { return []; }
+})());
+function guardarSoluciones() {
+  try {
+    if (soluciones.size) sessionStorage.setItem(CLAVE_SOLUCIONES, JSON.stringify(Object.fromEntries(soluciones)));
+    else sessionStorage.removeItem(CLAVE_SOLUCIONES); // solo la clave propia, nunca sessionStorage.clear()
+  } catch { /* solo en memoria */ }
 }
+function recordarSolucion(id, solucion) {
+  if (solucion) soluciones.set(id, { salaId, ...solucion }); else soluciones.delete(id);
+  guardarSoluciones();
+}
+/** Descarta las soluciones que no cumplan `conservar(salaIdDeLaSolucion)` (sin argumento: todas). */
+function olvidarSoluciones(conservar = () => false) {
+  for (const [id, s] of soluciones) if (!conservar(s.salaId)) soluciones.delete(id);
+  guardarSoluciones();
+}
+const soloSalas = (salas) => olvidarSoluciones((id) => salas.some((s) => s.id === id));
+guardarSoluciones(); // reescribe sin entradas inválidas o de un formato anterior
 
 function mostrar(vista) {
   for (const id of ['vista-login', 'vista-salas', 'vista-sala']) $(id).classList.toggle('oculto', id !== vista);
@@ -65,7 +87,10 @@ $('form-login').addEventListener('submit', async (ev) => {
 $('btn-salir').addEventListener('click', async () => {
   await api('/api/docente/logout', {});
   socket?.disconnect();
-  socket = null; salaId = ''; csrf = '';
+  socket = null; salaId = ''; csrf = ''; firmaActiva = '';
+  olvidarSoluciones();
+  reiniciarComposer(); // también los campos privados a medio escribir (correctas, explicación)
+  $('panel-activa').replaceChildren();
   history.replaceState(null, '', '/docente/');
   mostrar('vista-login');
 });
@@ -77,9 +102,10 @@ function conectar() {
   socket.on('connect', () => { $('conexion').textContent = 'Conectado'; $('conexion').classList.remove('offline'); });
   socket.on('disconnect', () => { $('conexion').textContent = 'Reconectando…'; $('conexion').classList.add('offline'); });
   socket.on('connect_error', (e) => {
-    if (e.message === 'no_autenticado') { socket.disconnect(); mostrar('vista-login'); }
+    if (e.message === 'no_autenticado') { socket.disconnect(); olvidarSoluciones(); reiniciarComposer(); mostrar('vista-login'); }
   });
   socket.on('sesion', ({ salas }) => {
+    soloSalas(salas); // salas finalizadas o vencidas mientras la pestaña estaba cerrada o sin conexión
     const deRuta = /#sala=([A-Za-z0-9_-]+)/.exec(location.hash)?.[1];
     if (deRuta && salas.some((s) => s.id === deRuta)) seguir(deRuta);
     else if (salaId && salas.some((s) => s.id === salaId)) seguir(salaId);
@@ -88,8 +114,10 @@ function conectar() {
   socket.on('estado', (e) => { if (e.sala.id === salaId) pintar(e); });
   socket.io.on('reconnect_attempt', () => { $('conexion').textContent = 'Sin conexión: reintentando…'; $('conexion').classList.add('offline'); });
   socket.on('sala:cerrada', ({ salaId: id, motivo }) => {
+    olvidarSoluciones((s) => s !== id);
     if (id !== salaId) return;
-    salaId = '';
+    salaId = ''; firmaActiva = '';
+    reiniciarComposer();
     history.replaceState(null, '', '/docente/');
     listar().then(() => aviso('aviso-salas', motivo === 'vencida' ? 'La sala venció y sus datos se eliminaron.' : 'Sesión finalizada. Los datos se eliminaron del servidor.', 'ok'));
   });
@@ -97,7 +125,7 @@ function conectar() {
 
 async function listar() {
   const r = await emitir('sala:listar');
-  if (r.ok) pintarSalas(r.salas);
+  if (r.ok) { soloSalas(r.salas); pintarSalas(r.salas); }
 }
 
 function pintarSalas(salas) {
@@ -253,8 +281,8 @@ function pintarActiva(enc, sala) {
 }
 
 /** La solución sale de esta pestaña solo aquí, con la votación ya cerrada; el servidor la valida y la revela de una vez. */
-async function revelar(encuestaId, solucion) {
-  const r = await emitir('encuesta:revelar', { salaId, encuestaId, solucion });
+async function revelar(encuestaId, { correctas, explicacion }) {
+  const r = await emitir('encuesta:revelar', { salaId, encuestaId, solucion: { correctas, explicacion } });
   if (!r.ok && r.error !== 'ya_revelada') return avisoSala(r.mensaje, 'error');
   recordarSolucion(encuestaId, null);
   avisoSala('');

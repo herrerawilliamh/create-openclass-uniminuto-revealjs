@@ -46,13 +46,29 @@ No existen eventos de navegación ni de control docente en este espacio.
 Handshake, dos modos:
 
 - **Panel:** cookie `oclive_docente` (HttpOnly, firmada) obtenida con `POST /api/docente/login`; origen = `APP_URL`.
-- **Presentador** (adaptador Reveal.js local): `auth: { clave }`, clave firmada ligada a **una** sala y a su versión; origen ∈ `PRESENTER_ORIGINS` o `APP_URL`.
+- **Presentador** (adaptador Reveal.js local): `auth: { clave, protocolo: 2, capacidades: ['soluciones-privadas', 'temporizador-sala'] }`, clave firmada ligada a **una** sala y a su versión; origen ∈ `PRESENTER_ORIGINS` o `APP_URL`.
 
-Rechazos: `origen`, `frecuencia`, `no_autenticado`, `clave`.
+Rechazos: `origen`, `frecuencia`, `no_autenticado`, `protocolo`, `clave`.
+
+### Negociación de versión (v0.2)
+
+- El adaptador declara `protocolo` y `capacidades` en el handshake; el servicio los comprueba **después del
+  origen y antes de la clave** (`src/protocolo.mjs`). Un adaptador v0.1 (`auth: { clave }`), otra versión o
+  capacidades incompletas → `connect_error` `protocolo` con `data: { protocolo: { version, capacidades } }`
+  (solo eso: ni la validez de la clave ni datos de la sala) y registro `presentador_incompatible`. No llega
+  a crear encuestas ni a enviar soluciones. El adaptador v0.1 muestra su mensaje genérico «No se pudo
+  conectar con OpenClass Live»: no se puede cambiar sin actualizarlo.
+- `sesion` incluye `protocolo: { version: 2, capacidades }` para ambos roles. El adaptador v0.2
+  (`template/src/plugins/protocolo-live.mjs`) exige la misma versión y capacidades; ante un servicio sin
+  versión (v0.1) o distinto, corta la conexión sin reintentar, no recuerda la clave, bloquea todas las
+  acciones (también las de Build Tech) y muestra «La presentación y OpenClass Live utilizan versiones
+  diferentes. Actualice el servicio OpenClass Live.» (o «…la presentación…» si el servicio es más nuevo).
+- Orden de despliegue: primero el servicio v0.2 y después `live.mjs` + `protocolo-live.mjs` en el curso. No
+  hay modo de compatibilidad: el v0.1 enviaba la solución al crear la encuesta.
 
 | Evento | Datos | Rol | Respuesta |
 | --- | --- | --- | --- |
-| `sesion` (S→C) | `{ rol, salas }` o `{ rol: 'presentador', salaId, estado }` | — | — |
+| `sesion` (S→C) | `{ rol, protocolo, salas }` o `{ rol: 'presentador', protocolo, salaId, estado }` | — | — |
 | `estado` (S→C) | estado docente de la sala seguida | — | `servidor` (ms), sala (con `duracionVotacion`), encuesta activa con rondas (`conteos`, `porcentajes`, `respondientes`, `cierra`, `cierre`), historial, preguntas (todas), proyectada. |
 | `sala:crear` | `{ titulo?, preModeracion? }` | docente | `{ sala, enlace, qr, clave }` |
 | `sala:listar` | `{}` | docente | `{ salas }` |
@@ -77,7 +93,11 @@ Flujo de aprendizaje activo (Freeman): `crear/abrir` → respuestas individuales
 
 Soluciones (v0.2): el servidor no conoce la correcta ni la explicación hasta `encuesta:revelar`. La presentación
 local las conserva en su diapositiva y el panel, para una pregunta improvisada, en la pestaña que la creó
-(`sessionStorage`: sobrevive a recargar, se pierde al cerrar la pestaña). Por eso no hay acierto
+(`sessionStorage` clave `openclass-live:soluciones`, cada entrada con su `salaId`: sobrevive a recargar la misma
+pestaña y se borra al revelar, al cerrar sesión, al finalizar o vencer la sala y cuando `sesion`/`sala:listar`
+ya no listan esa sala; solo se elimina esa clave, nunca `sessionStorage.clear()`). `sessionStorage` no es un
+secreto: lo lee cualquier JavaScript del mismo origen (el panel solo carga sus módulos: CSP `'self'`, COOP
+`same-origin`, enlaces `noopener`) y «restaurar pestañas» o duplicar la pestaña lo copian. Por eso no hay acierto
 (`porcentajeCorrecto`) antes de revelar, ni siquiera en la vista docente; el panel remoto no puede revelar una
 pregunta de la presentación (indica hacerlo desde «En vivo» o Build Tech). Tras revelar, las vistas incluyen
 `correctas`, `explicacion` y `porcentajeCorrecto` por ronda. Un adaptador v0.1 (que envía la solución al crear)

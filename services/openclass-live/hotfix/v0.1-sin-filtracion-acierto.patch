@@ -5,7 +5,7 @@ index 2c62060..b3449ae 100644
 @@ -98,7 +98,13 @@ export function crearAlmacen({ ttlMin, maxParticipantes, maxSalas, ahora = () =>
      };
    }
- 
+
 -  /** Lo que recibe un estudiante: sin respuesta correcta ni explicación hasta que el docente las revele. */
 +  /** Resumen para estudiantes: el acierto identifica la correcta, así que solo viaja tras revelarla. */
 +  function resumenParticipante(e, r) {
@@ -33,7 +33,7 @@ index 9eb582c..1d1e8d0 100644
 @@ -153,6 +153,30 @@ test('vencimiento y finalización eliminan todos los datos de la sala', () => {
    assert.throws(() => a.estadoDocente(s2.id), (e) => e.codigo === 'sala_inexistente');
  });
- 
+
 +test('sonda: respuesta B, resultados publicados, sin revelar → ningún campo identifica la correcta', () => {
 +  const { a } = nuevo();
 +  const s = a.crearSala();

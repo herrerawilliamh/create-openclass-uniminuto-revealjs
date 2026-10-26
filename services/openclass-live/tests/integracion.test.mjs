@@ -5,7 +5,7 @@
  */
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { iniciar, evento, rechazo, pedir, esperar, PRESENTADOR } from './ayuda.mjs';
+import { iniciar, evento, rechazo, pedir, esperar, PRESENTADOR, V2 } from './ayuda.mjs';
 
 const ENCUESTA = {
   enunciado: '¿Qué estructura usa un servidor Socket.IO para agrupar sockets?',
@@ -177,7 +177,7 @@ test('revelación: ninguna ruta (difusión, acuses, historial, reconexión, regi
   const fuera = evento(pres, 'disconnect');
   await pedir(doc, 'sala:revocarClaves', { salaId: sala.id });
   await fuera;
-  assert.equal(await rechazo(srv.conectar('/docente', { origen: PRESENTADOR, auth: { clave } })), 'clave');
+  assert.equal(await rechazo(srv.conectar('/docente', { origen: PRESENTADOR, auth: { clave, ...V2 } })), 'clave');
   assert.equal(srv.app.almacen.encuestaDocente(sala.id, e3.id).correctaRevelada, false);
 });
 
@@ -328,7 +328,7 @@ test('autorización: un estudiante no ejecuta eventos docentes ni entra al espac
 
   // Sin cookie, con token de estudiante o con cookie inventada: rechazado.
   assert.equal(await rechazo(srv.conectar('/docente')), 'no_autenticado');
-  assert.equal(await rechazo(srv.conectar('/docente', { auth: { clave: a.sesion.token } })), 'clave');
+  assert.equal(await rechazo(srv.conectar('/docente', { auth: { clave: a.sesion.token, ...V2 } })), 'clave');
   assert.equal(await rechazo(srv.conectar('/docente', { cabeceras: { cookie: 'oclive_docente=abc.def' } })), 'no_autenticado');
 });
 
@@ -343,16 +343,53 @@ test('clave de presentador: limitada a su sala, sin operaciones de panel, revoca
   for (const ev of ['sala:crear', 'sala:listar', 'sala:clave', 'sala:revocarClaves', 'sala:finalizar']) {
     assert.equal((await pedir(pres, ev, { salaId: sala.id })).error, 'prohibido', ev);
   }
-  await rechazadoPorOrigen(srv.conectar('/docente', { origen: 'https://evil.example', auth: { clave } }));
+  await rechazadoPorOrigen(srv.conectar('/docente', { origen: 'https://evil.example', auth: { clave, ...V2 } }));
   // La cookie del panel no vale desde el origen del presentador (ni desde otro origen).
   assert.equal(await rechazo(srv.conectar('/docente', { origen: PRESENTADOR, cabeceras: { cookie } })), 'origen');
 
   const desconexion = evento(pres, 'disconnect');
   await pedir(doc, 'sala:revocarClaves', { salaId: sala.id });
   await desconexion;
-  assert.equal(await rechazo(srv.conectar('/docente', { origen: PRESENTADOR, auth: { clave } })), 'clave');
+  assert.equal(await rechazo(srv.conectar('/docente', { origen: PRESENTADOR, auth: { clave, ...V2 } })), 'clave');
   const [cuerpo, firma] = clave.split('.');
-  assert.equal(await rechazo(srv.conectar('/docente', { origen: PRESENTADOR, auth: { clave: `${cuerpo}x.${firma}` } })), 'clave');
+  assert.equal(await rechazo(srv.conectar('/docente', { origen: PRESENTADOR, auth: { clave: `${cuerpo}x.${firma}`, ...V2 } })), 'clave');
+});
+
+test('protocolo: el servicio v0.2 rechaza en el handshake a un adaptador v0.1 y lo declara en sesion', async (t) => {
+  const { srv, doc, sala, clave } = await preparar(t);
+  const { PROTOCOLO } = await import('../src/protocolo.mjs');
+  const { PROTOCOLO_LIVE, componenteDesactualizado, textoIncompatible } = await import('../../../template/src/plugins/protocolo-live.mjs');
+  assert.deepEqual(PROTOCOLO_LIVE, PROTOCOLO, 'adaptador de la plantilla y servicio hablan la misma versión');
+
+  // Adaptador v0.1 (solo la clave), versión anterior o capacidades incompletas: fuera antes de entrar.
+  for (const auth of [{ clave }, { clave, protocolo: 1 }, { clave, protocolo: 2 }, { clave, protocolo: 2, capacidades: ['temporizador-sala'] }, { clave, protocolo: '2', capacidades: V2.capacidades }]) {
+    const e = await evento(srv.conectar('/docente', { origen: PRESENTADOR, auth }), 'connect_error');
+    assert.equal(e.message, 'protocolo', JSON.stringify({ ...auth, clave: '…' }));
+    assert.deepEqual(e.data, { protocolo: PROTOCOLO }, 'solo informa la versión esperada');
+  }
+  // También con una clave falsa: no revela si la clave sería válida ni ningún dato de la sala.
+  const falsa = await evento(srv.conectar('/docente', { origen: PRESENTADOR, auth: { clave: 'x.y' } }), 'connect_error');
+  assert.equal(falsa.message, 'protocolo');
+  assert.doesNotMatch(JSON.stringify(falsa.data), new RegExp(`${sala.id}|${sala.codigo}`));
+  assert.equal((await pedir(doc, 'sala:seguir', { salaId: sala.id })).estado.historial.length, 0, 'ninguna encuesta llegó a crearse');
+  assert.ok(srv.lineas.some((l) => l.includes('presentador_incompatible')));
+  assert.ok(!srv.lineas.join('\n').includes(clave), 'el registro no guarda la clave');
+
+  // v0.2 con v0.2: sesion declara versión y capacidades y el adaptador la acepta.
+  const { s: pres, sesion } = await srv.presentador(clave);
+  assert.deepEqual(sesion.protocolo, PROTOCOLO);
+  assert.equal(componenteDesactualizado(sesion.protocolo), null);
+  assert.equal((await pedir(pres, 'encuesta:crear', { salaId: sala.id, encuesta: ENCUESTA, abrir: true })).ok, true);
+  // El panel web (cookie) no cambia y también recibe la versión.
+  const { sesion: panel } = await srv.docente((await srv.login()).cookie);
+  assert.deepEqual(panel.protocolo, PROTOCOLO);
+
+  // Adaptador v0.2 frente a un servicio sin versión (v0.1) o más nuevo: componente a actualizar y mensaje.
+  assert.equal(componenteDesactualizado(undefined), 'servicio');
+  assert.equal(componenteDesactualizado({ version: 2, capacidades: ['temporizador-sala'] }), 'servicio');
+  assert.equal(componenteDesactualizado({ version: 3, capacidades: [...PROTOCOLO.capacidades, 'otra'] }), 'presentacion');
+  assert.equal(textoIncompatible('servicio'), 'La presentación y OpenClass Live utilizan versiones diferentes. Actualice el servicio OpenClass Live.');
+  assert.match(textoIncompatible('presentacion'), /^La presentación y OpenClass Live utilizan versiones diferentes\. Actualice la presentación/);
 });
 
 test('cierre de sesión docente: revoca la cookie para HTTP y Socket.IO; CSRF obligatorio', async (t) => {

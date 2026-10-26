@@ -559,7 +559,7 @@ test('OpenClass Live en Chrome: una sala para toda la clase, QR integrado y tres
   const revPanel = tramasPanel.filter((x) => x.includes('"encuesta:revelar"')).map((x) => JSON.parse(x.replace(/^42(?:\/[^,[]*,)?\d*/, '')));
   assert.equal(revPanel.length, 1, 'una sola revelación desde el panel');
   assert.deepEqual(revPanel[0][1].solucion, { correctas: [1], explicacion: EXPLICACION_PANEL });
-  assert.equal(await panel.evaluar(`sessionStorage.getItem('openclass-live:soluciones')`), '{}', 'tras revelar, la copia local se descarta');
+  assert.equal(await panel.evaluar(`sessionStorage.getItem('openclass-live:soluciones')`), null, 'tras revelar, la copia local se descarta');
 
   // ---------- Pregunta abierta: moderada antes de llegar a la pantalla compartida ----------
   await B.evaluar(`document.getElementById('tab-preguntas').click(); document.getElementById('texto-pregunta').value = '<b>¿</b>Se puede usar join con varias salas?'; document.getElementById('form-pregunta').requestSubmit();`);

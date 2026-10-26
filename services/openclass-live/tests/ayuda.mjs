@@ -4,10 +4,13 @@ import { io as cliente } from 'socket.io-client';
 import { crearApp } from '../src/app.mjs';
 import { hashPassword } from '../src/auth.mjs';
 import { leerConfig } from '../src/config.mjs';
+import { PROTOCOLO } from '../src/protocolo.mjs';
 
 export const PASSWORD = 'clave-de-prueba-docente-2026';
 export const ORIGEN = 'http://oclive.test';
 export const PRESENTADOR = 'http://localhost:8613';
+/** Lo que declara un adaptador v0.2 en el handshake (template/src/plugins/live.mjs). */
+export const V2 = { protocolo: PROTOCOLO.version, capacidades: [...PROTOCOLO.capacidades] };
 const HASH = hashPassword(PASSWORD);
 
 export async function iniciar({ env = {}, ahora } = {}) {
@@ -45,7 +48,7 @@ export async function iniciar({ env = {}, ahora } = {}) {
       return { s, sesion };
     },
     async presentador(clave, opciones = {}) {
-      const s = conectar('/docente', { origen: PRESENTADOR, auth: { clave }, ...opciones });
+      const s = conectar('/docente', { origen: PRESENTADOR, auth: { clave, ...V2 }, ...opciones });
       const sesion = await evento(s, 'sesion');
       return { s, sesion };
     },

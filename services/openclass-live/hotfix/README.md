@@ -32,6 +32,10 @@ adaptador de Reveal.js v0.2, por eso no forma parte del hotfix.
   completa pasa con él: `npm test` → 26/26.
 - `git apply --check` limpio sobre `a8b9c29`.
 - Aplicado sobre una copia de `despliegue/openclass-live-0.1.0/` (solo `src/`), el módulo carga.
+- R3 (mismo día): las líneas de contexto vacías ya no llevan el espacio inicial (`git apply` las acepta
+  como contexto vacío), así que `git diff --check` queda limpio sin `--unidiff-zero` ni cambiar el alcance.
+  Sobre `git archive` de `a8b9c29` y de `37c15cd` (mismo `salas.mjs`, blob `2c62060`): `git apply` limpio,
+  suite 25/25 antes y 26/26 después; solo con la prueba del parche (sin la corrección) la sonda falla.
 
 ## Aplicación (cuando se autorice)
 

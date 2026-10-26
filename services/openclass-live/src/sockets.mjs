@@ -17,6 +17,7 @@
 import { Server } from 'socket.io';
 import { sesionDesdeCookie } from './http.mjs';
 import { crearLimitador, ipCliente } from './limites.mjs';
+import { PROTOCOLO, presentadorCompatible } from './protocolo.mjs';
 import { ErrorSala } from './salas.mjs';
 import * as V from './validar.mjs';
 
@@ -192,6 +193,12 @@ export function crearSockets(servidorHttp, { config, almacen, firmador, sesiones
 
     if (auth?.clave) {
       if (!origenAdmitido(headers, [config.appUrl, ...config.origenesPresentador])) return next(new Error('origen'));
+      // Antes de mirar la clave: un adaptador de otra versión no llega a crear encuestas. Solo se
+      // informa la versión y las capacidades que el servicio espera.
+      if (!presentadorCompatible(auth)) {
+        log('presentador_incompatible', { protocolo: Number.isInteger(auth.protocolo) ? auth.protocolo : 1 });
+        return next(Object.assign(new Error('protocolo'), { data: { protocolo: PROTOCOLO } }));
+      }
       const d = firmador.verificar(auth.clave, 'presentador');
       if (!d || !almacen.existe(d.s) || almacen.versionPresentador(d.s) !== d.v) return next(new Error('clave'));
       socket.data = { rol: 'presentador', salaId: d.s, version: d.v };
@@ -237,9 +244,9 @@ export function crearSockets(servidorHttp, { config, almacen, firmador, sesiones
 
     if (rol === 'presentador') {
       socket.join([`doc:${socket.data.salaId}`, `pres:${socket.data.salaId}`]);
-      socket.emit('sesion', { rol, salaId: socket.data.salaId, estado: almacen.estadoDocente(socket.data.salaId) });
+      socket.emit('sesion', { rol, protocolo: PROTOCOLO, salaId: socket.data.salaId, estado: almacen.estadoDocente(socket.data.salaId) });
     } else {
-      socket.emit('sesion', { rol, salas: almacen.listarSalas() });
+      socket.emit('sesion', { rol, protocolo: PROTOCOLO, salas: almacen.listarSalas() });
     }
 
     on('sala:crear', (datos) => {

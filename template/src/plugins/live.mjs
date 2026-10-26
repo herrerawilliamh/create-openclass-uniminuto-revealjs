@@ -34,6 +34,7 @@
  */
 import './live.css';
 import { extraerEncuesta, separarSolucion } from './encuesta.mjs';
+import { PROTOCOLO_LIVE, componenteDesactualizado, textoIncompatible } from './protocolo-live.mjs';
 
 export { extraerEncuesta };
 
@@ -156,6 +157,7 @@ export function OpenClassLive({ servidor }) {
   const base = String(servidor).replace(/\/+$/, '');
   let deck = null;
   let socket = null;
+  let compatible = false; // el servicio confirmó en `sesion` el mismo protocolo (PROTOCOLO_LIVE)
   let estado = null;
   let sala = null; // { id, codigo }
   let conectando = false;
@@ -216,6 +218,8 @@ export function OpenClassLive({ servidor }) {
   const momento = () => momentoDe({ sala, estado, aqui: sala ? encuestaAqui() : null, delMazo: estado?.activa ? esDelMazo(estado.activa) : true });
 
   const emitir = (evento, datos) => new Promise((resolve) => {
+    // Nada sale hacia un servicio cuya versión no se confirmó en `sesion` (p. ej., un backend v0.1).
+    if (!compatible) return resolve({ ok: false, mensaje: textoMensaje.texto || 'Conecte primero la sala con OpenClass Live.' });
     if (!socket?.connected) return resolve({ ok: false, mensaje: 'Sin conexión con OpenClass Live. Revise internet; la presentación reintenta sola.' });
     socket.timeout(10_000).emit(evento, datos, (err, r) => resolve(err ? { ok: false, mensaje: 'El servidor no respondió. Intente de nuevo.' } : r));
   });
@@ -243,9 +247,14 @@ export function OpenClassLive({ servidor }) {
     mensaje('Conectando…');
     try { await cargarCliente(); } catch (e) { conectando = false; return mensaje(e.message, 'error'); }
     socket?.disconnect();
-    socket = window.io(`${base}/docente`, { auth: { clave }, transports: ['websocket', 'polling'], reconnectionDelayMax: 5000 });
-    socket.on('sesion', ({ rol, salaId, estado: e }) => {
+    compatible = false;
+    const auth = { clave, protocolo: PROTOCOLO_LIVE.version, capacidades: [...PROTOCOLO_LIVE.capacidades] };
+    socket = window.io(`${base}/docente`, { auth, transports: ['websocket', 'polling'], reconnectionDelayMax: 5000 });
+    socket.on('sesion', ({ rol, protocolo, salaId, estado: e }) => {
       if (rol !== 'presentador') return;
+      const desactualizado = componenteDesactualizado(protocolo);
+      if (desactualizado) return incompatible(desactualizado);
+      compatible = true;
       guardarClave(clave);
       conectando = false;
       sala = { id: salaId, codigo: e.sala.codigo };
@@ -255,14 +264,25 @@ export function OpenClassLive({ servidor }) {
     socket.on('estado', actualizar);
     socket.on('connect', () => { if (sala) { mensaje(''); pintarControl(); } });
     socket.on('connect_error', (e) => {
+      if (e.message === 'protocolo') return incompatible('presentacion'); // el servicio es más nuevo y nos rechazó
       if (socket.active) { mensaje('Reconectando… La sala y las votaciones siguen en el servidor.', 'alerta'); return pintarControl(); }
       olvidarSala();
       mensaje(e.message === 'clave' ? 'La clave no es válida o venció. En el panel docente pulse «Copiar clave de presentador» y péguela de nuevo.' : 'No se pudo conectar con OpenClass Live. Revise la conexión e intente de nuevo.', 'error');
     });
     socket.on('disconnect', (motivo) => {
+      compatible = false;
       if (motivo === 'io server disconnect') { olvidarSala(); mensaje('El servidor cerró la conexión: la sala finalizó o la clave fue revocada.', 'alerta'); } else pintarControl();
     });
     socket.on('sala:cerrada', () => { olvidarSala(); mensaje('La sala finalizó.', 'alerta'); });
+  }
+
+  /** Versiones distintas: se corta la conexión sin reintentos y la clave no se recuerda. */
+  function incompatible(componente) {
+    compatible = false;
+    socket?.disconnect();
+    socket = null;
+    olvidarSala();
+    mensaje(textoIncompatible(componente), 'error');
   }
 
   function desconectar() {
