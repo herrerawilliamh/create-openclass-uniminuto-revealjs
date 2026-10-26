@@ -7,6 +7,7 @@ import assert from 'node:assert/strict';
 import { PROTOCOLO, VERSION, mensajeDe, sobre, urlVista, validarOrden } from '../template/src/plugins/puente.mjs';
 import { marcadorDe, notasSeguras } from '../template/src/plugins/notas.mjs';
 import { esYoutube, urlYoutubeControlable } from '../template/src/plugins/multimedia.mjs';
+import { firmaEncuesta } from '../template/src/plugins/encuesta.mjs';
 import { configurar, fase, formatoReloj, iniciar, leerTiempo, nuevoTiempo, pausar, reiniciar, restante, transcurrido } from '../template/src/buildtech/tiempo.mjs';
 
 test('puente: solo órdenes explícitas de la lista cerrada, con argumentos acotados', () => {
@@ -90,4 +91,13 @@ test('YouTube: solo los iframes de YouTube se preparan para la API oficial', () 
   assert.equal(u.searchParams.get('origin'), 'http://localhost:5173');
   assert.equal(u.searchParams.get('start'), '10', 'conserva los parámetros del docente');
   assert.equal(urlYoutubeControlable(u.toString(), 'http://localhost:5173'), u.toString(), 'idempotente');
+});
+
+test('encuestas: la identidad incluye el código; el espaciado no la cambia', () => {
+  const base = { enunciado: '¿Qué imprime?', tipo: 'unica', opciones: ['1', '2', 'error'] };
+  const a = firmaEncuesta({ ...base, codigo: 'console.log(1)' });
+  assert.notEqual(a, firmaEncuesta({ ...base, codigo: 'console.log(2)' }), 'mismo enunciado y opciones, distinto código');
+  assert.notEqual(a, firmaEncuesta(base), 'con y sin código');
+  assert.equal(a, firmaEncuesta({ ...base, codigo: 'console.log(1)\n', correctas: [0] }), 'la guardada en el servidor (sin solución) coincide');
+  assert.equal(firmaEncuesta(base), firmaEncuesta({ ...base, codigo: '' }), 'el servidor guarda «sin código» como cadena vacía');
 });

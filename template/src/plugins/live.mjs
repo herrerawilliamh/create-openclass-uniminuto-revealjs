@@ -33,10 +33,10 @@
  * Atajos: tecla L abre o cierra el menú «En vivo»; tecla Q amplía o reduce el QR de la sala; Esc cierra el menú.
  */
 import './live.css';
-import { extraerEncuesta, separarSolucion } from './encuesta.mjs';
+import { extraerEncuesta, firmaEncuesta, separarSolucion } from './encuesta.mjs';
 import { PROTOCOLO_LIVE, componenteDesactualizado, textoIncompatible } from './protocolo-live.mjs';
 
-export { extraerEncuesta };
+export { extraerEncuesta, firmaEncuesta };
 
 const CLAVE_SESION = 'openclass-live:clave';
 const leerClave = () => { try { return sessionStorage.getItem(CLAVE_SESION) ?? ''; } catch { return ''; } };
@@ -118,9 +118,6 @@ function ocupadosEn(seccion, excluir) {
 const ORIENTACION = 'openclass-live:orientacion';
 const orientacionVista = () => { try { return localStorage.getItem(ORIENTACION) === 'vista'; } catch { return false; } };
 const marcarOrientacion = () => { try { localStorage.setItem(ORIENTACION, 'vista'); } catch { /* sin almacenamiento */ } };
-const normal = (t) => String(t ?? '').normalize('NFC').replace(/\s+/g, ' ').trim();
-/** Identidad de una encuesta (la del Markdown y la guardada en el servidor coinciden): sobrevive a recargas. */
-export const firmaEncuesta = (d) => JSON.stringify([normal(d.enunciado), (d.opciones ?? []).map(normal), d.tipo ?? 'unica']);
 export const formatoTiempo = (ms) => { const s = Math.ceil(Math.max(0, ms) / 1000); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; };
 const textoDuracion = (s) => (s ? `${s} s` : 'sin límite');
 const DURACIONES = [15, 30, 60, 90];

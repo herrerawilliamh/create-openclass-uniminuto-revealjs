@@ -142,6 +142,24 @@ test('solo una votación abierta a la vez y selección múltiple', () => {
   assert.throws(() => V.respuesta({ encuestaId: e1.id, ronda: 1, seleccion: [0, 1] }, a.encuestaDocente(s.id, e1.id)), /exactamente una/);
 });
 
+test('segunda ronda: no reemplaza otra votación abierta (controles de otra pestaña)', () => {
+  const { r, a } = nuevo();
+  const s = a.crearSala();
+  const p = a.unir(s.codigo, {});
+  const e1 = a.crearEncuesta(s.id, encuesta());
+  const e2 = a.crearEncuesta(s.id, encuesta({ enunciado: '¿Qué imprime console.log(typeof [])?' }));
+  a.abrirEncuesta(s.id, e1.id);
+  a.cerrarEncuesta(s.id, e1.id);
+  a.abrirEncuesta(s.id, e2.id);
+  assert.throws(() => a.segundaRonda(s.id, e1.id), /Cierre primero/);
+  assert.equal(a.estadoParticipante(s.id, p.pid).encuesta.id, e2.id, 'la votación abierta sigue en pantalla');
+  a.responder(s.id, p.pid, { encuestaId: e2.id, ronda: 1, seleccion: [1] });
+  r.avanzar(31_000);
+  assert.equal(a.encuestaDocente(s.id, e2.id).estado, 'cerrada', 'su temporizador la sigue cerrando');
+  a.segundaRonda(s.id, e1.id);
+  assert.equal(a.encuestaDocente(s.id, e1.id).ronda, 2, 'con la otra cerrada, la segunda ronda procede');
+});
+
 test('reconexión con token: mismo participante, misma respuesta; token ajeno no sirve', () => {
   const { a } = nuevo();
   const s = a.crearSala();

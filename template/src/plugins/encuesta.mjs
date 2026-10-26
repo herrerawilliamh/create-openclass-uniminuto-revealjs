@@ -50,6 +50,13 @@ export function extraerEncuesta(elemento) {
   };
 }
 
+const normal = (t) => String(t ?? '').normalize('NFC').replace(/\s+/g, ' ').trim();
+/**
+ * Identidad de una encuesta (la del Markdown y la guardada en el servidor coinciden): sobrevive a recargas.
+ * Incluye el código: dos «¿Qué imprime?» con las mismas opciones y distinto código son encuestas distintas.
+ */
+export const firmaEncuesta = (d) => JSON.stringify([normal(d.enunciado), normal(d.codigo), (d.opciones ?? []).map(normal), d.tipo ?? 'unica']);
+
 /**
  * Separa la carga pública (enunciado, código, tipo y opciones: lo único que sale del computador al
  * abrir la votación) de la solución, que se queda aquí hasta que el docente pulsa «Revelar».

@@ -309,6 +309,8 @@ export function crearAlmacen({ ttlMin, maxParticipantes, maxSalas, ahora = () =>
     segundaRonda(salaId, eid) {
       const s = sala(salaId);
       const e = encuesta(s, eid);
+      const otra = s.activa && s.activa !== eid ? s.encuestas.get(s.activa) : null;
+      if (otra && estadoEncuesta(otra) === 'abierta') falla('otra_abierta', 'Cierre primero la votación abierta');
       if (estadoEncuesta(e) !== 'cerrada') falla('no_cerrada', 'Cierre la primera ronda antes de repetir');
       if (e.rondas.length >= 2) falla('max_rondas', 'La encuesta ya tuvo dos rondas');
       if (e.correctaRevelada) falla('revelada', 'Ya se reveló la respuesta: una segunda ronda no aportaría evidencia');
