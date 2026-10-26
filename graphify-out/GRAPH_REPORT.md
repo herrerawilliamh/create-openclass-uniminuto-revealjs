@@ -1,17 +1,17 @@
 # Graph Report - create-openclass-uniminuto-revealjs  (2026-10-25)
 
 ## Corpus Check
-- 85 files · ~77,971 words
+- 85 files · ~81,369 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 19 file(s) not represented in the graph (top: (none) 10, .css 6, .example 1)
 
 ## Summary
-- 1092 nodes · 1611 edges · 60 communities (54 shown, 6 thin omitted)
-- Extraction: 98% EXTRACTED · 2% INFERRED · 0% AMBIGUOUS · INFERRED: 34 edges (avg confidence: 0.87)
+- 1114 nodes · 1648 edges · 66 communities (60 shown, 6 thin omitted)
+- Extraction: 98% EXTRACTED · 2% INFERRED · 0% AMBIGUOUS · INFERRED: 40 edges (avg confidence: 0.88)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `e6c7b819`
+- Built from commit: `a8b9c295`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -44,35 +44,41 @@
 - Plantilla semanal para crear una OpenClass con IA
 - publicacion-seguridad.test.mjs
 - Presentacion.jsx
-- ref_node_child_process
+- semana.test.mjs
 - OpenClass Live — guía para la clase
 - Pagina
 - Microactividad interactiva (5–10 minutos)
 - Prompt para crear una semana de OpenClass con IA
 - vite.config.mjs
 - main.jsx
-- index.mjs
+- live.mjs
 - portal-academico.test.mjs
 - publicar
-- steps
+- with
+- ref_node_child_process
 - ref_node_fs
-- navegador.test.mjs
 - http.mjs
 - docente.mjs
 - openclass-live/package.json
 - validar.mjs
 - scripts
-- dependencies
+- environment
 - unidad.test.mjs
-- ref_node_url
+- live-navegador.test.mjs
 - crearAlmacen
 - app.mjs
 - openclass-live
 - index.mjs
-- live-navegador.test.mjs
+- ref_node_url
 - leerConfig
-- semana.test.mjs
-- ref_node_child_process
+- chrome.mjs
+- empaquetar-despliegue.mjs
+- ref_node_assert
+- docker-compose.yml
+- healthcheck
+- dependencies
+- options
+- build
 - autoPaginar.mjs
 
 ## God Nodes (most connected - your core abstractions)
@@ -81,28 +87,28 @@
 3. `scripts` - 16 edges
 4. `crearAlmacen()` - 16 edges
 5. `Contrato técnico de OpenClass para asistentes de IA` - 16 edges
-6. `Guía del docente — Crear OpenClass UNIMINUTO Reveal.js` - 15 edges
-7. `Internet de las cosas` - 14 edges
-8. `abrirNavegador()` - 13 edges
-9. `el()` - 13 edges
-10. `crearManejadorHttp()` - 13 edges
+6. `OpenClassLive()` - 15 edges
+7. `Guía del docente — Crear OpenClass UNIMINUTO Reveal.js` - 15 edges
+8. `Internet de las cosas` - 14 edges
+9. `abrirNavegador()` - 13 edges
+10. `el()` - 13 edges
 
 ## Surprising Connections (you probably didn't know these)
 - `Architecture and key files` --references--> `puedeMover()`  [INFERRED]
   docs/AI-CONTEXT.md → template/src/plugins/codigo.mjs
 - `Architecture and key files` --references--> `cerrar()`  [INFERRED]
   docs/AI-CONTEXT.md → scripts/lib/chrome.mjs
-- `Espacio `/participante` (estudiantes)` --references--> `estado()`  [INFERRED]
-  services/openclass-live/docs/PROTOCOLO.md → template/public/actividades/microactividad/app.js
 - `Espacio `/docente` (panel y presentación local)` --references--> `cerrar()`  [INFERRED]
   services/openclass-live/docs/PROTOCOLO.md → scripts/lib/chrome.mjs
 - `Espacio `/docente` (panel y presentación local)` --references--> `estado()`  [INFERRED]
+  services/openclass-live/docs/PROTOCOLO.md → template/public/actividades/microactividad/app.js
+- `Espacio `/participante` (estudiantes)` --references--> `estado()`  [INFERRED]
   services/openclass-live/docs/PROTOCOLO.md → template/public/actividades/microactividad/app.js
 
 ## Import Cycles
 - None detected.
 
-## Communities (60 total, 6 thin omitted)
+## Communities (66 total, 6 thin omitted)
 
 ### Community 0 - "generar-desde-config.mjs"
 Cohesion: 0.11
@@ -204,33 +210,33 @@ Nodes (8): evidencia(), artefactos, bin, id, listar(), M, root, SOLUCIONARIOS
 Cohesion: 0.20
 Nodes (8): auditarOverflow(), ajustarTextos(), AJUSTES, escribirCurso(), FIJAS, numeroDiapositiva(), Presentacion(), protegerCurso()
 
-### Community 28 - "ref_node_child_process"
-Cohesion: 0.13
-Nodes (10): args, dist, r, raiz, raiz, bin, root, capitulo() (+2 more)
+### Community 28 - "semana.test.mjs"
+Cohesion: 0.19
+Nodes (9): capitulo(), leer(), root, texto(), bin, curso(), readCfg(), root (+1 more)
 
 ### Community 29 - "OpenClass Live — guía para la clase"
 Cohesion: 0.05
-Nodes (36): 10. Cerrar la sesión, 11. Si se pierde la conexión, 1. Iniciar OpenClass en su computador, 2. Entrar al panel docente, 3. Abrir una sala, 4. Mostrar el QR durante Zoom, 5. Preparar una encuesta, 6. Iniciar la votación (+28 more)
+Nodes (36): 10. Cerrar la sesión, 11. Si se pierde la conexión, 1. Iniciar OpenClass en su computador, 2. Entrar al panel docente, 3. Abrir una sala, 4. Una clase = una sala = un QR, 5. Preparar una encuesta, 6. Iniciar la votación (+28 more)
 
 ### Community 31 - "Pagina"
-Cohesion: 0.12
-Nodes (12): cerrar(), Conexion, esperar(), Pagina, Espacio `/docente` (panel y presentación local), Espacio `/participante` (estudiantes), HTTP, OpenClass Live — protocolo Socket.IO (+4 more)
+Cohesion: 0.15
+Nodes (11): cerrar(), esperar(), Pagina, Espacio `/docente` (panel y presentación local), Espacio `/participante` (estudiantes), HTTP, OpenClass Live — protocolo Socket.IO, comprobar() (+3 more)
 
 ### Community 32 - "Microactividad interactiva (5–10 minutos)"
 Cohesion: 0.50
 Nodes (3): Alternativas, Cambiar el tema, Microactividad interactiva (5–10 minutos)
 
 ### Community 35 - "vite.config.mjs"
-Cohesion: 0.09
-Nodes (19): Architecture and key files, Checks and graph maintenance, Distribution decision (2026-10-21, confirmed by the user), Generation routes, Institutional and scope constraints, OpenClass Live (in development, not in the npm package), OpenClass master: minimal AI context, Publication state (2026-10-21) (+11 more)
+Cohesion: 0.10
+Nodes (18): Architecture and key files, Checks and graph maintenance, Distribution decision (2026-10-21, confirmed by the user), Generation routes, Institutional and scope constraints, OpenClass master: minimal AI context, Publication state (2026-10-21), Start here (+10 more)
 
 ### Community 36 - "main.jsx"
 Cohesion: 0.25
 Nodes (7): react, react-dom, el, Portal(), RECORRIDOS, recursos(), slug()
 
-### Community 37 - "index.mjs"
-Cohesion: 0.28
-Nodes (15): el(), extraerEncuesta(), guardarClave(), letra(), OpenClassLive(), abrirEncuestaActual(), actualizar(), alternarPanel() (+7 more)
+### Community 37 - "live.mjs"
+Cohesion: 0.16
+Nodes (26): OpenClass Live (in development, not in the npm package), el(), elegirHueco(), extraerEncuesta(), guardarClave(), HUECOS_CODIGO, HUECOS_QR, letra() (+18 more)
 
 ### Community 38 - "portal-academico.test.mjs"
 Cohesion: 0.16
@@ -240,17 +246,17 @@ Nodes (11): archivos(), config(), construir(), manifiesto, npm(), ok(), root, RU
 Cohesion: 0.05
 Nodes (37): concurrency, cancel-in-progress, group, description, required, type, VERSION, confirmar (+29 more)
 
-### Community 40 - "steps"
+### Community 40 - "with"
 Cohesion: 0.05
 Nodes (44): CHROME_PATH, CONTENIDO, ESPERADO, OPENCLASS_EVIDENCIA, PAGES_BASE, SALIDA, jobs, ligeras (+36 more)
 
-### Community 41 - "ref_node_fs"
-Cohesion: 0.29
-Nodes (4): checks, config, required, short
+### Community 41 - "ref_node_child_process"
+Cohesion: 0.15
+Nodes (8): args, dist, r, raiz, hash, plantilla, raiz, salida
 
-### Community 42 - "navegador.test.mjs"
-Cohesion: 0.33
-Nodes (4): CLASES, esperar(), IDS, irA()
+### Community 42 - "ref_node_fs"
+Cohesion: 0.14
+Nodes (10): capturas, miniaturas, raiz, enviar(), servir(), TIPOS, checks, config (+2 more)
 
 ### Community 43 - "http.mjs"
 Cohesion: 0.16
@@ -272,73 +278,97 @@ Nodes (17): ajustesPreguntas(), CODIGO, codigoSala(), crearSala(), definicionEnc
 Cohesion: 0.15
 Nodes (13): scripts, build:all, config, demo, dev, general, laboratorio, pages:build (+5 more)
 
-### Community 48 - "dependencies"
-Cohesion: 0.22
-Nodes (9): dependencies, chart.js, @fontsource/atkinson-hyperlegible, @fontsource/merriweather-sans, mermaid, react, react-dom, reveal.js (+1 more)
+### Community 48 - "environment"
+Cohesion: 0.15
+Nodes (13): ADMIN_PASSWORD_HASH, APP_URL, MAX_ROOM_PARTICIPANTS, MAX_ROOMS, NODE_ENV, PORT, PRESENTER_ORIGINS, ROOM_TTL_MINUTES (+5 more)
 
 ### Community 49 - "unidad.test.mjs"
-Cohesion: 0.28
+Cohesion: 0.24
 Nodes (4): LIMITES_SALA, ALFABETO_CODIGO, nuevo(), reloj()
 
-### Community 50 - "ref_node_url"
-Cohesion: 0.40
-Nodes (4): destino, fijarDuracion(), largoVint(), raiz
+### Community 50 - "live-navegador.test.mjs"
+Cohesion: 0.25
+Nodes (4): MARCADORES, npm(), prepararCurso(), RAIZ
 
 ### Community 51 - "crearAlmacen"
 Cohesion: 0.29
 Nodes (10): crearAlmacen(), eliminar(), estadoEncuesta(), generarCodigo(), participante(), resumenRonda(), sala(), vistaEncuestaDocente() (+2 more)
 
 ### Community 52 - "app.mjs"
-Cohesion: 0.43
+Cohesion: 0.53
 Nodes (5): crearApp(), PUBLICO, crearFirmador(), crearSesiones(), cargarEstaticos()
 
 ### Community 53 - "openclass-live"
-Cohesion: 0.05
-Nodes (38): context, dockerfile, interval, retries, start_period, test, timeout, driver (+30 more)
+Cohesion: 0.11
+Nodes (18): cap_drop, container_name, cpus, expose, image, init, labels, mem_limit (+10 more)
 
 ### Community 54 - "index.mjs"
 Cohesion: 0.11
 Nodes (16): chart.js, reveal.js, OpenClassCodigo(), puedeMover(), TECLAS, cargarFase2(), FASE2, LIVE (+8 more)
 
-### Community 55 - "live-navegador.test.mjs"
-Cohesion: 0.13
-Nodes (14): capturas, miniaturas, raiz, abrirNavegador(), CANDIDATOS, rutaChrome(), enviar(), servir() (+6 more)
+### Community 55 - "ref_node_url"
+Cohesion: 0.40
+Nodes (4): destino, fijarDuracion(), largoVint(), raiz
 
 ### Community 56 - "leerConfig"
 Cohesion: 0.36
 Nodes (6): crearLog(), entero(), leerConfig(), lista(), app, log
 
-### Community 57 - "semana.test.mjs"
-Cohesion: 0.24
-Nodes (6): leer(), bin, curso(), readCfg(), root, tmp()
+### Community 57 - "chrome.mjs"
+Cohesion: 0.19
+Nodes (8): abrirNavegador(), CANDIDATOS, Conexion, rutaChrome(), CLASES, esperar(), IDS, irA()
 
-### Community 58 - "ref_node_child_process"
-Cohesion: 0.12
-Nodes (13): ARCHIVOS, carpeta, lista, r, raiz, salida, suma, tar (+5 more)
+### Community 58 - "empaquetar-despliegue.mjs"
+Cohesion: 0.20
+Nodes (9): ARCHIVOS, carpeta, lista, r, raiz, salida, suma, tar (+1 more)
 
-### Community 59 - "autoPaginar.mjs"
+### Community 59 - "ref_node_assert"
+Cohesion: 0.21
+Nodes (4): raiz, bin, root, raiz
+
+### Community 60 - "docker-compose.yml"
+Cohesion: 0.33
+Nodes (5): name, networks, web, services, external
+
+### Community 61 - "healthcheck"
+Cohesion: 0.33
+Nodes (6): interval, retries, start_period, test, timeout, healthcheck
+
+### Community 62 - "dependencies"
+Cohesion: 0.22
+Nodes (9): dependencies, chart.js, @fontsource/atkinson-hyperlegible, @fontsource/merriweather-sans, mermaid, react, react-dom, reveal.js (+1 more)
+
+### Community 63 - "options"
+Cohesion: 0.40
+Nodes (5): driver, options, logging, max-file, max-size
+
+### Community 64 - "build"
+Cohesion: 0.67
+Nodes (3): context, dockerfile, build
+
+### Community 65 - "autoPaginar.mjs"
 Cohesion: 0.57
 Nodes (6): coste(), paginarMarkdown(), paginasCodigo(), paginasTexto(), separarDiapositivas(), sinId()
 
 ## Knowledge Gaps
-- **1 isolated node(s):** `mermaid`
-  These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 637 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
+- **548 isolated node(s):** `root`, `template`, `input`, `flags`, `positional` (+543 more)
+  These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 650 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
 - **6 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `cerrar()` connect `Pagina` to `vite.config.mjs`, `live-navegador.test.mjs`?**
-  _High betweenness centrality (0.075) - this node is a cross-community bridge._
-- **What connects `mermaid` to the rest of the system?**
-  _1 weakly-connected nodes found - possible documentation gaps or missing edges._
+- **Why does `codigo()` connect `docente.mjs` to `build-site.mjs`?**
+  _High betweenness centrality (0.063) - this node is a cross-community bridge._
+- **What connects `root`, `template`, `input` to the rest of the system?**
+  _548 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `generar-desde-config.mjs` be split into smaller, more focused modules?**
   _Cohesion score 0.10526315789473684 - nodes in this community are weakly interconnected._
-- **Why does `codigo()` connect `docente.mjs` to `build-site.mjs`?**
-  _High betweenness centrality (0.064) - this node is a cross-community bridge._
+- **Why does `OpenClass Live — protocolo Socket.IO` connect `Pagina` to `OpenClass Live — guía para la clase`?**
+  _High betweenness centrality (0.059) - this node is a cross-community bridge._
 - **Should `create-openclass-uniminuto-revealjs.mjs` be split into smaller, more focused modules?**
   _Cohesion score 0.1038961038961039 - nodes in this community are weakly interconnected._
+- **Why does `codigoSala()` connect `validar.mjs` to `http.mjs`, `Pagina`?**
+  _High betweenness centrality (0.047) - this node is a cross-community bridge._
 - **Should `template/package.json` be split into smaller, more focused modules?**
   _Cohesion score 0.14285714285714285 - nodes in this community are weakly interconnected._
-- **Should `semana.mjs` be split into smaller, more focused modules?**
-  _Cohesion score 0.12280701754385964 - nodes in this community are weakly interconnected._

@@ -9,6 +9,12 @@ Códigos de error frecuentes: `validacion`, `frecuencia`, `sala_inexistente`, `s
 ## Espacio `/participante` (estudiantes)
 
 Handshake: `auth: { codigo: 'K7M2QP', alias?: '≤30', token?: '<token de reconexión>' }`; origen = `APP_URL`.
+Una sala dura toda la clase (`ROOM_TTL_MINUTES`, 180 por omisión) y la presentación vuelve a usar su
+código para cada encuesta; al conectarse, `sesion.estado` ya trae la encuesta abierta, si la hay
+(entrada tardía). Código: 6 caracteres de `ALFABETO_CODIGO` (31 símbolos, sin 0/O ni 1/I/L: 31⁶ ≈ 8,9·10⁸ combinaciones). Posible
+evolución, no implementada: 8–9 dígitos numéricos, más fáciles de dictar o escribir en un teclado
+numérico (10⁸–10⁹ combinaciones); exigiría cambiar `codigoSala()` en `validar.mjs`, la ruta
+`/qr/` y `/join/` de `http.mjs`, el generador de `salas.mjs` y sus pruebas.
 Rechazos (`connect_error.message`): `origen`, `frecuencia`, `validacion`, `sala_inexistente`, `sala_vencida`, `sala_llena`, `bloqueado`.
 
 | Dirección | Evento | Datos | Respuesta / efecto |

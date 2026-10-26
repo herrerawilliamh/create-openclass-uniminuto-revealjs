@@ -27,8 +27,8 @@ Roles: **docente** (cookie del panel), **presentador** (clave ligada a una sala,
 ```bash
 cd services/openclass-live
 npm ci
-npm test                 # 23 pruebas: lógica, integración con 40 clientes, seguridad, privacidad
-npm run test:navegador   # Chrome real: crea un curso temporal con el CLI y prueba docente + presentación + 2 móviles
+npm test                 # 25 pruebas: lógica, integración con 40 clientes, seguridad, privacidad
+npm run test:navegador   # Chrome real: crea un curso temporal con el CLI y prueba docente + presentación + 3 móviles (una sala, QR integrado, PDF)
 npm run audit            # dependencias de producción
 ```
 

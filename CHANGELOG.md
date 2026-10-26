@@ -14,6 +14,14 @@ No se publica en npm hasta aprobar el adaptador local; no altera la versión del
 - Plantilla: adaptador local `src/plugins/live.mjs` (botón «En vivo», tecla L), **apagado** por defecto
   en `fase2.mjs` (`LIVE.activa`); no hace ninguna petición hasta que el docente se conecta y solo envía
   la encuesta que abre (`npm run test:navegador` del servicio, Chrome real).
+- Una clase = una sala = un QR: con la sala conectada (nunca antes), el adaptador integra el QR real y
+  el código en la portada (junto a la franja amarilla), en la segunda diapositiva (bloque de
+  participación sobre la banda temática) y en cada diapositiva con `.oc-live-encuesta` (QR compacto en
+  una esquina libre calculada sin cubrir texto ni medios; se amplía con clic o tecla Q y se oculta por
+  diapositiva). La capa de votación y resultados lleva el QR de la misma sala y acompaña a la
+  diapositiva de su encuesta. Nada de esto entra en el PDF. Sin cambios de servidor (`npm run
+  test:navegador` del servicio: A al inicio, B tarde, C con el QR de la pregunta 2, una sola sala,
+  1920×1080, 1920×945 y 1536×730).
 - Corrección: la carga heredada de Questions usaba `window.RevealQuestions`; el plugin vendorizado se
   registra como `window.RevealQnA`.
 

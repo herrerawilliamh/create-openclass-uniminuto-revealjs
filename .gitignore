@@ -22,6 +22,7 @@ _site/
 .claude/settings.local.json
 .claude/skills/
 .codex/skills/
+.agents/skills/
 odd/
 .vscode/
 

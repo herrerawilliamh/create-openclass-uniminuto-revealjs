@@ -3,9 +3,11 @@
  *  1. levanta el servicio en 127.0.0.1;
  *  2. crea un curso temporal con el CLI del repositorio maestro, activa LIVE en SU copia de fase2.mjs y
  *     añade a SU slides.md una diapositiva con encuesta (la plantilla y los cursos reales no se tocan);
- *  3. docente (panel), presentación Reveal.js local y dos estudiantes móviles en perfiles separados;
- *  4. verifica QR, encuesta en dos rondas, revelación, pregunta proyectada y que la presentación
- *     solo envió la encuesta abierta (sin Markdown, notas ni otras diapositivas).
+ *  3. docente (panel), presentación Reveal.js local y tres estudiantes móviles en perfiles separados;
+ *  4. una clase = una sala: QR real en portada, temática y cada encuesta (nunca antes de conectar),
+ *     A entra al inicio, B llega tarde a la pregunta 1, C entra con el QR de la pregunta 2; dos rondas,
+ *     revelación, QR junto a los resultados, sin solapes a 1920×1080, 1920×945 y 1536×730, PDF sin
+ *     capas, pregunta proyectada y la presentación solo envió las encuestas abiertas.
  * Variables: OPENCLASS_LIVE_DIST=<dist ya compilado> para no recompilar; OPENCLASS_CAPTURAS=<dir> guarda PNG.
  */
 import test from 'node:test';
@@ -31,7 +33,7 @@ const DIAPOSITIVAS = `
 ---
 
 ## Pregunta en vivo
-<!-- .slide: id="encuesta-live" class="oc-demo oc-l-text" -->
+<!-- .slide: id="encuesta-live" class="oc-demo oc-l-text" data-background-image="{{BASE_URL}}fondos/slide-05-template.png" data-background-size="cover" -->
 
 <div class="oc-live-encuesta" data-tipo="unica" data-correctas="B">
 <p class="oc-live-enunciado">¿Qué método une un socket a una sala en Socket.IO?</p>
@@ -49,9 +51,40 @@ NOTA-PRIVADA-PRESENTADOR: no debe salir del computador.
 ---
 
 ## Diapositiva privada
-<!-- .slide: class="oc-demo oc-l-text" -->
+<!-- .slide: id="privada" class="oc-demo oc-l-text" data-background-image="{{BASE_URL}}fondos/slide-05-template.png" data-background-size="cover" -->
 
 MARCADOR-DIAPOSITIVA-PRIVADA
+
+---
+
+## Segunda pregunta
+<!-- .slide: id="encuesta-live-2" class="oc-demo oc-l-text" data-background-image="{{BASE_URL}}fondos/slide-05-template.png" data-background-size="cover" -->
+
+<div class="oc-live-encuesta" data-tipo="multiple" data-correctas="A,C">
+<p class="oc-live-enunciado">¿Qué datos salen del computador del docente al abrir una encuesta?</p>
+<ol class="oc-live-opciones">
+<li>El enunciado y las opciones</li>
+<li>Las notas del presentador</li>
+<li>La explicación, para revelarla al final</li>
+<li>Las demás diapositivas</li>
+</ol>
+<div class="oc-live-explicacion">Solo la encuesta abierta; notas, fondos y diapositivas quedan en el computador.</div>
+</div>
+
+---
+
+## Tercera pregunta
+<!-- .slide: id="encuesta-live-3" class="oc-demo oc-l-text" data-background-image="{{BASE_URL}}fondos/slide-05-template.png" data-background-size="cover" -->
+
+<div class="oc-live-encuesta" data-tipo="unica" data-correctas="C">
+<div class="oc-live-enunciado"><p>¿Qué imprime este programa?</p><pre><code>console.log((7 / 2) | 0);</code></pre></div>
+<ol class="oc-live-opciones">
+<li>3.5</li>
+<li>4</li>
+<li>3</li>
+</ol>
+<div class="oc-live-explicacion">El operador | convierte a entero de 32 bits y descarta la parte decimal: 3.</div>
+</div>
 `;
 
 function prepararCurso(servidorLive) {
@@ -93,10 +126,36 @@ async function pulsar(pagina, texto, ambito = 'document') {
 async function capturar(pagina, nombre) {
   if (!CAPTURAS) return;
   mkdirSync(CAPTURAS, { recursive: true });
+  await pagina.send('Page.bringToFront'); // una pestaña en segundo plano no entrega capturas
   writeFileSync(path.join(CAPTURAS, `${nombre}.png`), await pagina.captura());
 }
 
-test('OpenClass Live en Chrome: presentación local + panel docente + dos estudiantes móviles', { timeout: 900_000 }, async (t) => {
+// Bloque de participación de la diapositiva actual: solapes con su texto y sus medios (comprobación
+// independiente de la ubicación que calcula live.mjs), posición en el lienzo 1280×720 y estado del QR.
+const BLOQUE = `(() => {
+  const b = document.querySelector('.reveal .slides section.present > .oc-live-participa');
+  if (!b) return null;
+  const r = b.getBoundingClientRect();
+  const sec = b.parentElement;
+  const toca = (t) => t.width > 0 && t.height > 0 && t.left < r.right && r.left < t.right && t.top < r.bottom && r.top < t.bottom;
+  const choques = [];
+  const rango = document.createRange();
+  const w = document.createTreeWalker(sec, NodeFilter.SHOW_TEXT);
+  for (let n; (n = w.nextNode());) {
+    if (b.contains(n) || !n.textContent.trim() || n.parentElement.closest('aside')) continue;
+    rango.selectNodeContents(n);
+    if ([...rango.getClientRects()].some(toca)) choques.push(n.textContent.trim().slice(0, 40));
+  }
+  for (const m of sec.querySelectorAll('img, pre, svg, iframe, video, canvas, table, .oc-section-plane')) if (!b.contains(m) && toca(m.getBoundingClientRect())) choques.push(m.tagName);
+  const caja = sec.getBoundingClientRect(); const k = caja.width / sec.offsetWidth;
+  const img = b.querySelector('img');
+  return { choques, dentro: r.left >= 0 && r.top >= 0 && r.right <= innerWidth && r.bottom <= innerHeight,
+    lienzo: { x: (r.left - caja.left) / k, y: (r.top - caja.top) / k, derecha: (r.right - caja.left) / k, abajo: (r.bottom - caja.top) / k },
+    qr: img ? { src: img.src, cargado: img.complete && img.naturalWidth > 0, lado: img.getBoundingClientRect().width, visible: getComputedStyle(img).display !== 'none' } : null,
+    texto: b.textContent, grupos: [...b.querySelectorAll('.oc-live-grupo')].map((g) => g.textContent) };
+})()`;
+
+test('OpenClass Live en Chrome: una sala para toda la clase, QR integrado y tres estudiantes', { timeout: 900_000 }, async (t) => {
   // Puerto efímero para conocer APP_URL antes de compilar; con un dist reutilizado, el que quedó compilado.
   let port = Number(process.env.OPENCLASS_LIVE_DIST && puertoCompilado(process.env.OPENCLASS_LIVE_DIST));
   if (!port) {
@@ -119,12 +178,12 @@ test('OpenClass Live en Chrome: presentación local + panel docente + dos estudi
   await app.escuchar(port, '127.0.0.1');
   t.after(() => app.cerrar());
 
-  const nDocente = await abrirNavegador({ ancho: 1366, alto: 900 });
-  const nAlumno1 = await abrirNavegador({ ancho: 390, alto: 844 });
-  const nAlumno2 = await abrirNavegador({ ancho: 390, alto: 844 });
-  t.after(async () => { await nDocente.cerrar(); await nAlumno1.cerrar(); await nAlumno2.cerrar(); });
+  const nDocente = await abrirNavegador({ ancho: 1920, alto: 1080 });
+  const nAlumnos = [];
+  for (let i = 0; i < 3; i++) nAlumnos.push(await abrirNavegador({ ancho: 390, alto: 844 }));
+  t.after(async () => { await nDocente.cerrar(); for (const n of nAlumnos) await n.cerrar(); });
 
-  // ---------- Panel docente ----------
+  // ---------- Panel docente: UNA sala para toda la clase ----------
   const panel = await nDocente.pagina({ ancho: 1366, alto: 900 });
   await panel.ir(`${APP}/docente/`);
   await panel.esperarA(`!document.getElementById('vista-login').classList.contains('oculto')`);
@@ -141,9 +200,29 @@ test('OpenClass Live en Chrome: presentación local + panel docente + dos estudi
   await panel.evaluar(`document.getElementById('btn-clave').click()`);
   const clave = await panel.esperarA(`window.__clave`);
   assert.match(clave, /^[\w-]+\.[\w-]+$/);
+  const unaSala = () => assert.equal(app.almacen.tamano, 1, 'una sola sala en el servidor');
 
-  // ---------- Presentación local: sin peticiones al servicio hasta conectar ----------
-  const deck = await nDocente.pagina({ ancho: 1366, alto: 768 });
+  // ---------- Estudiantes (móvil, perfiles separados) ----------
+  const entrar = async (n) => {
+    const p = await nAlumnos[n].pagina({ ancho: 390, alto: 844, escala: 2 });
+    await p.send('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 2, mobile: true });
+    await p.ir(`${APP}/join/${codigo}`); // la URL que codifica el QR (/qr/<código>.svg)
+    return p;
+  };
+  const opciones = (p, n) => p.esperarA(`document.querySelectorAll('#panel-encuesta input[name=opcion]').length === ${n}`);
+  const responder = async (p, indices) => {
+    await p.evaluar(`(() => { const i = document.querySelectorAll('#panel-encuesta input[name=opcion]'); for (const n of ${JSON.stringify(indices)}) i[n].click(); })()`);
+    await pulsar(p, (await p.evaluar(`[...document.querySelectorAll('#panel-encuesta button')].map((b) => b.textContent).find((t) => /respuesta/.test(t))`)), `document.getElementById('panel-encuesta')`);
+    await p.esperarA(`/Respuesta registrada/.test(document.getElementById('panel-encuesta').textContent)`);
+  };
+  const enSala = (p) => p.evaluar(`document.getElementById('vista-fin').classList.contains('oculto')`);
+
+  // Estudiante A entra al inicio: aún no hay pregunta abierta, espera la siguiente.
+  const A = await entrar(0);
+  await A.esperarA(`/Esperando la próxima pregunta/.test(document.getElementById('panel-encuesta').textContent)`);
+
+  // ---------- Presentación local: sin peticiones ni QR hasta conectar ----------
+  const deck = await nDocente.pagina({ ancho: 1920, alto: 1080 });
   const tramas = [];
   const peticiones = [];
   deck.cdp.oyentes.add((m) => {
@@ -156,64 +235,102 @@ test('OpenClass Live en Chrome: presentación local + panel docente + dos estudi
   await deck.esperarA(`window.OpenClass?.deck?.isReady?.() && document.querySelector('.oc-live-boton')`);
   await esperar(500);
   assert.equal(peticiones.filter((p) => p.url.startsWith(APP)).length, 0, 'sin ninguna petición a OpenClass Live antes de conectar');
+  assert.equal(await deck.evaluar(`document.querySelectorAll('.oc-live-participa').length`), 0, 'sin sala conectada no hay QR (ni falso)');
 
-  await deck.evaluar(`document.querySelector('.oc-live-boton').click()`);
+  const abrirPanel = () => deck.evaluar(`if (document.querySelector('.oc-live-panel').hidden) document.querySelector('.oc-live-boton').click()`);
+  const cerrarPanel = () => deck.evaluar(`document.querySelector('.oc-live-panel').hidden = true`);
+  const irA = async (destino) => {
+    const nodo = typeof destino === 'number' ? `window.OpenClass.deck.getSlides()[${destino}]` : `document.getElementById(${JSON.stringify(destino)})`;
+    await deck.evaluar(`(() => { const d = window.OpenClass.deck; const i = d.getIndices(${nodo}); d.slide(i.h, i.v); })()`);
+    await deck.esperarA(`window.OpenClass.deck.getCurrentSlide() === ${nodo}`);
+    // Fin de la transición y del ajuste de tamaño: nada se mueve entre dos lecturas.
+    await deck.esperarA(`(() => { const s = window.OpenClass.deck.getCurrentSlide(); const b = s.querySelector('.oc-live-participa');
+      const r = JSON.stringify([s.getBoundingClientRect(), b?.getBoundingClientRect()]); const quieta = r === window.__rect; window.__rect = r; return quieta; })()`, { intervalo: 300 });
+  };
+  const qrListo = `document.querySelector('.reveal .slides section.present > .oc-live-participa img')?.complete && document.querySelector('.reveal .slides section.present > .oc-live-participa img').naturalWidth > 0`;
+
+  await abrirPanel();
   await deck.evaluar(`const p = document.querySelector('.oc-live-panel'); p.querySelector('input[type=password]').value = ${JSON.stringify(clave)}; p.querySelector('form').requestSubmit();`);
   await deck.esperarA(`document.querySelector('.oc-live-sala b')?.textContent === ${JSON.stringify(codigo)}`);
-  await pulsar(deck, 'Mostrar QR');
-  await deck.esperarA(`document.querySelector('.oc-live-qr img')?.complete && document.querySelector('.oc-live-qr img').naturalWidth > 0`);
-  assert.equal(await deck.evaluar(`document.querySelector('.oc-live-codigo').textContent`), codigo);
-  await deck.evaluar(`document.querySelector('.oc-live-panel').hidden = true`);
-  await capturar(deck, '03-presentacion-qr');
-  await deck.evaluar(`document.querySelector('.oc-live-panel').hidden = false`);
+  await cerrarPanel();
 
-  // Ir a la diapositiva con la encuesta (la navegación es solo local).
-  await deck.evaluar(`(() => { const d = window.OpenClass.deck; const s = document.getElementById('encuesta-live'); const i = d.getIndices(s); d.slide(i.h, i.v); })()`);
-  await deck.esperarA(`window.OpenClass.deck.getCurrentSlide().id === 'encuesta-live'`);
+  // ---------- QR en portada, temática y pregunta, a tres tamaños de ventana ----------
+  const MOMENTOS = [[0, 'portada', /Participa durante la sesión/], [1, 'tematica', /Tu participación es importante/], ['encuesta-live', 'encuesta', /./]];
+  const NOMBRES = { portada: '12-presentacion-portada', tematica: '13-presentacion-tematica', encuesta: '14-presentacion-encuesta-qr' };
+  for (const [ancho, alto] of [[1920, 1080], [1920, 945], [1536, 730]]) {
+    await deck.viewport(ancho, alto);
+    await deck.evaluar(`window.dispatchEvent(new Event('resize'))`);
+    for (const [destino, nombre, lema] of MOMENTOS) {
+      await irA(destino);
+      await deck.esperarA(qrListo);
+      const b = await deck.evaluar(BLOQUE);
+      const donde = `${nombre} a ${ancho}×${alto}`;
+      assert.deepEqual(b.choques, [], `${donde}: el QR no cubre texto ni medios`);
+      assert.ok(b.dentro, `${donde}: dentro de la ventana`);
+      assert.ok(b.qr.visible && b.qr.cargado, `${donde}: QR real cargado`);
+      assert.equal(b.qr.src, `${APP}/qr/${codigo}.svg`, `${donde}: QR de la misma sala`);
+      assert.ok(b.texto.includes(codigo), `${donde}: código visible (sin espacios en el texto)`);
+      assert.deepEqual(b.grupos, [codigo.slice(0, 3), codigo.slice(3)], `${donde}: código en dos grupos de tres`);
+      assert.match(b.texto, lema, `${donde}: mensaje de participación`);
+      if (nombre === 'portada') assert.ok(b.lienzo.x >= 395 && b.lienzo.derecha <= 870 && b.lienzo.abajo <= 206, `${donde}: junto a la franja, sin logos, avión ni título ${JSON.stringify(b.lienzo)}`);
+      if (nombre === 'tematica') assert.ok(b.lienzo.x >= 401 && b.lienzo.y >= 83 && b.lienzo.abajo <= 368, `${donde}: sobre la banda temática ${JSON.stringify(b.lienzo)}`);
+      // Lado mínimo en pantalla (antes de la compresión de Zoom): 1 px del lienzo ≈ alto / 763 px.
+      assert.ok(b.qr.lado >= (nombre === 'encuesta' ? 140 : 160) * (alto / 763), `${donde}: QR legible (${Math.round(b.qr.lado)} px)`);
+      await capturar(deck, `${NOMBRES[nombre]}${ancho === 1920 && alto === 1080 ? '' : `-${ancho}x${alto}`}`);
+    }
+  }
+  await deck.viewport(1920, 1080);
   await deck.evaluar(`window.dispatchEvent(new Event('resize'))`);
   await esperar(300);
+
+  // Ampliar y reducir con la tecla Q; ocultar y volver a mostrar el QR de esta diapositiva.
+  await deck.tecla('q', { code: 'KeyQ', keyCode: 81 });
+  await deck.esperarA(`document.querySelector('.oc-live-capa.oc-live-capa-qr .oc-live-qr img')?.naturalWidth > 0`);
+  assert.equal(await deck.evaluar(`document.querySelector('.oc-live-codigo').textContent`), codigo);
+  await capturar(deck, '03-presentacion-qr');
+  await deck.tecla('q', { code: 'KeyQ', keyCode: 81 });
+  await deck.esperarA(`document.querySelector('.oc-live-capa').hidden`);
+  await deck.evaluar(`document.querySelector('section.present .oc-live-p-ocultar').click()`);
+  await deck.esperarA(`!document.querySelector('.oc-live-participa')`);
+  await abrirPanel();
+  await pulsar(deck, 'Mostrar QR en esta diapositiva');
+  await deck.esperarA(qrListo);
   assert.equal(await deck.evaluar(`getComputedStyle(document.querySelector('#encuesta-live .oc-live-explicacion')).display`), 'none', 'la explicación no se ve en la diapositiva');
+
+  // ---------- Pregunta 1: se abre desde Reveal.js (autoría única en el Markdown) ----------
   await pulsar(deck, 'Abrir encuesta de esta diapositiva');
   await deck.esperarA(`window.OpenClassLive.estado()?.activa?.estado === 'abierta'`);
+  await opciones(A, 3);
+  await capturar(A, '04-estudiante-encuesta');
+  await responder(A, [0]);
+  await capturar(A, '05-estudiante-registrada');
 
-  // ---------- Estudiantes (móvil) ----------
-  const alumnos = [];
-  for (const [n, navegador] of [[1, nAlumno1], [2, nAlumno2]]) {
-    const p = await navegador.pagina({ ancho: 390, alto: 844, escala: 2 });
-    await p.send('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 2, mobile: true });
-    await p.ir(`${APP}/join/${codigo}`);
-    await p.esperarA(`document.querySelectorAll('#panel-encuesta input[name=opcion]').length === 3`);
-    alumnos.push(p);
-    if (n === 1) await capturar(p, '04-estudiante-encuesta');
-  }
-  const responder = async (p, indice) => {
-    await p.evaluar(`(() => { const i = document.querySelectorAll('#panel-encuesta input[name=opcion]')[${indice}]; i.click(); })()`);
-    await pulsar(p, (await p.evaluar(`[...document.querySelectorAll('#panel-encuesta button')].map((b) => b.textContent).find((t) => /respuesta/.test(t))`)), `document.getElementById('panel-encuesta')`);
-    await p.esperarA(`/Respuesta registrada/.test(document.getElementById('panel-encuesta').textContent)`);
-  };
-  await responder(alumnos[0], 0);
-  await responder(alumnos[1], 1);
-  await capturar(alumnos[0], '05-estudiante-registrada');
+  // Estudiante B llega tarde con el mismo QR y recibe la pregunta abierta de inmediato.
+  const B = await entrar(1);
+  await opciones(B, 3);
+  await responder(B, [1]);
   await deck.esperarA(`window.OpenClassLive.estado().activa.rondas[0].respondientes === 2`);
+  unaSala();
   assert.equal(await deck.evaluar(`document.querySelectorAll('.oc-live-barra').length`), 0, 'con la votación abierta no se proyecta la distribución');
+  assert.equal(await deck.evaluar(`document.querySelector('.oc-live-capa .oc-live-qr-lateral img')?.naturalWidth > 0`), true, 'QR de la sala durante la votación');
 
-  // Reconexión: el estudiante 1 recarga la página y conserva su respuesta.
-  await alumnos[0].ir(`${APP}/join/${codigo}`);
-  await alumnos[0].esperarA(`document.querySelectorAll('#panel-encuesta input[name=opcion]')[0]?.checked === true`);
+  // Reconexión: A recarga la página y conserva su respuesta.
+  await A.ir(`${APP}/join/${codigo}`);
+  await A.esperarA(`document.querySelectorAll('#panel-encuesta input[name=opcion]')[0]?.checked === true`);
 
   await pulsar(deck, 'Cerrar votación');
   await deck.esperarA(`window.OpenClassLive.estado().activa.estado === 'cerrada'`);
   await pulsar(deck, 'Publicar resultados');
   await deck.esperarA(`document.querySelectorAll('.oc-live-barra').length === 3`);
   assert.equal(await deck.evaluar(`document.querySelectorAll('.oc-live-barra.correcta').length`), 0, 'publicar no revela la correcta');
-  await alumnos[1].esperarA(`document.querySelectorAll('#panel-encuesta .res-fila').length === 3`);
+  await B.esperarA(`document.querySelectorAll('#panel-encuesta .res-fila').length === 3`);
 
   // Segunda ronda tras la discusión: ambos eligen B.
   await pulsar(deck, 'Segunda ronda');
   await deck.esperarA(`window.OpenClassLive.estado().activa.ronda === 2 && window.OpenClassLive.estado().activa.estado === 'abierta'`);
-  for (const p of alumnos) {
+  for (const p of [A, B]) {
     await p.esperarA(`/Segunda ronda/.test(document.getElementById('panel-encuesta').textContent)`);
-    await responder(p, 1);
+    await responder(p, [1]);
   }
   await deck.esperarA(`window.OpenClassLive.estado().activa.rondas[1].respondientes === 2`);
   await pulsar(deck, 'Cerrar votación');
@@ -221,19 +338,80 @@ test('OpenClass Live en Chrome: presentación local + panel docente + dos estudi
   await pulsar(deck, 'Revelar respuesta');
   await deck.esperarA(`document.querySelectorAll('.oc-live-barra.correcta').length === 1 && /socket\\.join/.test(document.querySelector('.oc-live-capa').textContent)`);
   assert.match(await deck.evaluar(`document.querySelector('.oc-live-capa').textContent`), /ronda 1: 50%/, 'comparación con la primera ronda');
-  await deck.evaluar(`document.querySelector('.oc-live-panel').hidden = true`);
+  // QR y resultados conviven sin solaparse.
+  assert.equal(await deck.evaluar(`(() => { const q = document.querySelector('.oc-live-capa .oc-live-qr-lateral'); const r = document.querySelector('.oc-live-capa .oc-live-resultados'); if (!q || !q.querySelector('img').naturalWidth) return false;
+    const a = q.getBoundingClientRect(); const b = r.getBoundingClientRect(); return a.right <= b.left || b.right <= a.left || a.bottom <= b.top || b.bottom <= a.top; })()`), true, 'QR junto a los resultados, sin solaparse');
+  await cerrarPanel();
   await capturar(deck, '06-presentacion-resultados');
-  await alumnos[0].esperarA(`/Su respuesta fue correcta/.test(document.getElementById('panel-encuesta').textContent) && document.querySelector('#panel-encuesta pre')`);
-  await capturar(alumnos[0], '07-estudiante-revelada');
-
-  // Panel docente: comparación de rondas.
+  await A.esperarA(`/Su respuesta fue correcta/.test(document.getElementById('panel-encuesta').textContent) && document.querySelector('#panel-encuesta pre')`);
+  await capturar(A, '07-estudiante-revelada');
   await panel.esperarA(`document.querySelector('#panel-activa table.comparar')`);
   await capturar(panel, '08-panel-comparacion');
 
+  // ---------- Navegar: la sala y los estudiantes siguen; capa y QR de la encuesta se ocultan ----------
+  await irA('privada');
+  assert.equal(await deck.evaluar(`document.querySelector('.oc-live-capa').hidden && !document.querySelector('.oc-live-participa')`), true, 'fuera de la diapositiva de la encuesta no hay QR ni resultados');
+  await irA(1);
+  await deck.esperarA(qrListo);
+  await irA('privada');
+  assert.equal(await deck.evaluar(`window.OpenClassLive.sala().codigo`), codigo);
+  assert.equal(await deck.evaluar(`window.OpenClassLive.estado().sala.conectados`), 2, 'A y B siguen conectados');
+  for (const p of [A, B]) assert.equal(await enSala(p), true, 'el estudiante sigue en la sala');
+  unaSala();
+
+  // ---------- Pregunta 2 en la MISMA sala; C entra con el QR contextual ----------
+  await irA('encuesta-live-2');
+  await deck.esperarA(qrListo);
+  const b2 = await deck.evaluar(BLOQUE);
+  assert.deepEqual(b2.choques, [], 'pregunta 2: el QR no cubre el enunciado ni las opciones');
+  assert.equal(b2.qr.src, `${APP}/qr/${codigo}.svg`, 'pregunta 2: QR de la misma sala');
+  await abrirPanel();
+  await pulsar(deck, 'Abrir encuesta de esta diapositiva');
+  await deck.esperarA(`/Qué datos salen/.test(window.OpenClassLive.estado()?.activa?.enunciado) && window.OpenClassLive.estado().activa.estado === 'abierta'`);
+  for (const p of [A, B]) await opciones(p, 4);
+  const C = await entrar(2);
+  await opciones(C, 4);
+  await responder(A, [0, 2]);
+  await responder(B, [0]);
+  await responder(C, [0, 2]);
+  await deck.esperarA(`window.OpenClassLive.estado().activa.rondas[0].respondientes === 3`);
+  assert.equal(await deck.evaluar(`window.OpenClassLive.estado().sala.conectados`), 3, 'A, B y C conectados');
+  unaSala();
+  await pulsar(deck, 'Cerrar votación');
+  await deck.esperarA(`window.OpenClassLive.estado().activa.estado === 'cerrada'`);
+  await pulsar(deck, 'Revelar respuesta');
+  await deck.esperarA(`document.querySelectorAll('.oc-live-barra').length === 4 && document.querySelectorAll('.oc-live-barra.correcta').length === 2`);
+  await cerrarPanel();
+  await capturar(deck, '15-presentacion-pregunta2-resultados');
+  await C.esperarA(`/Su respuesta fue correcta/.test(document.getElementById('panel-encuesta').textContent)`);
+
+  // ---------- Pregunta 3 (con código) en la MISMA sala: A, B y C responden; C se reconecta ----------
+  await irA('encuesta-live-3');
+  await deck.esperarA(qrListo);
+  const b3 = await deck.evaluar(BLOQUE);
+  assert.deepEqual(b3.choques, [], 'pregunta 3: el QR no cubre el enunciado, el código ni las opciones');
+  assert.equal(await deck.evaluar(`window.OpenClassLive.estado().activa.estado`), 'cerrada', 'llegar a la diapositiva no abre la votación');
+  await abrirPanel();
+  await pulsar(deck, 'Abrir encuesta de esta diapositiva');
+  await deck.esperarA(`/Qué imprime/.test(window.OpenClassLive.estado()?.activa?.enunciado) && window.OpenClassLive.estado().activa.estado === 'abierta'`);
+  for (const p of [A, B, C]) await opciones(p, 3);
+  await responder(A, [2]);
+  await responder(B, [0]);
+  await responder(C, [2]);
+  await C.ir(`${APP}/join/${codigo}`);
+  await C.esperarA(`document.querySelectorAll('#panel-encuesta input[name=opcion]')[2]?.checked === true`);
+  await deck.esperarA(`window.OpenClassLive.estado().activa.rondas[0].respondientes === 3`);
+  unaSala();
+  await pulsar(deck, 'Cerrar votación');
+  await deck.esperarA(`window.OpenClassLive.estado().activa.estado === 'cerrada'`);
+  await pulsar(deck, 'Revelar respuesta');
+  await deck.esperarA(`document.querySelectorAll('.oc-live-barra.correcta').length === 1 && document.querySelector('.oc-live-capa .oc-live-qr-lateral img')?.naturalWidth > 0`);
+  for (const p of [A, C]) await p.esperarA(`/Su respuesta fue correcta/.test(document.getElementById('panel-encuesta').textContent)`);
+
   // ---------- Pregunta abierta: moderada antes de llegar a la pantalla compartida ----------
-  await alumnos[1].evaluar(`document.getElementById('tab-preguntas').click(); document.getElementById('texto-pregunta').value = '<b>¿</b>Se puede usar join con varias salas?'; document.getElementById('form-pregunta').requestSubmit();`);
-  await alumnos[1].esperarA(`/docente la apruebe/.test(document.getElementById('aviso-pregunta').textContent)`);
-  await capturar(alumnos[1], '09-estudiante-pregunta');
+  await B.evaluar(`document.getElementById('tab-preguntas').click(); document.getElementById('texto-pregunta').value = '<b>¿</b>Se puede usar join con varias salas?'; document.getElementById('form-pregunta').requestSubmit();`);
+  await B.esperarA(`/docente la apruebe/.test(document.getElementById('aviso-pregunta').textContent)`);
+  await capturar(B, '09-estudiante-pregunta');
   await panel.esperarA(`document.querySelectorAll('#lista-preguntas .pregunta.pendiente').length === 1`);
   assert.equal(await deck.evaluar(`document.querySelector('.oc-live-banda').hidden`), true, 'una pregunta sin moderar no aparece en la presentación');
   assert.equal(await panel.evaluar(`document.querySelector('#lista-preguntas .pregunta.pendiente .velo') !== null`), true, 'pendiente velada en el panel');
@@ -250,22 +428,43 @@ test('OpenClass Live en Chrome: presentación local + panel docente + dos estudi
   // ---------- Privacidad: qué salió de la presentación ----------
   const salientes = tramas.filter((x) => x.startsWith('42'));
   if (process.env.OPENCLASS_LIVE_TRAMAS) writeFileSync(process.env.OPENCLASS_LIVE_TRAMAS, JSON.stringify(salientes, null, 1));
-  assert.ok(salientes.length >= 6, 'eventos emitidos por la presentación');
+  assert.ok(salientes.length >= 8, 'eventos emitidos por la presentación');
   const todo = `${tramas.join('\n')}\n${peticiones.filter((p) => p.url.startsWith(APP)).map((p) => `${p.url} ${p.cuerpo}`).join('\n')}`;
   for (const m of MARCADORES) assert.ok(!todo.includes(m), `no sale «${m}»`);
-  // Formato de trama: 42/docente,<ack>[evento, datos]
-  const crear = salientes.map((x) => JSON.parse(x.replace(/^42(?:\/[^,[]*,)?\d*/, ''))).find(([ev]) => ev === 'encuesta:crear');
-  assert.deepEqual(Object.keys(crear[1].encuesta).sort(), ['correctas', 'enunciado', 'explicacion', 'opciones', 'tipo']);
-  assert.deepEqual(crear[1].encuesta.opciones, ['socket.enter()', 'socket.join()', 'io.attach()']);
-  assert.deepEqual(crear[1].encuesta.correctas, [1]);
+  // Formato de trama: 42/docente,<ack>[evento, datos]. Cada pregunta sale UNA vez, tal como está en el Markdown.
+  const creadas = salientes.map((x) => JSON.parse(x.replace(/^42(?:\/[^,[]*,)?\d*/, ''))).filter(([ev]) => ev === 'encuesta:crear');
+  assert.equal(creadas.length, 3, 'una creación por pregunta');
+  for (const [, datos] of creadas.slice(0, 2)) assert.deepEqual(Object.keys(datos.encuesta).sort(), ['correctas', 'enunciado', 'explicacion', 'opciones', 'tipo']);
+  assert.deepEqual(creadas[0][1].encuesta.opciones, ['socket.enter()', 'socket.join()', 'io.attach()']);
+  assert.deepEqual(creadas[0][1].encuesta.correctas, [1]);
+  assert.deepEqual(creadas[1][1].encuesta.correctas, [0, 2]);
+  assert.equal(creadas[1][1].encuesta.tipo, 'multiple');
+  assert.deepEqual(creadas[2][1].encuesta, { enunciado: '¿Qué imprime este programa?', codigo: 'console.log((7 / 2) | 0);', tipo: 'unica', opciones: ['3.5', '4', '3'], correctas: [2], explicacion: 'El operador | convierte a entero de 32 bits y descarta la parte decimal: 3.' });
+  assert.ok(creadas.every(([, d]) => d.salaId === creadas[0][1].salaId), 'las tres preguntas en la misma sala');
   const recursos = peticiones.filter((p) => p.url.startsWith(APP)).map((p) => new URL(p.url).pathname);
   assert.ok(recursos.every((r) => r.startsWith('/socket.io/') || /^\/qr\/[A-Z2-9]{6}\.svg$/.test(r)), `solo cliente Socket.IO y QR: ${[...new Set(recursos)].join(', ')}`);
   assert.ok(!registro.join('\n').includes('join con varias salas'), 'el texto de la pregunta no se registra');
 
+  // ---------- PDF: ni QR ni capas, aunque la clave siga en la sesión del navegador ----------
+  const pdf = await nDocente.pagina({ ancho: 1280, alto: 720 });
+  const pdfPeticiones = [];
+  pdf.cdp.oyentes.add((m) => { if (m.sessionId === pdf.sessionId && m.method === 'Network.requestWillBeSent') pdfPeticiones.push(m.params.request.url); });
+  await pdf.send('Network.enable');
+  await pdf.ir(`${estatico.url}general/`);
+  await pdf.evaluar(`sessionStorage.setItem('openclass-live:clave', ${JSON.stringify(clave)})`);
+  await pdf.ir(`${estatico.url}general/?print-pdf`);
+  await pdf.esperarA(`window.OpenClass?.deck?.isReady?.() && document.documentElement.classList.contains('reveal-print')`, { timeout: 30000 });
+  await esperar(1500);
+  assert.equal(await pdf.evaluar(`document.querySelectorAll('.oc-live-participa, .oc-live-boton, .oc-live-capa, .oc-live-banda, .oc-live-panel').length`), 0, 'PDF sin QR ni capas de OpenClass Live');
+  assert.equal(pdfPeticiones.filter((u) => u.startsWith(APP)).length, 0, 'el PDF no contacta OpenClass Live');
+  const { data } = await pdf.send('Page.printToPDF', { printBackground: true, preferCSSPageSize: true });
+  assert.ok(data.length > 1000, 'PDF generado');
+  if (CAPTURAS) writeFileSync(path.join(CAPTURAS, 'presentacion.pdf'), Buffer.from(data, 'base64'));
+
   // ---------- Fin de sesión ----------
   await pulsar(panel, 'Finalizar sesión');
-  await alumnos[0].esperarA(`!document.getElementById('vista-fin').classList.contains('oculto')`);
-  await deck.esperarA(`!document.querySelector('.oc-live-sala')`);
+  for (const p of [A, B, C]) await p.esperarA(`!document.getElementById('vista-fin').classList.contains('oculto')`);
+  await deck.esperarA(`!document.querySelector('.oc-live-sala') && !document.querySelector('.oc-live-participa')`);
   assert.equal(app.almacen.tamano, 0, 'datos eliminados del servidor');
-  for (const p of [panel, deck, ...alumnos]) assert.deepEqual(p.errores, [], 'sin excepciones de JavaScript');
+  for (const p of [panel, deck, A, B, C, pdf]) assert.deepEqual(p.errores, [], 'sin excepciones de JavaScript');
 });

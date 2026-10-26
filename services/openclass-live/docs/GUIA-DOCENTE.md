@@ -35,15 +35,30 @@ Escriba un título (opcional) y pulse **Crear sala**. Deje marcada «Revisar las
 
 Pulse **Copiar clave de presentador**. Esa clave solo sirve para esta sala; no la comparta con estudiantes. Si cree que alguien la vio, pulse **Revocar claves** y copie una nueva.
 
-## 4. Mostrar el QR durante Zoom
+## 4. Una clase = una sala = un QR
 
 1. En Zoom, comparta **solo la ventana de la presentación** (no la pantalla completa: así el panel docente nunca se ve).
 2. En la presentación pulse **● En vivo** (o **L**), pegue la clave y pulse **Conectar**.
-3. Pulse **Mostrar QR**. Los estudiantes escanean o escriben el código en `openclass-live.apps.willedtech.io`.
 
-![QR sobre la presentación](capturas/03-presentacion-qr.png)
+Desde ese momento, y nunca antes (no hay QR de ejemplo), el QR real y el código de **la misma sala** aparecen solos en tres momentos:
 
-Pulse **Ocultar QR** para seguir con la clase.
+- **Portada:** junto a la franja amarilla, con «Participa durante la sesión».
+
+  ![QR en la portada](capturas/12-presentacion-portada.png)
+
+- **Segunda diapositiva (temática):** bloque de participación con el QR, la dirección y el código.
+
+  ![Bloque de participación en la temática](capturas/13-presentacion-tematica.png)
+
+- **Cada diapositiva con encuesta:** un QR compacto en una esquina libre (nunca sobre el enunciado, las opciones, el código ni los diagramas; si no hay espacio, solo el código). Haga clic en él o pulse **Q** para ampliarlo; la **×** (o **Ocultar QR en esta diapositiva** en el panel) lo oculta solo en esa diapositiva.
+
+  ![QR compacto en una pregunta](capturas/14-presentacion-encuesta-qr.png)
+
+**Ampliar QR** (tecla **Q**) lo muestra grande en cualquier momento:
+
+![QR ampliado sobre la presentación](capturas/03-presentacion-qr.png)
+
+Los estudiantes entran una vez y permanecen conectados toda la sesión. Cambiar de diapositiva no crea otra sala ni desconecta a nadie. Quien llega tarde usa el mismo QR o el mismo código en `openclass-live.apps.willedtech.io`: si hay una pregunta abierta la recibe al instante; si no, espera la siguiente. La casilla **QR y código en la portada, la temática y las encuestas** del panel los quita todos de una vez. Nada de esto aparece en el PDF.
 
 ## 5. Preparar una encuesta
 
@@ -73,7 +88,9 @@ En la diapositiva de la encuesta: **● En vivo → Abrir encuesta de esta diapo
 
 ![Vista del estudiante](capturas/04-estudiante-encuesta.png)
 
-Mientras está abierta, la pantalla compartida muestra solo cuántas respuestas van, no la distribución, para no influir en la respuesta individual. Los estudiantes pueden cambiar su respuesta hasta que usted cierre.
+Mientras está abierta, la pantalla compartida muestra solo cuántas respuestas van, no la distribución, para no influir en la respuesta individual. Los estudiantes pueden cambiar su respuesta hasta que usted cierre. El QR compacto de la sala acompaña la votación y los resultados para quien llegue tarde; al pasar a otra diapositiva, la capa y el QR se ocultan (la sala y la votación siguen) y vuelven al regresar.
+
+La pregunta se escribe **una sola vez**, en el Markdown: el formulario del panel queda para preguntas improvisadas.
 
 ![Respuesta registrada](capturas/05-estudiante-registrada.png)
 
