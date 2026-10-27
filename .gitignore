@@ -8,6 +8,7 @@ __pycache__/
 *.zip
 *.log
 .env*
+!.env.example
 
 # Recursos institucionales sin autorización de redistribución pública (solo locales)
 recursos-institucionales/
@@ -21,6 +22,7 @@ _site/
 .claude/settings.local.json
 .claude/skills/
 .codex/skills/
+.agents/skills/
 odd/
 .vscode/
 

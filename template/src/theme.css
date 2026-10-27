@@ -299,6 +299,18 @@ html.reveal-print:is([data-kind="general"], [data-kind="week"], [data-kind="demo
   overflow: visible !important;
 }
 
+/* El PDF lleva solo las diapositivas: ni el pie de herramientas ni los botones fijos. */
+html.reveal-print :is(.back-link, .oc-inicio, #customcontrols) {
+  display: none !important;
+}
+
+/*
+ * Solución privada de una pregunta (`.oc-live-encuesta`): oculta siempre, en pantalla y en el PDF,
+ * con OpenClass Live encendido o apagado (live.css solo se carga con LIVE.activa). Solo se revela por
+ * OpenClass Live o en la vista privada de Build Tech. Otras explicaciones pedagógicas no se tocan.
+ */
+.oc-live-encuesta .oc-live-explicacion { display: none !important; }
+
 /* Fondo anclado al lienzo. Reveal escala 1280x720 con
    S = round(min(0.94·W/1280, 0.94·H/720) acotado a [0.2, 2], 0.01), es decir, un lienzo de
    ancho round(min(94vw, 94vh·16/9), 12.8px). El fondo es ese lienzo más el margen de 0.06,
@@ -347,7 +359,8 @@ html:is([data-kind="general"], [data-kind="week"], [data-kind="demo"]) .reveal .
    Controls y logo 70 años, anclados al lienzo igual que el fondo (u = px de pantalla por px de
    lienzo). Viven dentro del pie azul de la plantilla (Y 696,1–743; borde derecho en diagonal:
    X 1243 en Y 704, X 1211 en Y 734). Barra de botones Y 704–734, centrada en el pie.
-   · izquierda: casa / portal (X 82–116), «Diapositiva X / Y» (desde X 124), dibujo (X 471–585)
+   · izquierda: casa / portal (X 82–116), «Diapositiva X / Y» (desde X 124), «Exportar a PDF» (X 431–465),
+     dibujo (X 471–585)
    · centro: logo 70 años = «Volver al inicio» (X 596–684), sobre el logo impreso (X 601,6–677,5)
    · derecha: vista (X 695–849), anterior / siguiente (X 1124–1198), bajo «Vigilada Mineducación»
      (X 1157–1247, Y 675,6–686,2) sin tocarla.
@@ -554,14 +567,14 @@ html:is([data-kind="general"], [data-kind="week"], [data-kind="demo"]) {
 }
 
 /* Herramientas del plugin Custom Controls (configuradas en src/plugins/index.mjs), a lado y lado
-   del logo: dibujo a la izquierda (hasta «Borrar»), vista a la derecha. La caja deja pasar los
+   del logo: «Exportar a PDF» y dibujo a la izquierda (hasta «Borrar»), vista a la derecha. La caja deja pasar los
    clics del hueco central al botón 70 años. Reemplaza por completo customcontrols/style.css. */
 #customcontrols {
   position: fixed;
   top: var(--oc-barra-y);
-  left: calc(var(--oc-x0) + 471 * var(--oc-u));
+  left: calc(var(--oc-x0) + 431 * var(--oc-u));
   z-index: 30;
-  width: calc(378 * var(--oc-u));
+  width: calc(418 * var(--oc-u));
   font-size: 0;
   pointer-events: none;
 }
@@ -598,12 +611,12 @@ html:is([data-kind="general"], [data-kind="week"], [data-kind="demo"]) {
 
 /* Portada (layout oc-l-cover, sin pie azul): todas las herramientas salvo casa y logo 70 años, en
    una fila Y 704–734 de la franja blanca: herramientas X 420–694 (25 px tras la franja amarilla,
-   X 131–395), «Diapositiva X / Y» desde X 706 (crece a la derecha) y «siguiente» en X 936–970,
+   X 131–395; «Exportar a PDF» solo en el pie azul), «Diapositiva X / Y» desde X 706 (crece a la derecha) y «siguiente» en X 936–970,
    alineado con el filete de SEMANA y a 21 px del logo de acreditación (X 991,5). Botones blancos
    con borde azul discreto; el foco es azul porque el amarillo no contrasta sobre blanco.
    Cierre: sin herramientas ni botón 70 años (el PNG ya trae el logo). Los atajos de teclado
    siguen activos en ambos. */
-html:has(.reveal .slides>section.present.oc-l-cover) :is(.back-link, .oc-inicio, .reveal .controls .navigate-left),
+html:has(.reveal .slides>section.present.oc-l-cover) :is(.back-link, .oc-inicio, .reveal .controls .navigate-left, #oc-h-pdf),
 html:has(.reveal .slides>section.present.oc-l-closing) :is(.oc-inicio, #customcontrols) {
   display: none !important;
 }

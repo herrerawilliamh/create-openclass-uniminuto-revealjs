@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="referrer" content="no-referrer">
+  <meta name="robots" content="noindex, nofollow">
+  <title>OpenClass Live</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/assets/estilos.css">
+  <script src="/socket.io/socket.io.min.js" defer></script>
+  <script type="module" src="/assets/estudiante.mjs"></script>
+</head>
+<body>
+  <header class="barra">
+    <div>
+      <h1>OpenClass Live</h1>
+      <div class="sub" id="titulo-sala">Participación en clase</div>
+    </div>
+    <span class="estado-conexion" id="conexion" aria-live="polite"></span>
+  </header>
+  <main>
+    <section class="tarjeta" id="vista-union" aria-labelledby="t-union">
+      <h2 id="t-union">Unirse a la clase</h2>
+      <p class="suave">Escriba el código que muestra su docente. No se necesita cuenta ni datos personales.</p>
+      <form id="form-union" autocomplete="off" novalidate>
+        <label for="codigo">Código de la sala</label>
+        <input type="text" id="codigo" name="codigo" inputmode="text" autocapitalize="characters" maxlength="6" spellcheck="false" placeholder="Ej.: K7M2QP" required>
+        <label for="alias">Alias (opcional)</label>
+        <input type="text" id="alias" name="alias" maxlength="30" placeholder="Puede dejarlo vacío">
+        <p class="suave">El alias solo lo ve el docente junto a sus preguntas. No escriba su nombre completo ni documentos.</p>
+        <div id="error-union" class="aviso error oculto" role="alert"></div>
+        <button type="submit" id="btn-unirse">Entrar</button>
+      </form>
+    </section>
+
+    <section id="vista-sala" class="oculto">
+      <div id="aviso-sala" class="aviso oculto" role="status"></div>
+      <nav class="pestanas" role="tablist" aria-label="Secciones">
+        <button type="button" role="tab" id="tab-encuesta" aria-selected="true" aria-controls="panel-encuesta">Encuesta</button>
+        <button type="button" role="tab" id="tab-preguntas" aria-selected="false" aria-controls="panel-preguntas">Preguntas</button>
+      </nav>
+      <section class="tarjeta" id="panel-encuesta" role="tabpanel" aria-labelledby="tab-encuesta" aria-live="polite"></section>
+      <section class="tarjeta oculto" id="panel-preguntas" role="tabpanel" aria-labelledby="tab-preguntas">
+        <form id="form-pregunta" autocomplete="off">
+          <label for="texto-pregunta">Escriba su pregunta</label>
+          <textarea id="texto-pregunta" maxlength="280" minlength="3" required></textarea>
+          <div class="fila"><span class="suave crece" id="cuenta-pregunta">0 / 280</span><button type="submit" id="btn-preguntar">Enviar pregunta</button></div>
+          <div id="aviso-pregunta" class="aviso oculto" role="status"></div>
+        </form>
+        <h3>Preguntas de la clase</h3>
+        <ul class="preguntas" id="lista-preguntas"></ul>
+      </section>
+      <p class="suave">Sala <b id="codigo-actual"></b> · <button type="button" class="mini secundario" id="btn-salir">Salir</button></p>
+    </section>
+
+    <section class="tarjeta oculto" id="vista-fin" aria-live="polite">
+      <h2>La sesión terminó</h2>
+      <p id="texto-fin">Gracias por participar. Los datos de la sesión se eliminaron.</p>
+      <button type="button" id="btn-otra">Unirse a otra sala</button>
+    </section>
+  </main>
+</body>
+</html>

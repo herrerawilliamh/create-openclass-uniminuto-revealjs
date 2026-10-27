@@ -1,0 +1,31 @@
+{
+  "name": "openclass-live",
+  "version": "0.1.0",
+  "private": true,
+  "description": "OpenClass Live: participación en tiempo real (encuestas y preguntas) para clases presentadas localmente con OpenClass Reveal.js",
+  "author": "William Herrera",
+  "license": "MIT",
+  "type": "module",
+  "main": "src/server.mjs",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "start": "node src/server.mjs",
+    "dev": "node --env-file-if-exists=.env src/server.mjs",
+    "hash-password": "node scripts/hash-password.mjs",
+    "gen-env": "node scripts/generar-env.mjs",
+    "test": "node --test --test-concurrency=1 tests/*.test.mjs",
+    "test:navegador": "node --test --test-concurrency=1 tests/e2e/*.test.mjs",
+    "audit": "npm audit --omit=dev",
+    "empaquetar": "node scripts/empaquetar-despliegue.mjs",
+    "verificar": "node scripts/verificar-despliegue.mjs"
+  },
+  "dependencies": {
+    "qrcode-generator": "2.0.4",
+    "socket.io": "4.8.4"
+  },
+  "devDependencies": {
+    "socket.io-client": "4.8.4"
+  }
+}

@@ -1,0 +1,106 @@
+/* Build Tech en la presentación principal: selector de vistas, reloj público opcional, vista previa
+   (?receiver) y barra de impresión. Todo vive fuera de .slides y nunca entra en el PDF. */
+
+.oc-vistas {
+  position: fixed;
+  z-index: 60;
+  display: grid;
+  gap: 6px;
+  width: min(360px, calc(100vw - 16px));
+  padding: 8px;
+  border-radius: 8px;
+  background: #fff;
+  color: var(--oc-azul, #243764);
+  box-shadow: 0 6px 24px rgba(8, 16, 40, .35);
+  font-family: 'Atkinson Hyperlegible', Arial, sans-serif;
+}
+.oc-vistas[hidden] { display: none; }
+.oc-vistas button {
+  display: grid;
+  gap: 2px;
+  min-height: 48px;
+  padding: 8px 12px;
+  border: 1px solid #dce3ee;
+  border-radius: 6px;
+  background: #fff;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.oc-vistas button:is(:hover, :focus-visible) { background: var(--oc-amarillo, #ffca05); border-color: var(--oc-amarillo, #ffca05); }
+.oc-vistas button:focus-visible { outline: 2px solid var(--oc-azul, #243764); outline-offset: 2px; }
+.oc-vistas strong { font-size: 16px; }
+.oc-vistas small { font-size: 13px; color: #40547d; }
+.oc-vistas-aviso { margin: 0; font-size: 13px; color: #9b2c1f; }
+.oc-vistas-aviso:empty { display: none; }
+
+/* Reloj público: hora local, pequeño y semitransparente en la esquina superior derecha. */
+.oc-reloj-publico {
+  position: fixed;
+  top: 8px;
+  right: 10px;
+  z-index: 25;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: rgba(36, 55, 100, .72);
+  color: #fff;
+  font: 700 14px/1.4 'Atkinson Hyperlegible', Arial, sans-serif;
+  pointer-events: none;
+}
+
+/* Vista previa en Build Tech (?receiver): solo la diapositiva, sin barra ni controles. */
+html.oc-previa :is(.back-link, .oc-inicio, #customcontrols, .reveal .controls, .reveal .progress, .reveal .slide-number, .oc-vistas, .oc-reloj-publico) {
+  display: none !important;
+}
+html.oc-previa, html.oc-previa body { overflow: hidden !important; }
+
+/* Barra de «Exportar a PDF»: ayuda en pantalla, nunca impresa. */
+.oc-imprimir {
+  position: fixed;
+  inset: 0 0 auto;
+  z-index: 80;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 16px;
+  background: var(--oc-azul, #243764);
+  color: #fff;
+  font: 16px/1.4 'Atkinson Hyperlegible', Arial, sans-serif;
+}
+.oc-imprimir p { margin: 0; max-width: 900px; }
+.oc-imprimir button {
+  min-height: 40px;
+  padding: 6px 16px;
+  border: 0;
+  border-radius: 6px;
+  background: var(--oc-amarillo, #ffca05);
+  color: var(--oc-azul, #243764);
+  font: 700 16px 'Atkinson Hyperlegible', Arial, sans-serif;
+  cursor: pointer;
+}
+/* PDF: el lugar de un iframe muestra su título y su enlace. */
+html.reveal-print .oc-pdf-oculto { display: none !important; }
+.oc-pdf-medio {
+  display: grid;
+  place-content: center;
+  gap: 12px;
+  width: 100%;
+  height: 100%;
+  min-height: 240px;
+  box-sizing: border-box;
+  padding: 24px;
+  border: 2px solid var(--oc-azul, #243764);
+  border-radius: 8px;
+  background: #f2f4f9;
+  color: var(--oc-azul, #243764);
+  text-align: center;
+  font: 24px/1.35 'Atkinson Hyperlegible', Arial, sans-serif;
+}
+.oc-pdf-medio a { color: inherit; font-size: 20px; overflow-wrap: anywhere; }
+@media print {
+  .oc-imprimir, .oc-vistas, .oc-reloj-publico { display: none !important; }
+}
+html.reveal-print :is(.oc-vistas, .oc-reloj-publico) { display: none !important; }

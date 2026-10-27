@@ -3,6 +3,70 @@
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/); versiones según
 [SemVer](https://semver.org/lang/es/). Entre paréntesis, la suite que acredita cada punto.
 
+## [Sin versión] — OpenClass Live (en desarrollo)
+
+No se publica en npm hasta aprobar el adaptador local; no altera la versión del paquete.
+
+- Nuevo servicio `services/openclass-live/` (fuera de `files` del paquete): encuestas en dos rondas y
+  preguntas moderadas en tiempo real con Socket.IO 4; los estudiantes entran con QR o código y nunca
+  cargan la presentación; estado solo en memoria con vencimiento; Docker + Traefik para la VPS
+  (`cd services/openclass-live && npm test`, `npm run test:navegador`).
+- Plantilla: adaptador local `src/plugins/live.mjs` (botón «En vivo», tecla L), **apagado** por defecto
+  en `fase2.mjs` (`LIVE.activa`); no hace ninguna petición hasta que el docente se conecta y solo envía
+  la encuesta que abre (`npm run test:navegador` del servicio, Chrome real).
+- Una clase = una sala = un QR: con la sala conectada (nunca antes), el adaptador integra el QR real y
+  el código en la portada (junto a la franja amarilla), en la segunda diapositiva (bloque de
+  participación sobre la banda temática) y en cada diapositiva con `.oc-live-encuesta` (QR compacto en
+  una esquina libre calculada sin cubrir texto ni medios; se amplía con clic o tecla Q y se oculta por
+  diapositiva). La capa de votación y resultados lleva el QR de la misma sala y acompaña a la
+  diapositiva de su encuesta. Nada de esto entra en el PDF. Sin cambios de servidor (`npm run
+  test:navegador` del servicio: A al inicio, B tarde, C con el QR de la pregunta 2, una sola sala,
+  1920×1080, 1920×945 y 1536×730).
+- Corrección: la carga heredada de Questions usaba `window.RevealQuestions`; el plugin vendorizado se
+  registra como `window.RevealQnA`.
+- UX docente v0.2 (requiere desplegar el servicio y actualizar `live.mjs`/`live.css` en cada curso):
+  control «En vivo» en el pie azul (sin botón flotante; en la portada, icono en el hueco de
+  «anterior») con conexión, participantes y cuenta regresiva; un único menú contextual (también al
+  pulsar cualquier QR de la diapositiva, tecla L, Esc cierra) que solo ofrece las acciones del momento:
+  «Conectar participación» con orientación breve y descartable → «Iniciar votación · 30 s» → «Cerrar
+  ahora» / «+30 segundos» / «Proyectar tendencias» (desactivado por defecto, sin la correcta) →
+  «Mostrar resultados» → «Discutir y repetir» o «Revelar explicación». Tiempo de votación global por
+  sala (15/30/60/90 s, «Sin límite» avanzado; 30 s por defecto) aplicado a las rondas siguientes; el
+  servidor fija el vencimiento absoluto, cierra una sola vez aunque el docente esté desconectado y
+  nunca publica ni revela; los clientes cuentan con la hora del servidor (eventos nuevos
+  `encuesta:extender` y `sala:ajustar`). Panel docente reordenado (sala → pregunta activa con
+  temporizador y tendencias privadas actualizadas en el sitio → controles del momento → preguntas →
+  «Crear pregunta improvisada», historial y «Configuración de la sesión» plegados), sin `alert()`.
+  Cuenta regresiva en el teléfono. Las capas de resultados ya no cubren la banda institucional superior.
+- **Build Tech** (plantilla, sin cambios de servidor): vista privada del docente en una ventana aparte,
+  desde «Vista del presentador» (selector Build Tech / notas clásicas de Reveal.js) o tecla T. Notas
+  `Notes:` vía `getSlideNotes()` analizadas con DOMParser y pintadas como texto (punto de lectura
+  `[[n]]`, notas ancladas `[[#ancla]]` + `data-oc-nota`, acciones explícitas `[[#ancla:reproducir]]`),
+  letra ±, «Solo notas», divisor redimensionable; vistas previas en modo `?receiver` sin Live, sin
+  sonido y sin cargar iframes; hora, tiempo de clase (45/60/90/personalizado, pausa, reinicio con
+  confirmación, solo aviso al terminar) y el temporizador global de votación, independientes; control de
+  `<video>`/`<audio>` y de YouTube con la API IFrame oficial (`enablejsapi=1` al iniciar), «Control
+  externo no disponible» para otros; En vivo completo (incluye retirar y moderar preguntas) por la misma
+  conexión de la presentación; puente `postMessage` local con origen, ventana y lista cerrada de
+  órdenes (`src/plugins/puente.mjs`); reloj público opcional. Las notas clásicas de Reveal.js ya no
+  conectan sus vistas previas a la sala (`npm run test:build-tech`; Chrome:
+  `services/openclass-live/tests/e2e/build-tech-navegador.test.mjs`).
+- **Exportar a PDF**: botón de impresora en el pie azul (X 431–465; oculto en la portada) que abre
+  `?print-pdf&oc-imprimir` en otra pestaña con el diálogo del navegador; una página 16:9 por diapositiva
+  (`pdfSeparateFragments: false`, `pdfMaxPagesPerSlide: 1`), sin notas, soluciones, QR, controles ni
+  capas; cada iframe se imprime como su título y su enlace (`npm run test:navegador`: 8 herramientas).
+- **Seguridad v0.2 (auditoría de 46ed512)**: (1) la solución ya no sale al crear la encuesta: la
+  presentación envía solo enunciado, código, tipo y opciones y conserva correctas y explicación hasta
+  «Revelar explicación», que las transmite en el evento `encuesta:revelar` (validado contra la encuesta
+  activa, con la votación cerrada, una sola vez y atómico); el servidor rechaza `correctas`/`explicacion`
+  al crear. Las preguntas improvisadas del panel guardan su solución en la pestaña (`sessionStorage`).
+  (2) Los estudiantes nunca reciben `porcentajeCorrecto` antes de revelar (resúmenes de ronda con lista
+  blanca; distribución solo tras publicar). (3) La regla que oculta `.oc-live-encuesta
+  .oc-live-explicacion` pasa a `theme.css` (siempre cargado): oculta en pantalla y en el PDF también con
+  `LIVE.activa = false` (servicio `npm test`, `npm run test:navegador`: Live, Build Tech y
+  `pdf-privacidad-navegador`). Hotfix mínimo del acierto para v0.1, preparado y sin desplegar:
+  `services/openclass-live/hotfix/`.
+
 ## [1.1.0] — sin publicar
 
 Compatible con cursos creados con 1.0.0: no cambia la estructura de `openclass.config.json` (el bloque

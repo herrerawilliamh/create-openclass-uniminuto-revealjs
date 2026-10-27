@@ -98,6 +98,9 @@ que ya existe no se toca.
 
 - Video local: `<video controls preload="metadata" src="{{BASE_URL}}videos/archivo.webm"><track kind="captions" src="{{BASE_URL}}videos/archivo.vtt" srclang="es" label="Español" default></video>`.
 - YouTube/Vimeo: `<iframe title="..." src="https://www.youtube-nocookie.com/embed/ID" allowfullscreen style="width:100%;height:100%;border:0"></iframe>`.
+  El `title` es obligatorio: en el PDF el video se reemplaza por ese título y su enlace. Build Tech controla los
+  videos de YouTube con su API oficial (la presentación añade `enablejsapi=1` al iniciar); Vimeo y otros
+  proveedores se usan con sus propios controles.
 - Actividad local: `<iframe title="..." src="{{BASE_URL}}actividades/carpeta/index.html" loading="lazy" sandbox="allow-scripts allow-forms" style="width:100%;height:100%;border:0"></iframe>`.
 - Muchos sitios bloquean el `iframe` (CSP/X-Frame-Options). Si no lo has comprobado, ofrece un
   enlace normal y marca la verificación como pendiente.
@@ -128,7 +131,16 @@ que ya existe no se toca.
 ## 6. Notas del presentador
 
 Cada diapositiva de contenido debería tener `Notes:` con: propósito, pregunta guía, tiempo
-estimado y transición. El docente las ve con la tecla **S** (vista del presentador).
+estimado y transición. El docente las ve en **Build Tech** (tecla **T**, vista privada en otra ventana)
+o en las notas clásicas de Reveal.js (tecla **S**).
+
+- Marcadores opcionales, al comienzo de un párrafo o elemento de lista de las Notes (Build Tech los
+  interpreta; en el Markdown son texto normal):
+  - `[[0]]`, `[[1]]`, `[[2]]`… punto de lectura: se resalta cuando se han mostrado esos fragmentos.
+  - `[[#mapa]]` nota anclada al elemento de la diapositiva con `data-oc-nota="mapa"` (atributo en el
+    HTML o `<!-- .element: data-oc-nota="mapa" -->`); aparece como marcador solo en la miniatura privada.
+  - `[[#video:reproducir]]` (o `:pausar`, `:reiniciar`): además ofrece ese botón sobre el video o audio
+    del ancla. Nunca se ejecuta solo. No escribas HTML ni scripts en las Notes: Build Tech los muestra como texto.
 
 - Mantén la profundidad docente: explicación académica del concepto, ejemplos adicionales,
   errores frecuentes y cómo abordarlos. Las Notes no son un resumen de la diapositiva.

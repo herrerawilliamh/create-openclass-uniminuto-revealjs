@@ -75,7 +75,7 @@ test('Demostración completa: 13 layouts, ids, notas e identidad', { skip: omiti
   assert.equal(datos.clases.length, 13);
   assert.ok(datos.notas >= 20, `notas: ${datos.notas}`);
   assert.match(datos.numero, new RegExp(`Diapositiva 1 / ${datos.total}`));
-  assert.equal(datos.herramientas, 7);
+  assert.equal(datos.herramientas, 8, 'siete herramientas + Exportar a PDF');
   assert.ok(datos.inicio > 0, 'botón de inicio sin imagen');
   assert.ok(datos.casa);
   assert.ok(datos.sello.includes(`${BASE}imagenes/acreditacion-openclass.png`), `sello fuera de la base: ${datos.sello}`);
