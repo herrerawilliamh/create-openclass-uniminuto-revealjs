@@ -3,9 +3,16 @@
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/); versiones según
 [SemVer](https://semver.org/lang/es/). Entre paréntesis, la suite que acredita cada punto.
 
-## [Sin versión] — OpenClass Live (en desarrollo)
+## [1.2.0] — 2026-10-27
 
-No se publica en npm hasta aprobar el adaptador local; no altera la versión del paquete.
+Versión estable del generador: Build Tech, controles multimedia y exportación PDF; incluye el
+adaptador Live v0.2, desactivado por defecto. El servicio Live se distribuye por separado y no
+forma parte del paquete npm. El adaptador requiere protocolo v2: no activarlo con el servidor v0.1.
+La aceptación manual inicial está completada; la revisión del PDF guardado sigue pendiente antes
+de aprobar su entrega. La miniatura de video en Build Tech no actualiza los fotogramas y la demo
+contiene preguntas ordinarias que no son encuestas Live.
+
+Los cambios preparados como 1.1.0 se incorporan a esta publicación; 1.1.0 no se publicó en npm.
 
 - Nuevo servicio `services/openclass-live/` (fuera de `files` del paquete): encuestas en dos rondas y
   preguntas moderadas en tiempo real con Socket.IO 4; los estudiantes entran con QR o código y nunca

@@ -1760,30 +1760,6 @@
       "source_location": "L77"
     },
     {
-      "id": "services_openclass_live_tests_e2e_build_tech_navegador_test_adjuntarnueva",
-      "label": "adjuntarNueva()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 35,
-      "community_name": "Pagina",
-      "file_type": "code",
-      "norm_label": "adjuntarnueva()",
-      "source_file": "services/openclass-live/tests/e2e/build-tech-navegador.test.mjs",
-      "source_location": "L69"
-    },
-    {
-      "id": "services_openclass_live_tests_e2e_build_tech_navegador_test_esperar",
-      "label": "esperar()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 35,
-      "community_name": "Pagina",
-      "file_type": "code",
-      "norm_label": "esperar()",
-      "source_file": "services/openclass-live/tests/e2e/build-tech-navegador.test.mjs",
-      "source_location": "L35"
-    },
-    {
       "id": "template_src_plugins_encuesta_extraerencuesta",
       "label": "extraerEncuesta()",
       "_callable": true,
@@ -3176,6 +3152,18 @@
       "source_location": "L82"
     },
     {
+      "id": "tests_contenido_test_diapositivacodigo",
+      "label": "diapositivaCodigo()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 42,
+      "community_name": "build-site.mjs",
+      "file_type": "code",
+      "norm_label": "diapositivacodigo()",
+      "source_file": "tests/contenido.test.mjs",
+      "source_location": "L14"
+    },
+    {
       "id": "tests_contenido_test_leer",
       "label": "leer()",
       "_callable": true,
@@ -4040,18 +4028,6 @@
       "source_location": "L13"
     },
     {
-      "id": "tests_contenido_test_diapositivacodigo",
-      "label": "diapositivaCodigo()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 44,
-      "community_name": "docente.mjs",
-      "file_type": "code",
-      "norm_label": "diapositivacodigo()",
-      "source_file": "tests/contenido.test.mjs",
-      "source_location": "L14"
-    },
-    {
       "id": "services_openclass_live_scripts_verificar_despliegue_conectar",
       "label": "conectar()",
       "_callable": true,
@@ -4525,7 +4501,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 51,
-      "community_name": "ref_node_child_process",
+      "community_name": "ref_node_assert",
       "file_type": "code",
       "norm_label": "compilar()",
       "source_file": "services/openclass-live/tests/e2e/build-tech-curso.mjs",
@@ -4537,7 +4513,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 51,
-      "community_name": "ref_node_child_process",
+      "community_name": "ref_node_assert",
       "file_type": "code",
       "norm_label": "crearcurso()",
       "source_file": "services/openclass-live/tests/e2e/build-tech-curso.mjs",
@@ -4549,7 +4525,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 51,
-      "community_name": "ref_node_child_process",
+      "community_name": "ref_node_assert",
       "file_type": "code",
       "norm_label": "npm()",
       "source_file": "services/openclass-live/tests/e2e/build-tech-curso.mjs",
@@ -4561,11 +4537,23 @@
       "_callable": true,
       "_origin": "ast",
       "community": 51,
-      "community_name": "ref_node_child_process",
+      "community_name": "ref_node_assert",
       "file_type": "code",
       "norm_label": "recompilar()",
       "source_file": "services/openclass-live/tests/e2e/build-tech-curso.mjs",
       "source_location": "L89"
+    },
+    {
+      "id": "services_openclass_live_tests_e2e_build_tech_navegador_test_prepararcurso",
+      "label": "prepararCurso()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 51,
+      "community_name": "ref_node_assert",
+      "file_type": "code",
+      "norm_label": "prepararcurso()",
+      "source_file": "services/openclass-live/tests/e2e/build-tech-navegador.test.mjs",
+      "source_location": "L37"
     },
     {
       "id": "services_openclass_live_tests_e2e_pdf_privacidad_inspeccionar",
@@ -4573,7 +4561,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 51,
-      "community_name": "ref_node_child_process",
+      "community_name": "ref_node_assert",
       "file_type": "code",
       "norm_label": "inspeccionar()",
       "source_file": "services/openclass-live/tests/e2e/pdf-privacidad.mjs",
@@ -4585,7 +4573,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 51,
-      "community_name": "ref_node_child_process",
+      "community_name": "ref_node_assert",
       "file_type": "code",
       "norm_label": "npm()",
       "source_file": "services/openclass-live/tests/e2e/pdf-privacidad-navegador.test.mjs",
@@ -4597,7 +4585,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 51,
-      "community_name": "ref_node_child_process",
+      "community_name": "ref_node_assert",
       "file_type": "code",
       "norm_label": "textopdf()",
       "source_file": "services/openclass-live/tests/e2e/pdf-privacidad.mjs",
@@ -5084,52 +5072,148 @@
       "source_location": "L25"
     },
     {
-      "id": "scripts_render_demo_video_fijarduracion",
-      "label": "fijarDuracion()",
+      "id": "scripts_lib_chrome_abrirnavegador",
+      "label": "abrirNavegador()",
       "_callable": true,
       "_origin": "ast",
       "community": 56,
-      "community_name": "ref_node_url",
+      "community_name": "build-tech-navegador.test.mjs",
       "file_type": "code",
-      "norm_label": "fijarduracion()",
-      "source_file": "scripts/render-demo-video.mjs",
-      "source_location": "L72"
+      "norm_label": "abrirnavegador()",
+      "source_file": "scripts/lib/chrome.mjs",
+      "source_location": "L127"
     },
     {
-      "id": "scripts_render_demo_video_largovint",
-      "label": "largoVint()",
+      "id": "scripts_lib_chrome_rutachrome",
+      "label": "rutaChrome()",
       "_callable": true,
       "_origin": "ast",
       "community": 56,
-      "community_name": "ref_node_url",
+      "community_name": "build-tech-navegador.test.mjs",
       "file_type": "code",
-      "norm_label": "largovint()",
-      "source_file": "scripts/render-demo-video.mjs",
-      "source_location": "L67"
+      "norm_label": "rutachrome()",
+      "source_file": "scripts/lib/chrome.mjs",
+      "source_location": "L20"
     },
     {
-      "id": "tests_creator_test_fixture",
-      "label": "fixture()",
+      "id": "services_openclass_live_src_config_entero",
+      "label": "entero()",
       "_callable": true,
       "_origin": "ast",
-      "community": 57,
-      "community_name": "ref_node_assert",
+      "community": 56,
+      "community_name": "build-tech-navegador.test.mjs",
       "file_type": "code",
-      "norm_label": "fixture()",
-      "source_file": "tests/creator.test.mjs",
-      "source_location": "L10"
+      "norm_label": "entero()",
+      "source_file": "services/openclass-live/src/config.mjs",
+      "source_location": "L5"
     },
     {
-      "id": "tests_creator_test_run",
-      "label": "run()",
+      "id": "services_openclass_live_src_config_leerconfig",
+      "label": "leerConfig()",
       "_callable": true,
       "_origin": "ast",
-      "community": 57,
-      "community_name": "ref_node_assert",
+      "community": 56,
+      "community_name": "build-tech-navegador.test.mjs",
       "file_type": "code",
-      "norm_label": "run()",
-      "source_file": "tests/creator.test.mjs",
-      "source_location": "L11"
+      "norm_label": "leerconfig()",
+      "source_file": "services/openclass-live/src/config.mjs",
+      "source_location": "L14"
+    },
+    {
+      "id": "services_openclass_live_src_config_lista",
+      "label": "lista()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 56,
+      "community_name": "build-tech-navegador.test.mjs",
+      "file_type": "code",
+      "norm_label": "lista()",
+      "source_file": "services/openclass-live/src/config.mjs",
+      "source_location": "L12"
+    },
+    {
+      "id": "services_openclass_live_tests_e2e_build_tech_navegador_test_adjuntarnueva",
+      "label": "adjuntarNueva()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 56,
+      "community_name": "build-tech-navegador.test.mjs",
+      "file_type": "code",
+      "norm_label": "adjuntarnueva()",
+      "source_file": "services/openclass-live/tests/e2e/build-tech-navegador.test.mjs",
+      "source_location": "L69"
+    },
+    {
+      "id": "services_openclass_live_tests_e2e_build_tech_navegador_test_capturar",
+      "label": "capturar()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 56,
+      "community_name": "build-tech-navegador.test.mjs",
+      "file_type": "code",
+      "norm_label": "capturar()",
+      "source_file": "services/openclass-live/tests/e2e/build-tech-navegador.test.mjs",
+      "source_location": "L54"
+    },
+    {
+      "id": "services_openclass_live_tests_e2e_build_tech_navegador_test_esperar",
+      "label": "esperar()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 56,
+      "community_name": "build-tech-navegador.test.mjs",
+      "file_type": "code",
+      "norm_label": "esperar()",
+      "source_file": "services/openclass-live/tests/e2e/build-tech-navegador.test.mjs",
+      "source_location": "L35"
+    },
+    {
+      "id": "services_openclass_live_tests_e2e_build_tech_navegador_test_puertocompilado",
+      "label": "puertoCompilado()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 56,
+      "community_name": "build-tech-navegador.test.mjs",
+      "file_type": "code",
+      "norm_label": "puertocompilado()",
+      "source_file": "services/openclass-live/tests/e2e/build-tech-navegador.test.mjs",
+      "source_location": "L45"
+    },
+    {
+      "id": "services_openclass_live_tests_e2e_build_tech_navegador_test_pulsaren",
+      "label": "pulsarEn()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 56,
+      "community_name": "build-tech-navegador.test.mjs",
+      "file_type": "code",
+      "norm_label": "pulsaren()",
+      "source_file": "services/openclass-live/tests/e2e/build-tech-navegador.test.mjs",
+      "source_location": "L62"
+    },
+    {
+      "id": "services_openclass_live_tests_e2e_panel_contexto_navegador_test_montar",
+      "label": "montar()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 56,
+      "community_name": "build-tech-navegador.test.mjs",
+      "file_type": "code",
+      "norm_label": "montar()",
+      "source_file": "services/openclass-live/tests/e2e/panel-contexto-navegador.test.mjs",
+      "source_location": "L28"
+    },
+    {
+      "id": "services_openclass_live_tests_e2e_panel_contexto_navegador_test_vencersesion",
+      "label": "vencerSesion()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 56,
+      "community_name": "build-tech-navegador.test.mjs",
+      "file_type": "code",
+      "norm_label": "vencersesion()",
+      "source_file": "services/openclass-live/tests/e2e/panel-contexto-navegador.test.mjs",
+      "source_location": "L26"
     },
     {
       "id": "tests_docente_p3_test_capitulo",
@@ -5137,7 +5221,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 57,
-      "community_name": "ref_node_assert",
+      "community_name": "semana.test.mjs",
       "file_type": "code",
       "norm_label": "capitulo()",
       "source_file": "tests/docente-p3.test.mjs",
@@ -5149,7 +5233,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 57,
-      "community_name": "ref_node_assert",
+      "community_name": "semana.test.mjs",
       "file_type": "code",
       "norm_label": "leer()",
       "source_file": "tests/docente-p3.test.mjs",
@@ -5161,7 +5245,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 57,
-      "community_name": "ref_node_assert",
+      "community_name": "semana.test.mjs",
       "file_type": "code",
       "norm_label": "texto()",
       "source_file": "tests/docente-p3.test.mjs",
@@ -5173,7 +5257,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 57,
-      "community_name": "ref_node_assert",
+      "community_name": "semana.test.mjs",
       "file_type": "code",
       "norm_label": "curso()",
       "source_file": "tests/semana.test.mjs",
@@ -5185,7 +5269,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 57,
-      "community_name": "ref_node_assert",
+      "community_name": "semana.test.mjs",
       "file_type": "code",
       "norm_label": "npm()",
       "source_file": "tests/semana.test.mjs",
@@ -5197,7 +5281,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 57,
-      "community_name": "ref_node_assert",
+      "community_name": "semana.test.mjs",
       "file_type": "code",
       "norm_label": "readcfg()",
       "source_file": "tests/semana.test.mjs",
@@ -5209,7 +5293,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 57,
-      "community_name": "ref_node_assert",
+      "community_name": "semana.test.mjs",
       "file_type": "code",
       "norm_label": "sha()",
       "source_file": "tests/semana.test.mjs",
@@ -5221,7 +5305,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 57,
-      "community_name": "ref_node_assert",
+      "community_name": "semana.test.mjs",
       "file_type": "code",
       "norm_label": "tmp()",
       "source_file": "tests/semana.test.mjs",
@@ -5233,11 +5317,35 @@
       "_callable": true,
       "_origin": "ast",
       "community": 57,
-      "community_name": "ref_node_assert",
+      "community_name": "semana.test.mjs",
       "file_type": "code",
       "norm_label": "writecfg()",
       "source_file": "tests/semana.test.mjs",
       "source_location": "L21"
+    },
+    {
+      "id": "scripts_render_demo_video_fijarduracion",
+      "label": "fijarDuracion()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 58,
+      "community_name": "ref_node_url",
+      "file_type": "code",
+      "norm_label": "fijarduracion()",
+      "source_file": "scripts/render-demo-video.mjs",
+      "source_location": "L72"
+    },
+    {
+      "id": "scripts_render_demo_video_largovint",
+      "label": "largoVint()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 58,
+      "community_name": "ref_node_url",
+      "file_type": "code",
+      "norm_label": "largovint()",
+      "source_file": "scripts/render-demo-video.mjs",
+      "source_location": "L67"
     },
     {
       "id": "services_openclass_live_src_salas_crearalmacen",
@@ -5480,42 +5588,6 @@
       "source_location": "L59"
     },
     {
-      "id": "services_openclass_live_src_config_entero",
-      "label": "entero()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 67,
-      "community_name": "app.mjs",
-      "file_type": "code",
-      "norm_label": "entero()",
-      "source_file": "services/openclass-live/src/config.mjs",
-      "source_location": "L5"
-    },
-    {
-      "id": "services_openclass_live_src_config_leerconfig",
-      "label": "leerConfig()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 67,
-      "community_name": "app.mjs",
-      "file_type": "code",
-      "norm_label": "leerconfig()",
-      "source_file": "services/openclass-live/src/config.mjs",
-      "source_location": "L14"
-    },
-    {
-      "id": "services_openclass_live_src_config_lista",
-      "label": "lista()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 67,
-      "community_name": "app.mjs",
-      "file_type": "code",
-      "norm_label": "lista()",
-      "source_file": "services/openclass-live/src/config.mjs",
-      "source_location": "L12"
-    },
-    {
       "id": "services_openclass_live_src_http_cargarestaticos",
       "label": "cargarEstaticos()",
       "_callable": true,
@@ -5528,60 +5600,12 @@
       "source_location": "L38"
     },
     {
-      "id": "services_openclass_live_tests_e2e_panel_contexto_navegador_test_montar",
-      "label": "montar()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 67,
-      "community_name": "app.mjs",
-      "file_type": "code",
-      "norm_label": "montar()",
-      "source_file": "services/openclass-live/tests/e2e/panel-contexto-navegador.test.mjs",
-      "source_location": "L28"
-    },
-    {
-      "id": "services_openclass_live_tests_e2e_panel_contexto_navegador_test_vencersesion",
-      "label": "vencerSesion()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 67,
-      "community_name": "app.mjs",
-      "file_type": "code",
-      "norm_label": "vencersesion()",
-      "source_file": "services/openclass-live/tests/e2e/panel-contexto-navegador.test.mjs",
-      "source_location": "L26"
-    },
-    {
-      "id": "scripts_lib_chrome_abrirnavegador",
-      "label": "abrirNavegador()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 68,
-      "community_name": "build-tech-navegador.test.mjs",
-      "file_type": "code",
-      "norm_label": "abrirnavegador()",
-      "source_file": "scripts/lib/chrome.mjs",
-      "source_location": "L127"
-    },
-    {
-      "id": "scripts_lib_chrome_rutachrome",
-      "label": "rutaChrome()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 68,
-      "community_name": "build-tech-navegador.test.mjs",
-      "file_type": "code",
-      "norm_label": "rutachrome()",
-      "source_file": "scripts/lib/chrome.mjs",
-      "source_location": "L20"
-    },
-    {
       "id": "scripts_lib_servidor_enviar",
       "label": "enviar()",
       "_callable": true,
       "_origin": "ast",
       "community": 68,
-      "community_name": "build-tech-navegador.test.mjs",
+      "community_name": "protocolo-navegador.test.mjs",
       "file_type": "code",
       "norm_label": "enviar()",
       "source_file": "scripts/lib/servidor.mjs",
@@ -5593,59 +5617,11 @@
       "_callable": true,
       "_origin": "ast",
       "community": 68,
-      "community_name": "build-tech-navegador.test.mjs",
+      "community_name": "protocolo-navegador.test.mjs",
       "file_type": "code",
       "norm_label": "servir()",
       "source_file": "scripts/lib/servidor.mjs",
       "source_location": "L17"
-    },
-    {
-      "id": "services_openclass_live_tests_e2e_build_tech_navegador_test_capturar",
-      "label": "capturar()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 68,
-      "community_name": "build-tech-navegador.test.mjs",
-      "file_type": "code",
-      "norm_label": "capturar()",
-      "source_file": "services/openclass-live/tests/e2e/build-tech-navegador.test.mjs",
-      "source_location": "L54"
-    },
-    {
-      "id": "services_openclass_live_tests_e2e_build_tech_navegador_test_prepararcurso",
-      "label": "prepararCurso()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 68,
-      "community_name": "build-tech-navegador.test.mjs",
-      "file_type": "code",
-      "norm_label": "prepararcurso()",
-      "source_file": "services/openclass-live/tests/e2e/build-tech-navegador.test.mjs",
-      "source_location": "L37"
-    },
-    {
-      "id": "services_openclass_live_tests_e2e_build_tech_navegador_test_puertocompilado",
-      "label": "puertoCompilado()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 68,
-      "community_name": "build-tech-navegador.test.mjs",
-      "file_type": "code",
-      "norm_label": "puertocompilado()",
-      "source_file": "services/openclass-live/tests/e2e/build-tech-navegador.test.mjs",
-      "source_location": "L45"
-    },
-    {
-      "id": "services_openclass_live_tests_e2e_build_tech_navegador_test_pulsaren",
-      "label": "pulsarEn()",
-      "_callable": true,
-      "_origin": "ast",
-      "community": 68,
-      "community_name": "build-tech-navegador.test.mjs",
-      "file_type": "code",
-      "norm_label": "pulsaren()",
-      "source_file": "services/openclass-live/tests/e2e/build-tech-navegador.test.mjs",
-      "source_location": "L62"
     },
     {
       "id": "services_openclass_live_tests_e2e_protocolo_navegador_test_compilarcurso",
@@ -5653,7 +5629,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 68,
-      "community_name": "build-tech-navegador.test.mjs",
+      "community_name": "protocolo-navegador.test.mjs",
       "file_type": "code",
       "norm_label": "compilarcurso()",
       "source_file": "services/openclass-live/tests/e2e/protocolo-navegador.test.mjs",
@@ -5665,7 +5641,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 68,
-      "community_name": "build-tech-navegador.test.mjs",
+      "community_name": "protocolo-navegador.test.mjs",
       "file_type": "code",
       "norm_label": "extraerv01()",
       "source_file": "services/openclass-live/tests/e2e/protocolo-navegador.test.mjs",
@@ -5677,7 +5653,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 68,
-      "community_name": "build-tech-navegador.test.mjs",
+      "community_name": "protocolo-navegador.test.mjs",
       "file_type": "code",
       "norm_label": "npm()",
       "source_file": "services/openclass-live/tests/e2e/protocolo-navegador.test.mjs",
@@ -5689,7 +5665,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 68,
-      "community_name": "build-tech-navegador.test.mjs",
+      "community_name": "protocolo-navegador.test.mjs",
       "file_type": "code",
       "norm_label": "puertocompilado()",
       "source_file": "services/openclass-live/tests/e2e/protocolo-navegador.test.mjs",
@@ -5701,7 +5677,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 68,
-      "community_name": "build-tech-navegador.test.mjs",
+      "community_name": "protocolo-navegador.test.mjs",
       "file_type": "code",
       "norm_label": "abrirdeck()",
       "source_file": "tests/navegador.test.mjs",
@@ -5713,7 +5689,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 68,
-      "community_name": "build-tech-navegador.test.mjs",
+      "community_name": "protocolo-navegador.test.mjs",
       "file_type": "code",
       "norm_label": "esperar()",
       "source_file": "tests/navegador.test.mjs",
@@ -5725,7 +5701,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 68,
-      "community_name": "build-tech-navegador.test.mjs",
+      "community_name": "protocolo-navegador.test.mjs",
       "file_type": "code",
       "norm_label": "indice()",
       "source_file": "tests/navegador.test.mjs",
@@ -5737,7 +5713,7 @@
       "_callable": true,
       "_origin": "ast",
       "community": 68,
-      "community_name": "build-tech-navegador.test.mjs",
+      "community_name": "protocolo-navegador.test.mjs",
       "file_type": "code",
       "norm_label": "ira()",
       "source_file": "tests/navegador.test.mjs",
@@ -5910,6 +5886,30 @@
       "norm_label": "valor()",
       "source_file": "scripts/test-navegador.mjs",
       "source_location": "L17"
+    },
+    {
+      "id": "tests_creator_test_fixture",
+      "label": "fixture()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 70,
+      "community_name": "ref_node_fs",
+      "file_type": "code",
+      "norm_label": "fixture()",
+      "source_file": "tests/creator.test.mjs",
+      "source_location": "L10"
+    },
+    {
+      "id": "tests_creator_test_run",
+      "label": "run()",
+      "_callable": true,
+      "_origin": "ast",
+      "community": 70,
+      "community_name": "ref_node_fs",
+      "file_type": "code",
+      "norm_label": "run()",
+      "source_file": "tests/creator.test.mjs",
+      "source_location": "L11"
     },
     {
       "id": "template_scripts_generar_desde_config",
@@ -7864,28 +7864,6 @@
       "source_location": "L1"
     },
     {
-      "id": "services_openclass_live_src_protocolo",
-      "label": "protocolo.mjs",
-      "_origin": "ast",
-      "community": 2,
-      "community_name": "ayuda.mjs",
-      "file_type": "code",
-      "norm_label": "protocolo.mjs",
-      "source_file": "services/openclass-live/src/protocolo.mjs",
-      "source_location": "L1"
-    },
-    {
-      "id": "services_openclass_live_src_protocolo_protocolo",
-      "label": "PROTOCOLO",
-      "_origin": "ast",
-      "community": 2,
-      "community_name": "ayuda.mjs",
-      "file_type": "code",
-      "norm_label": "protocolo",
-      "source_file": "services/openclass-live/src/protocolo.mjs",
-      "source_location": "L9"
-    },
-    {
       "id": "services_openclass_live_tests_ayuda",
       "label": "ayuda.mjs",
       "_origin": "ast",
@@ -8466,7 +8444,7 @@
       "node_kind": "heading",
       "norm_label": "[1.0.0] \u2014 2026-10-21",
       "source_file": "CHANGELOG.md",
-      "source_location": "L166"
+      "source_location": "L173"
     },
     {
       "id": "changelog_1_1_0_sin_publicar",
@@ -8478,7 +8456,19 @@
       "node_kind": "heading",
       "norm_label": "[1.1.0] \u2014 sin publicar",
       "source_file": "CHANGELOG.md",
-      "source_location": "L70"
+      "source_location": "L77"
+    },
+    {
+      "id": "changelog_1_2_0_2026_10_27",
+      "label": "[1.2.0] \u2014 2026-10-27",
+      "_origin": "ast",
+      "community": 24,
+      "community_name": "[1.1.0] \u2014 sin publicar",
+      "file_type": "document",
+      "node_kind": "heading",
+      "norm_label": "[1.2.0] \u2014 2026-10-27",
+      "source_file": "CHANGELOG.md",
+      "source_location": "L6"
     },
     {
       "id": "changelog_actualizar_un_curso_existente",
@@ -8490,7 +8480,7 @@
       "node_kind": "heading",
       "norm_label": "actualizar un curso existente",
       "source_file": "CHANGELOG.md",
-      "source_location": "L151"
+      "source_location": "L158"
     },
     {
       "id": "changelog_cambios",
@@ -8514,7 +8504,7 @@
       "node_kind": "heading",
       "norm_label": "conocido",
       "source_file": "CHANGELOG.md",
-      "source_location": "L161"
+      "source_location": "L168"
     },
     {
       "id": "changelog_desarrollo_del_generador",
@@ -8526,7 +8516,7 @@
       "node_kind": "heading",
       "norm_label": "desarrollo del generador",
       "source_file": "CHANGELOG.md",
-      "source_location": "L133"
+      "source_location": "L140"
     },
     {
       "id": "changelog_generaci\u00f3n_semanal_segura",
@@ -8538,7 +8528,7 @@
       "node_kind": "heading",
       "norm_label": "generacion semanal segura",
       "source_file": "CHANGELOG.md",
-      "source_location": "L75"
+      "source_location": "L82"
     },
     {
       "id": "changelog_gu\u00eda_del_docente",
@@ -8550,7 +8540,7 @@
       "node_kind": "heading",
       "norm_label": "guia del docente",
       "source_file": "CHANGELOG.md",
-      "source_location": "L118"
+      "source_location": "L125"
     },
     {
       "id": "changelog_gu\u00eda_docente_y_prompt_maestro",
@@ -8562,7 +8552,7 @@
       "node_kind": "heading",
       "norm_label": "guia docente y prompt maestro",
       "source_file": "CHANGELOG.md",
-      "source_location": "L108"
+      "source_location": "L115"
     },
     {
       "id": "changelog_portal_centrado_en_estudiantes",
@@ -8574,7 +8564,7 @@
       "node_kind": "heading",
       "norm_label": "portal centrado en estudiantes",
       "source_file": "CHANGELOG.md",
-      "source_location": "L98"
+      "source_location": "L105"
     },
     {
       "id": "changelog_primera_secuencia_de_cada_semana",
@@ -8586,7 +8576,7 @@
       "node_kind": "heading",
       "norm_label": "primera secuencia de cada semana",
       "source_file": "CHANGELOG.md",
-      "source_location": "L84"
+      "source_location": "L91"
     },
     {
       "id": "changelog_publicaci\u00f3n_y_privacidad",
@@ -8598,19 +8588,7 @@
       "node_kind": "heading",
       "norm_label": "publicacion y privacidad",
       "source_file": "CHANGELOG.md",
-      "source_location": "L123"
-    },
-    {
-      "id": "changelog_sin_versi\u00f3n_openclass_live_en_desarrollo",
-      "label": "[Sin versi\u00f3n] \u2014 OpenClass Live (en desarrollo)",
-      "_origin": "ast",
-      "community": 24,
-      "community_name": "[1.1.0] \u2014 sin publicar",
-      "file_type": "document",
-      "node_kind": "heading",
-      "norm_label": "[sin version] \u2014 openclass live (en desarrollo)",
-      "source_file": "CHANGELOG.md",
-      "source_location": "L6"
+      "source_location": "L130"
     },
     {
       "id": "readme",
@@ -8634,7 +8612,7 @@
       "node_kind": "heading",
       "norm_label": "actualizar un curso existente",
       "source_file": "README.md",
-      "source_location": "L46"
+      "source_location": "L52"
     },
     {
       "id": "readme_comandos",
@@ -8646,7 +8624,7 @@
       "node_kind": "heading",
       "norm_label": "comandos",
       "source_file": "README.md",
-      "source_location": "L58"
+      "source_location": "L64"
     },
     {
       "id": "readme_desarrollo_del_generador",
@@ -8658,7 +8636,7 @@
       "node_kind": "heading",
       "norm_label": "desarrollo del generador",
       "source_file": "README.md",
-      "source_location": "L94"
+      "source_location": "L100"
     },
     {
       "id": "readme_instalaci\u00f3n_y_primer_curso",
@@ -8670,7 +8648,7 @@
       "node_kind": "heading",
       "norm_label": "instalacion y primer curso",
       "source_file": "README.md",
-      "source_location": "L28"
+      "source_location": "L34"
     },
     {
       "id": "readme_licencia_y_cr\u00e9ditos",
@@ -8682,7 +8660,7 @@
       "node_kind": "heading",
       "norm_label": "licencia y creditos",
       "source_file": "README.md",
-      "source_location": "L126"
+      "source_location": "L132"
     },
     {
       "id": "readme_limitaciones_conocidas",
@@ -8694,7 +8672,7 @@
       "node_kind": "heading",
       "norm_label": "limitaciones conocidas",
       "source_file": "README.md",
-      "source_location": "L117"
+      "source_location": "L123"
     },
     {
       "id": "readme_openclass_uniminuto_reveal_js",
@@ -8718,7 +8696,7 @@
       "node_kind": "heading",
       "norm_label": "que incluye cada curso",
       "source_file": "README.md",
-      "source_location": "L81"
+      "source_location": "L87"
     },
     {
       "id": "readme_requisitos",
@@ -9774,18 +9752,6 @@
       "norm_label": "protocolo_live",
       "source_file": "template/src/plugins/protocolo-live.mjs",
       "source_location": "L5"
-    },
-    {
-      "id": "docs_ai_context_openclass_live_in_development_not_in_the_npm_package",
-      "label": "OpenClass Live (in development, not in the npm package)",
-      "_origin": "ast",
-      "community": 37,
-      "community_name": "OpenClassLive",
-      "file_type": "document",
-      "node_kind": "heading",
-      "norm_label": "openclass live (in development, not in the npm package)",
-      "source_file": "docs/AI-CONTEXT.md",
-      "source_location": "L48"
     },
     {
       "id": "tests_portal_academico_test",
@@ -11560,6 +11526,18 @@
       "source_location": "L251"
     },
     {
+      "id": "docs_ai_context_openclass_live_in_development_not_in_the_npm_package",
+      "label": "OpenClass Live (in development, not in the npm package)",
+      "_origin": "ast",
+      "community": 44,
+      "community_name": "docente.mjs",
+      "file_type": "document",
+      "node_kind": "heading",
+      "norm_label": "openclass live (in development, not in the npm package)",
+      "source_file": "docs/AI-CONTEXT.md",
+      "source_location": "L48"
+    },
+    {
       "id": "services_openclass_live_package",
       "label": "openclass-live/package.json",
       "_origin": "ast",
@@ -12617,7 +12595,7 @@
       "label": "build-tech-curso.mjs",
       "_origin": "ast",
       "community": 51,
-      "community_name": "ref_node_child_process",
+      "community_name": "ref_node_assert",
       "file_type": "code",
       "norm_label": "build-tech-curso.mjs",
       "source_file": "services/openclass-live/tests/e2e/build-tech-curso.mjs",
@@ -12628,7 +12606,7 @@
       "label": "DIAPOSITIVAS",
       "_origin": "ast",
       "community": 51,
-      "community_name": "ref_node_child_process",
+      "community_name": "ref_node_assert",
       "file_type": "code",
       "norm_label": "diapositivas",
       "source_file": "services/openclass-live/tests/e2e/build-tech-curso.mjs",
@@ -12639,7 +12617,7 @@
       "label": "RAIZ",
       "_origin": "ast",
       "community": 51,
-      "community_name": "ref_node_child_process",
+      "community_name": "ref_node_assert",
       "file_type": "code",
       "norm_label": "raiz",
       "source_file": "services/openclass-live/tests/e2e/build-tech-curso.mjs",
@@ -12650,7 +12628,7 @@
       "label": "YOUTUBE_ID",
       "_origin": "ast",
       "community": 51,
-      "community_name": "ref_node_child_process",
+      "community_name": "ref_node_assert",
       "file_type": "code",
       "norm_label": "youtube_id",
       "source_file": "services/openclass-live/tests/e2e/build-tech-curso.mjs",
@@ -12661,7 +12639,7 @@
       "label": "pdf-privacidad.mjs",
       "_origin": "ast",
       "community": 51,
-      "community_name": "ref_node_child_process",
+      "community_name": "ref_node_assert",
       "file_type": "code",
       "norm_label": "pdf-privacidad.mjs",
       "source_file": "services/openclass-live/tests/e2e/pdf-privacidad.mjs",
@@ -12672,7 +12650,7 @@
       "label": "pdf-privacidad-navegador.test.mjs",
       "_origin": "ast",
       "community": 51,
-      "community_name": "ref_node_child_process",
+      "community_name": "ref_node_assert",
       "file_type": "code",
       "norm_label": "pdf-privacidad-navegador.test.mjs",
       "source_file": "services/openclass-live/tests/e2e/pdf-privacidad-navegador.test.mjs",
@@ -12683,7 +12661,7 @@
       "label": "PRIVADAS",
       "_origin": "ast",
       "community": 51,
-      "community_name": "ref_node_child_process",
+      "community_name": "ref_node_assert",
       "file_type": "code",
       "norm_label": "privadas",
       "source_file": "services/openclass-live/tests/e2e/pdf-privacidad-navegador.test.mjs",
@@ -12694,7 +12672,7 @@
       "label": "PUBLICAS",
       "_origin": "ast",
       "community": 51,
-      "community_name": "ref_node_child_process",
+      "community_name": "ref_node_assert",
       "file_type": "code",
       "norm_label": "publicas",
       "source_file": "services/openclass-live/tests/e2e/pdf-privacidad-navegador.test.mjs",
@@ -12705,7 +12683,7 @@
       "label": "RAIZ",
       "_origin": "ast",
       "community": 51,
-      "community_name": "ref_node_child_process",
+      "community_name": "ref_node_assert",
       "file_type": "code",
       "norm_label": "raiz",
       "source_file": "services/openclass-live/tests/e2e/pdf-privacidad-navegador.test.mjs",
@@ -13280,6 +13258,28 @@
       "source_location": "L1"
     },
     {
+      "id": "services_openclass_live_src_protocolo",
+      "label": "protocolo.mjs",
+      "_origin": "ast",
+      "community": 55,
+      "community_name": "sockets.mjs",
+      "file_type": "code",
+      "norm_label": "protocolo.mjs",
+      "source_file": "services/openclass-live/src/protocolo.mjs",
+      "source_location": "L1"
+    },
+    {
+      "id": "services_openclass_live_src_protocolo_protocolo",
+      "label": "PROTOCOLO",
+      "_origin": "ast",
+      "community": 55,
+      "community_name": "sockets.mjs",
+      "file_type": "code",
+      "norm_label": "protocolo",
+      "source_file": "services/openclass-live/src/protocolo.mjs",
+      "source_location": "L9"
+    },
+    {
       "id": "services_openclass_live_src_sockets",
       "label": "sockets.mjs",
       "_origin": "ast",
@@ -13291,99 +13291,121 @@
       "source_location": "L1"
     },
     {
-      "id": "scripts_render_demo_video",
-      "label": "render-demo-video.mjs",
+      "id": "scripts_lib_chrome",
+      "label": "chrome.mjs",
       "_origin": "ast",
       "community": 56,
-      "community_name": "ref_node_url",
+      "community_name": "build-tech-navegador.test.mjs",
       "file_type": "code",
-      "norm_label": "render-demo-video.mjs",
-      "source_file": "scripts/render-demo-video.mjs",
+      "norm_label": "chrome.mjs",
+      "source_file": "scripts/lib/chrome.mjs",
       "source_location": "L1"
     },
     {
-      "id": "scripts_render_demo_video_destino",
-      "label": "destino",
+      "id": "scripts_lib_chrome_candidatos",
+      "label": "CANDIDATOS",
       "_origin": "ast",
       "community": 56,
-      "community_name": "ref_node_url",
+      "community_name": "build-tech-navegador.test.mjs",
       "file_type": "code",
-      "norm_label": "destino",
-      "source_file": "scripts/render-demo-video.mjs",
-      "source_location": "L13"
-    },
-    {
-      "id": "scripts_render_demo_video_raiz",
-      "label": "raiz",
-      "_origin": "ast",
-      "community": 56,
-      "community_name": "ref_node_url",
-      "file_type": "code",
-      "norm_label": "raiz",
-      "source_file": "scripts/render-demo-video.mjs",
-      "source_location": "L12"
-    },
-    {
-      "id": "services_openclass_live_tests_configuracion_despliegue_test",
-      "label": "configuracion-despliegue.test.mjs",
-      "_origin": "ast",
-      "community": 57,
-      "community_name": "ref_node_assert",
-      "file_type": "code",
-      "norm_label": "configuracion-despliegue.test.mjs",
-      "source_file": "services/openclass-live/tests/configuracion-despliegue.test.mjs",
-      "source_location": "L1"
-    },
-    {
-      "id": "services_openclass_live_tests_configuracion_despliegue_test_raiz",
-      "label": "raiz",
-      "_origin": "ast",
-      "community": 57,
-      "community_name": "ref_node_assert",
-      "file_type": "code",
-      "norm_label": "raiz",
-      "source_file": "services/openclass-live/tests/configuracion-despliegue.test.mjs",
+      "norm_label": "candidatos",
+      "source_file": "scripts/lib/chrome.mjs",
       "source_location": "L11"
     },
     {
-      "id": "tests_creator_test",
-      "label": "creator.test.mjs",
+      "id": "services_openclass_live_src_config",
+      "label": "config.mjs",
       "_origin": "ast",
-      "community": 57,
-      "community_name": "ref_node_assert",
+      "community": 56,
+      "community_name": "build-tech-navegador.test.mjs",
       "file_type": "code",
-      "norm_label": "creator.test.mjs",
-      "source_file": "tests/creator.test.mjs",
+      "norm_label": "config.mjs",
+      "source_file": "services/openclass-live/src/config.mjs",
       "source_location": "L1"
     },
     {
-      "id": "tests_creator_test_bin",
-      "label": "bin",
+      "id": "services_openclass_live_tests_e2e_build_tech_navegador_test",
+      "label": "build-tech-navegador.test.mjs",
       "_origin": "ast",
-      "community": 57,
-      "community_name": "ref_node_assert",
+      "community": 56,
+      "community_name": "build-tech-navegador.test.mjs",
       "file_type": "code",
-      "norm_label": "bin",
-      "source_file": "tests/creator.test.mjs",
-      "source_location": "L9"
+      "norm_label": "build-tech-navegador.test.mjs",
+      "source_file": "services/openclass-live/tests/e2e/build-tech-navegador.test.mjs",
+      "source_location": "L1"
     },
     {
-      "id": "tests_creator_test_root",
-      "label": "root",
+      "id": "services_openclass_live_tests_e2e_build_tech_navegador_test_notas_privadas",
+      "label": "NOTAS_PRIVADAS",
       "_origin": "ast",
-      "community": 57,
-      "community_name": "ref_node_assert",
+      "community": 56,
+      "community_name": "build-tech-navegador.test.mjs",
       "file_type": "code",
-      "norm_label": "root",
-      "source_file": "tests/creator.test.mjs",
-      "source_location": "L8"
+      "norm_label": "notas_privadas",
+      "source_file": "services/openclass-live/tests/e2e/build-tech-navegador.test.mjs",
+      "source_location": "L34"
+    },
+    {
+      "id": "services_openclass_live_tests_e2e_panel_contexto_navegador_test",
+      "label": "panel-contexto-navegador.test.mjs",
+      "_origin": "ast",
+      "community": 56,
+      "community_name": "build-tech-navegador.test.mjs",
+      "file_type": "code",
+      "norm_label": "panel-contexto-navegador.test.mjs",
+      "source_file": "services/openclass-live/tests/e2e/panel-contexto-navegador.test.mjs",
+      "source_location": "L1"
+    },
+    {
+      "id": "services_openclass_live_tests_e2e_panel_contexto_navegador_test_relojreal",
+      "label": "relojReal",
+      "_origin": "ast",
+      "community": 56,
+      "community_name": "build-tech-navegador.test.mjs",
+      "file_type": "code",
+      "norm_label": "relojreal",
+      "source_file": "services/openclass-live/tests/e2e/panel-contexto-navegador.test.mjs",
+      "source_location": "L23"
+    },
+    {
+      "id": "services_openclass_live_tests_e2e_panel_soluciones_navegador_test",
+      "label": "panel-soluciones-navegador.test.mjs",
+      "_origin": "ast",
+      "community": 56,
+      "community_name": "build-tech-navegador.test.mjs",
+      "file_type": "code",
+      "norm_label": "panel-soluciones-navegador.test.mjs",
+      "source_file": "services/openclass-live/tests/e2e/panel-soluciones-navegador.test.mjs",
+      "source_location": "L1"
+    },
+    {
+      "id": "tests_sitio_test",
+      "label": "sitio.test.mjs",
+      "_origin": "ast",
+      "community": 56,
+      "community_name": "build-tech-navegador.test.mjs",
+      "file_type": "code",
+      "norm_label": "sitio.test.mjs",
+      "source_file": "tests/sitio.test.mjs",
+      "source_location": "L1"
+    },
+    {
+      "id": "tests_sitio_test_raiz",
+      "label": "raiz",
+      "_origin": "ast",
+      "community": 56,
+      "community_name": "build-tech-navegador.test.mjs",
+      "file_type": "code",
+      "norm_label": "raiz",
+      "source_file": "tests/sitio.test.mjs",
+      "source_location": "L13"
     },
     {
       "id": "tests_docente_p3_test",
       "label": "docente-p3.test.mjs",
       "_origin": "ast",
       "community": 57,
-      "community_name": "ref_node_assert",
+      "community_name": "semana.test.mjs",
       "file_type": "code",
       "norm_label": "docente-p3.test.mjs",
       "source_file": "tests/docente-p3.test.mjs",
@@ -13394,7 +13416,7 @@
       "label": "root",
       "_origin": "ast",
       "community": 57,
-      "community_name": "ref_node_assert",
+      "community_name": "semana.test.mjs",
       "file_type": "code",
       "norm_label": "root",
       "source_file": "tests/docente-p3.test.mjs",
@@ -13405,7 +13427,7 @@
       "label": "semana.test.mjs",
       "_origin": "ast",
       "community": 57,
-      "community_name": "ref_node_assert",
+      "community_name": "semana.test.mjs",
       "file_type": "code",
       "norm_label": "semana.test.mjs",
       "source_file": "tests/semana.test.mjs",
@@ -13416,7 +13438,7 @@
       "label": "bin",
       "_origin": "ast",
       "community": 57,
-      "community_name": "ref_node_assert",
+      "community_name": "semana.test.mjs",
       "file_type": "code",
       "norm_label": "bin",
       "source_file": "tests/semana.test.mjs",
@@ -13427,18 +13449,51 @@
       "label": "root",
       "_origin": "ast",
       "community": 57,
-      "community_name": "ref_node_assert",
+      "community_name": "semana.test.mjs",
       "file_type": "code",
       "norm_label": "root",
       "source_file": "tests/semana.test.mjs",
       "source_location": "L13"
     },
     {
+      "id": "scripts_render_demo_video",
+      "label": "render-demo-video.mjs",
+      "_origin": "ast",
+      "community": 58,
+      "community_name": "ref_node_url",
+      "file_type": "code",
+      "norm_label": "render-demo-video.mjs",
+      "source_file": "scripts/render-demo-video.mjs",
+      "source_location": "L1"
+    },
+    {
+      "id": "scripts_render_demo_video_destino",
+      "label": "destino",
+      "_origin": "ast",
+      "community": 58,
+      "community_name": "ref_node_url",
+      "file_type": "code",
+      "norm_label": "destino",
+      "source_file": "scripts/render-demo-video.mjs",
+      "source_location": "L13"
+    },
+    {
+      "id": "scripts_render_demo_video_raiz",
+      "label": "raiz",
+      "_origin": "ast",
+      "community": 58,
+      "community_name": "ref_node_url",
+      "file_type": "code",
+      "norm_label": "raiz",
+      "source_file": "scripts/render-demo-video.mjs",
+      "source_location": "L12"
+    },
+    {
       "id": "services_openclass_live_scripts_empaquetar_despliegue",
       "label": "empaquetar-despliegue.mjs",
       "_origin": "ast",
       "community": 58,
-      "community_name": "ref_node_path",
+      "community_name": "ref_node_url",
       "file_type": "code",
       "norm_label": "empaquetar-despliegue.mjs",
       "source_file": "services/openclass-live/scripts/empaquetar-despliegue.mjs",
@@ -13449,7 +13504,7 @@
       "label": "ARCHIVOS",
       "_origin": "ast",
       "community": 58,
-      "community_name": "ref_node_path",
+      "community_name": "ref_node_url",
       "file_type": "code",
       "norm_label": "archivos",
       "source_file": "services/openclass-live/scripts/empaquetar-despliegue.mjs",
@@ -13460,7 +13515,7 @@
       "label": "carpeta",
       "_origin": "ast",
       "community": 58,
-      "community_name": "ref_node_path",
+      "community_name": "ref_node_url",
       "file_type": "code",
       "norm_label": "carpeta",
       "source_file": "services/openclass-live/scripts/empaquetar-despliegue.mjs",
@@ -13471,7 +13526,7 @@
       "label": "lista",
       "_origin": "ast",
       "community": 58,
-      "community_name": "ref_node_path",
+      "community_name": "ref_node_url",
       "file_type": "code",
       "norm_label": "lista",
       "source_file": "services/openclass-live/scripts/empaquetar-despliegue.mjs",
@@ -13482,7 +13537,7 @@
       "label": "r",
       "_origin": "ast",
       "community": 58,
-      "community_name": "ref_node_path",
+      "community_name": "ref_node_url",
       "file_type": "code",
       "norm_label": "r",
       "source_file": "services/openclass-live/scripts/empaquetar-despliegue.mjs",
@@ -13493,7 +13548,7 @@
       "label": "raiz",
       "_origin": "ast",
       "community": 58,
-      "community_name": "ref_node_path",
+      "community_name": "ref_node_url",
       "file_type": "code",
       "norm_label": "raiz",
       "source_file": "services/openclass-live/scripts/empaquetar-despliegue.mjs",
@@ -13504,7 +13559,7 @@
       "label": "salida",
       "_origin": "ast",
       "community": 58,
-      "community_name": "ref_node_path",
+      "community_name": "ref_node_url",
       "file_type": "code",
       "norm_label": "salida",
       "source_file": "services/openclass-live/scripts/empaquetar-despliegue.mjs",
@@ -13515,7 +13570,7 @@
       "label": "suma",
       "_origin": "ast",
       "community": 58,
-      "community_name": "ref_node_path",
+      "community_name": "ref_node_url",
       "file_type": "code",
       "norm_label": "suma",
       "source_file": "services/openclass-live/scripts/empaquetar-despliegue.mjs",
@@ -13526,7 +13581,7 @@
       "label": "tar",
       "_origin": "ast",
       "community": 58,
-      "community_name": "ref_node_path",
+      "community_name": "ref_node_url",
       "file_type": "code",
       "norm_label": "tar",
       "source_file": "services/openclass-live/scripts/empaquetar-despliegue.mjs",
@@ -13537,7 +13592,7 @@
       "label": "{ version }",
       "_origin": "ast",
       "community": 58,
-      "community_name": "ref_node_path",
+      "community_name": "ref_node_url",
       "file_type": "code",
       "norm_label": "{ version }",
       "source_file": "services/openclass-live/scripts/empaquetar-despliegue.mjs",
@@ -13548,7 +13603,7 @@
       "label": "generar-env.mjs",
       "_origin": "ast",
       "community": 58,
-      "community_name": "ref_node_path",
+      "community_name": "ref_node_url",
       "file_type": "code",
       "norm_label": "generar-env.mjs",
       "source_file": "services/openclass-live/scripts/generar-env.mjs",
@@ -13559,7 +13614,7 @@
       "label": "hash",
       "_origin": "ast",
       "community": 58,
-      "community_name": "ref_node_path",
+      "community_name": "ref_node_url",
       "file_type": "code",
       "norm_label": "hash",
       "source_file": "services/openclass-live/scripts/generar-env.mjs",
@@ -13570,7 +13625,7 @@
       "label": "plantilla",
       "_origin": "ast",
       "community": 58,
-      "community_name": "ref_node_path",
+      "community_name": "ref_node_url",
       "file_type": "code",
       "norm_label": "plantilla",
       "source_file": "services/openclass-live/scripts/generar-env.mjs",
@@ -13581,7 +13636,7 @@
       "label": "raiz",
       "_origin": "ast",
       "community": 58,
-      "community_name": "ref_node_path",
+      "community_name": "ref_node_url",
       "file_type": "code",
       "norm_label": "raiz",
       "source_file": "services/openclass-live/scripts/generar-env.mjs",
@@ -13592,55 +13647,11 @@
       "label": "salida",
       "_origin": "ast",
       "community": 58,
-      "community_name": "ref_node_path",
+      "community_name": "ref_node_url",
       "file_type": "code",
       "norm_label": "salida",
       "source_file": "services/openclass-live/scripts/generar-env.mjs",
       "source_location": "L22"
-    },
-    {
-      "id": "template_scripts_verificar_estructura",
-      "label": "verificar-estructura.mjs",
-      "_origin": "ast",
-      "community": 58,
-      "community_name": "ref_node_path",
-      "file_type": "code",
-      "norm_label": "verificar-estructura.mjs",
-      "source_file": "template/scripts/verificar-estructura.mjs",
-      "source_location": "L1"
-    },
-    {
-      "id": "template_scripts_verificar_estructura_config",
-      "label": "config",
-      "_origin": "ast",
-      "community": 58,
-      "community_name": "ref_node_path",
-      "file_type": "code",
-      "norm_label": "config",
-      "source_file": "template/scripts/verificar-estructura.mjs",
-      "source_location": "L3"
-    },
-    {
-      "id": "template_scripts_verificar_estructura_required",
-      "label": "required",
-      "_origin": "ast",
-      "community": 58,
-      "community_name": "ref_node_path",
-      "file_type": "code",
-      "norm_label": "required",
-      "source_file": "template/scripts/verificar-estructura.mjs",
-      "source_location": "L4"
-    },
-    {
-      "id": "template_scripts_verificar_estructura_short",
-      "label": "short",
-      "_origin": "ast",
-      "community": 58,
-      "community_name": "ref_node_path",
-      "file_type": "code",
-      "norm_label": "short",
-      "source_file": "template/scripts/verificar-estructura.mjs",
-      "source_location": "L9"
     },
     {
       "id": "services_openclass_live_readme_arquitectura",
@@ -14466,8 +14477,8 @@
       "id": "services_openclass_live_hotfix_readme",
       "label": "hotfix/README.md",
       "_origin": "ast",
-      "community": 66,
-      "community_name": "crearAlmacen",
+      "community": 65,
+      "community_name": "Hotfix v0.1 \u2014 sin filtraci\u00f3n del acierto antes de revelar",
       "file_type": "document",
       "node_kind": "page",
       "norm_label": "hotfix/readme.md",
@@ -14478,8 +14489,8 @@
       "id": "services_openclass_live_hotfix_readme_aplicaci\u00f3n_cuando_se_autorice",
       "label": "Aplicaci\u00f3n (cuando se autorice)",
       "_origin": "ast",
-      "community": 66,
-      "community_name": "crearAlmacen",
+      "community": 65,
+      "community_name": "Hotfix v0.1 \u2014 sin filtraci\u00f3n del acierto antes de revelar",
       "file_type": "document",
       "node_kind": "heading",
       "norm_label": "aplicacion (cuando se autorice)",
@@ -14490,8 +14501,8 @@
       "id": "services_openclass_live_hotfix_readme_defecto",
       "label": "Defecto",
       "_origin": "ast",
-      "community": 66,
-      "community_name": "crearAlmacen",
+      "community": 65,
+      "community_name": "Hotfix v0.1 \u2014 sin filtraci\u00f3n del acierto antes de revelar",
       "file_type": "document",
       "node_kind": "heading",
       "norm_label": "defecto",
@@ -14502,13 +14513,25 @@
       "id": "services_openclass_live_hotfix_readme_hotfix_v0_1_sin_filtraci\u00f3n_del_acierto_antes_de_revelar",
       "label": "Hotfix v0.1 \u2014 sin filtraci\u00f3n del acierto antes de revelar",
       "_origin": "ast",
-      "community": 66,
-      "community_name": "crearAlmacen",
+      "community": 65,
+      "community_name": "Hotfix v0.1 \u2014 sin filtraci\u00f3n del acierto antes de revelar",
       "file_type": "document",
       "node_kind": "heading",
       "norm_label": "hotfix v0.1 \u2014 sin filtracion del acierto antes de revelar",
       "source_file": "services/openclass-live/hotfix/README.md",
       "source_location": "L1"
+    },
+    {
+      "id": "services_openclass_live_hotfix_readme_verificaci\u00f3n_hecha_2026_10_26",
+      "label": "Verificaci\u00f3n hecha (2026-10-26)",
+      "_origin": "ast",
+      "community": 65,
+      "community_name": "Hotfix v0.1 \u2014 sin filtraci\u00f3n del acierto antes de revelar",
+      "file_type": "document",
+      "node_kind": "heading",
+      "norm_label": "verificacion hecha (2026-10-26)",
+      "source_file": "services/openclass-live/hotfix/README.md",
+      "source_location": "L29"
     },
     {
       "id": "services_openclass_live_hotfix_readme_parche",
@@ -14521,18 +14544,6 @@
       "norm_label": "parche",
       "source_file": "services/openclass-live/hotfix/README.md",
       "source_location": "L12"
-    },
-    {
-      "id": "services_openclass_live_hotfix_readme_verificaci\u00f3n_hecha_2026_10_26",
-      "label": "Verificaci\u00f3n hecha (2026-10-26)",
-      "_origin": "ast",
-      "community": 66,
-      "community_name": "crearAlmacen",
-      "file_type": "document",
-      "node_kind": "heading",
-      "norm_label": "verificacion hecha (2026-10-26)",
-      "source_file": "services/openclass-live/hotfix/README.md",
-      "source_location": "L29"
     },
     {
       "id": "services_openclass_live_src_app",
@@ -14555,17 +14566,6 @@
       "norm_label": "publico",
       "source_file": "services/openclass-live/src/app.mjs",
       "source_location": "L16"
-    },
-    {
-      "id": "services_openclass_live_src_config",
-      "label": "config.mjs",
-      "_origin": "ast",
-      "community": 67,
-      "community_name": "app.mjs",
-      "file_type": "code",
-      "norm_label": "config.mjs",
-      "source_file": "services/openclass-live/src/config.mjs",
-      "source_location": "L1"
     },
     {
       "id": "services_openclass_live_src_server",
@@ -14601,55 +14601,11 @@
       "source_location": "L5"
     },
     {
-      "id": "services_openclass_live_tests_e2e_panel_contexto_navegador_test",
-      "label": "panel-contexto-navegador.test.mjs",
-      "_origin": "ast",
-      "community": 67,
-      "community_name": "app.mjs",
-      "file_type": "code",
-      "norm_label": "panel-contexto-navegador.test.mjs",
-      "source_file": "services/openclass-live/tests/e2e/panel-contexto-navegador.test.mjs",
-      "source_location": "L1"
-    },
-    {
-      "id": "services_openclass_live_tests_e2e_panel_contexto_navegador_test_relojreal",
-      "label": "relojReal",
-      "_origin": "ast",
-      "community": 67,
-      "community_name": "app.mjs",
-      "file_type": "code",
-      "norm_label": "relojreal",
-      "source_file": "services/openclass-live/tests/e2e/panel-contexto-navegador.test.mjs",
-      "source_location": "L23"
-    },
-    {
-      "id": "scripts_lib_chrome",
-      "label": "chrome.mjs",
-      "_origin": "ast",
-      "community": 68,
-      "community_name": "build-tech-navegador.test.mjs",
-      "file_type": "code",
-      "norm_label": "chrome.mjs",
-      "source_file": "scripts/lib/chrome.mjs",
-      "source_location": "L1"
-    },
-    {
-      "id": "scripts_lib_chrome_candidatos",
-      "label": "CANDIDATOS",
-      "_origin": "ast",
-      "community": 68,
-      "community_name": "build-tech-navegador.test.mjs",
-      "file_type": "code",
-      "norm_label": "candidatos",
-      "source_file": "scripts/lib/chrome.mjs",
-      "source_location": "L11"
-    },
-    {
       "id": "scripts_lib_servidor",
       "label": "servidor.mjs",
       "_origin": "ast",
       "community": 68,
-      "community_name": "build-tech-navegador.test.mjs",
+      "community_name": "protocolo-navegador.test.mjs",
       "file_type": "code",
       "norm_label": "servidor.mjs",
       "source_file": "scripts/lib/servidor.mjs",
@@ -14660,51 +14616,18 @@
       "label": "TIPOS",
       "_origin": "ast",
       "community": 68,
-      "community_name": "build-tech-navegador.test.mjs",
+      "community_name": "protocolo-navegador.test.mjs",
       "file_type": "code",
       "norm_label": "tipos",
       "source_file": "scripts/lib/servidor.mjs",
       "source_location": "L9"
     },
     {
-      "id": "services_openclass_live_tests_e2e_build_tech_navegador_test",
-      "label": "build-tech-navegador.test.mjs",
-      "_origin": "ast",
-      "community": 68,
-      "community_name": "build-tech-navegador.test.mjs",
-      "file_type": "code",
-      "norm_label": "build-tech-navegador.test.mjs",
-      "source_file": "services/openclass-live/tests/e2e/build-tech-navegador.test.mjs",
-      "source_location": "L1"
-    },
-    {
-      "id": "services_openclass_live_tests_e2e_build_tech_navegador_test_notas_privadas",
-      "label": "NOTAS_PRIVADAS",
-      "_origin": "ast",
-      "community": 68,
-      "community_name": "build-tech-navegador.test.mjs",
-      "file_type": "code",
-      "norm_label": "notas_privadas",
-      "source_file": "services/openclass-live/tests/e2e/build-tech-navegador.test.mjs",
-      "source_location": "L34"
-    },
-    {
-      "id": "services_openclass_live_tests_e2e_panel_soluciones_navegador_test",
-      "label": "panel-soluciones-navegador.test.mjs",
-      "_origin": "ast",
-      "community": 68,
-      "community_name": "build-tech-navegador.test.mjs",
-      "file_type": "code",
-      "norm_label": "panel-soluciones-navegador.test.mjs",
-      "source_file": "services/openclass-live/tests/e2e/panel-soluciones-navegador.test.mjs",
-      "source_location": "L1"
-    },
-    {
       "id": "services_openclass_live_tests_e2e_protocolo_navegador_test",
       "label": "protocolo-navegador.test.mjs",
       "_origin": "ast",
       "community": 68,
-      "community_name": "build-tech-navegador.test.mjs",
+      "community_name": "protocolo-navegador.test.mjs",
       "file_type": "code",
       "norm_label": "protocolo-navegador.test.mjs",
       "source_file": "services/openclass-live/tests/e2e/protocolo-navegador.test.mjs",
@@ -14715,7 +14638,7 @@
       "label": "RAIZ",
       "_origin": "ast",
       "community": 68,
-      "community_name": "build-tech-navegador.test.mjs",
+      "community_name": "protocolo-navegador.test.mjs",
       "file_type": "code",
       "norm_label": "raiz",
       "source_file": "services/openclass-live/tests/e2e/protocolo-navegador.test.mjs",
@@ -14726,7 +14649,7 @@
       "label": "SERVICIO",
       "_origin": "ast",
       "community": 68,
-      "community_name": "build-tech-navegador.test.mjs",
+      "community_name": "protocolo-navegador.test.mjs",
       "file_type": "code",
       "norm_label": "servicio",
       "source_file": "services/openclass-live/tests/e2e/protocolo-navegador.test.mjs",
@@ -14737,7 +14660,7 @@
       "label": "navegador.test.mjs",
       "_origin": "ast",
       "community": 68,
-      "community_name": "build-tech-navegador.test.mjs",
+      "community_name": "protocolo-navegador.test.mjs",
       "file_type": "code",
       "norm_label": "navegador.test.mjs",
       "source_file": "tests/navegador.test.mjs",
@@ -14748,7 +14671,7 @@
       "label": "CLASES",
       "_origin": "ast",
       "community": 68,
-      "community_name": "build-tech-navegador.test.mjs",
+      "community_name": "protocolo-navegador.test.mjs",
       "file_type": "code",
       "norm_label": "clases",
       "source_file": "tests/navegador.test.mjs",
@@ -14759,33 +14682,11 @@
       "label": "IDS",
       "_origin": "ast",
       "community": 68,
-      "community_name": "build-tech-navegador.test.mjs",
+      "community_name": "protocolo-navegador.test.mjs",
       "file_type": "code",
       "norm_label": "ids",
       "source_file": "tests/navegador.test.mjs",
       "source_location": "L15"
-    },
-    {
-      "id": "tests_sitio_test",
-      "label": "sitio.test.mjs",
-      "_origin": "ast",
-      "community": 68,
-      "community_name": "build-tech-navegador.test.mjs",
-      "file_type": "code",
-      "norm_label": "sitio.test.mjs",
-      "source_file": "tests/sitio.test.mjs",
-      "source_location": "L1"
-    },
-    {
-      "id": "tests_sitio_test_raiz",
-      "label": "raiz",
-      "_origin": "ast",
-      "community": 68,
-      "community_name": "build-tech-navegador.test.mjs",
-      "file_type": "code",
-      "norm_label": "raiz",
-      "source_file": "tests/sitio.test.mjs",
-      "source_location": "L13"
     },
     {
       "id": "services_openclass_live_src_salas",
@@ -14987,6 +14888,28 @@
       "source_location": "L15"
     },
     {
+      "id": "services_openclass_live_tests_configuracion_despliegue_test",
+      "label": "configuracion-despliegue.test.mjs",
+      "_origin": "ast",
+      "community": 70,
+      "community_name": "ref_node_fs",
+      "file_type": "code",
+      "norm_label": "configuracion-despliegue.test.mjs",
+      "source_file": "services/openclass-live/tests/configuracion-despliegue.test.mjs",
+      "source_location": "L1"
+    },
+    {
+      "id": "services_openclass_live_tests_configuracion_despliegue_test_raiz",
+      "label": "raiz",
+      "_origin": "ast",
+      "community": 70,
+      "community_name": "ref_node_fs",
+      "file_type": "code",
+      "norm_label": "raiz",
+      "source_file": "services/openclass-live/tests/configuracion-despliegue.test.mjs",
+      "source_location": "L11"
+    },
+    {
       "id": "template_scripts_preparar_github_pages",
       "label": "preparar-github-pages.mjs",
       "_origin": "ast",
@@ -15009,6 +14932,83 @@
       "source_location": "L2"
     },
     {
+      "id": "template_scripts_verificar_estructura",
+      "label": "verificar-estructura.mjs",
+      "_origin": "ast",
+      "community": 70,
+      "community_name": "ref_node_fs",
+      "file_type": "code",
+      "norm_label": "verificar-estructura.mjs",
+      "source_file": "template/scripts/verificar-estructura.mjs",
+      "source_location": "L1"
+    },
+    {
+      "id": "template_scripts_verificar_estructura_config",
+      "label": "config",
+      "_origin": "ast",
+      "community": 70,
+      "community_name": "ref_node_fs",
+      "file_type": "code",
+      "norm_label": "config",
+      "source_file": "template/scripts/verificar-estructura.mjs",
+      "source_location": "L3"
+    },
+    {
+      "id": "template_scripts_verificar_estructura_required",
+      "label": "required",
+      "_origin": "ast",
+      "community": 70,
+      "community_name": "ref_node_fs",
+      "file_type": "code",
+      "norm_label": "required",
+      "source_file": "template/scripts/verificar-estructura.mjs",
+      "source_location": "L4"
+    },
+    {
+      "id": "template_scripts_verificar_estructura_short",
+      "label": "short",
+      "_origin": "ast",
+      "community": 70,
+      "community_name": "ref_node_fs",
+      "file_type": "code",
+      "norm_label": "short",
+      "source_file": "template/scripts/verificar-estructura.mjs",
+      "source_location": "L9"
+    },
+    {
+      "id": "tests_creator_test",
+      "label": "creator.test.mjs",
+      "_origin": "ast",
+      "community": 70,
+      "community_name": "ref_node_fs",
+      "file_type": "code",
+      "norm_label": "creator.test.mjs",
+      "source_file": "tests/creator.test.mjs",
+      "source_location": "L1"
+    },
+    {
+      "id": "tests_creator_test_bin",
+      "label": "bin",
+      "_origin": "ast",
+      "community": 70,
+      "community_name": "ref_node_fs",
+      "file_type": "code",
+      "norm_label": "bin",
+      "source_file": "tests/creator.test.mjs",
+      "source_location": "L9"
+    },
+    {
+      "id": "tests_creator_test_root",
+      "label": "root",
+      "_origin": "ast",
+      "community": 70,
+      "community_name": "ref_node_fs",
+      "file_type": "code",
+      "norm_label": "root",
+      "source_file": "tests/creator.test.mjs",
+      "source_location": "L8"
+    },
+    {
       "id": "docs_guia_del_creador",
       "label": "GUIA-DEL-CREADOR.md",
       "_origin": "ast",
@@ -15019,6 +15019,18 @@
       "norm_label": "guia-del-creador.md",
       "source_file": "docs/GUIA-DEL-CREADOR.md",
       "source_location": "L1"
+    },
+    {
+      "id": "docs_guia_del_creador_actualizaci\u00f3n_segura_1_2_0",
+      "label": "Actualizaci\u00f3n segura 1.2.0",
+      "_origin": "ast",
+      "community": 8,
+      "community_name": "Manual del creador de OpenClass UNIMINUTO Reveal.js",
+      "file_type": "document",
+      "node_kind": "heading",
+      "norm_label": "actualizacion segura 1.2.0",
+      "source_file": "docs/GUIA-DEL-CREADOR.md",
+      "source_location": "L104"
     },
     {
       "id": "docs_guia_del_creador_despliegue_y_funciones_online",
@@ -15453,11 +15465,23 @@
       "type": "external"
     },
     {
+      "id": "ref_node_assert",
+      "label": "ref_node_assert",
+      "_origin": "semantic",
+      "community": 51,
+      "community_name": "ref_node_assert",
+      "external": true,
+      "file_type": "concept",
+      "norm_label": "ref_node_assert",
+      "source_file": "",
+      "type": "external"
+    },
+    {
       "id": "ref_node_child_process",
       "label": "ref_node_child_process",
       "_origin": "semantic",
       "community": 51,
-      "community_name": "ref_node_child_process",
+      "community_name": "ref_node_assert",
       "external": true,
       "file_type": "concept",
       "norm_label": "ref_node_child_process",
@@ -15549,38 +15573,14 @@
       "type": "external"
     },
     {
-      "id": "ref_node_url",
-      "label": "ref_node_url",
+      "id": "ref_node_test",
+      "label": "ref_node_test",
       "_origin": "semantic",
       "community": 56,
-      "community_name": "ref_node_url",
+      "community_name": "build-tech-navegador.test.mjs",
       "external": true,
       "file_type": "concept",
-      "norm_label": "ref_node_url",
-      "source_file": "",
-      "type": "external"
-    },
-    {
-      "id": "ref_node_assert",
-      "label": "ref_node_assert",
-      "_origin": "semantic",
-      "community": 57,
-      "community_name": "ref_node_assert",
-      "external": true,
-      "file_type": "concept",
-      "norm_label": "ref_node_assert",
-      "source_file": "",
-      "type": "external"
-    },
-    {
-      "id": "ref_node_os",
-      "label": "ref_node_os",
-      "_origin": "semantic",
-      "community": 57,
-      "community_name": "ref_node_assert",
-      "external": true,
-      "file_type": "concept",
-      "norm_label": "ref_node_os",
+      "norm_label": "ref_node_test",
       "source_file": "",
       "type": "external"
     },
@@ -15589,7 +15589,7 @@
       "label": "ref_node_crypto",
       "_origin": "semantic",
       "community": 58,
-      "community_name": "ref_node_path",
+      "community_name": "ref_node_url",
       "external": true,
       "file_type": "concept",
       "norm_label": "ref_node_crypto",
@@ -15597,14 +15597,14 @@
       "type": "external"
     },
     {
-      "id": "ref_node_path",
-      "label": "ref_node_path",
+      "id": "ref_node_url",
+      "label": "ref_node_url",
       "_origin": "semantic",
       "community": 58,
-      "community_name": "ref_node_path",
+      "community_name": "ref_node_url",
       "external": true,
       "file_type": "concept",
-      "norm_label": "ref_node_path",
+      "norm_label": "ref_node_url",
       "source_file": "",
       "type": "external"
     },
@@ -15612,23 +15612,11 @@
       "id": "ref_node_http",
       "label": "ref_node_http",
       "_origin": "semantic",
-      "community": 67,
-      "community_name": "app.mjs",
+      "community": 68,
+      "community_name": "protocolo-navegador.test.mjs",
       "external": true,
       "file_type": "concept",
       "norm_label": "ref_node_http",
-      "source_file": "",
-      "type": "external"
-    },
-    {
-      "id": "ref_node_test",
-      "label": "ref_node_test",
-      "_origin": "semantic",
-      "community": 68,
-      "community_name": "build-tech-navegador.test.mjs",
-      "external": true,
-      "file_type": "concept",
-      "norm_label": "ref_node_test",
       "source_file": "",
       "type": "external"
     },
@@ -15641,6 +15629,30 @@
       "external": true,
       "file_type": "concept",
       "norm_label": "ref_node_fs",
+      "source_file": "",
+      "type": "external"
+    },
+    {
+      "id": "ref_node_os",
+      "label": "ref_node_os",
+      "_origin": "semantic",
+      "community": 70,
+      "community_name": "ref_node_fs",
+      "external": true,
+      "file_type": "concept",
+      "norm_label": "ref_node_os",
+      "source_file": "",
+      "type": "external"
+    },
+    {
+      "id": "ref_node_path",
+      "label": "ref_node_path",
+      "_origin": "semantic",
+      "community": 70,
+      "community_name": "ref_node_fs",
+      "external": true,
+      "file_type": "concept",
+      "norm_label": "ref_node_path",
       "source_file": "",
       "type": "external"
     }
@@ -30256,13 +30268,24 @@
     },
     {
       "source": "changelog_1_1_0_sin_publicar",
+      "target": "changelog_portal_centrado_en_estudiantes",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "CHANGELOG.md",
+      "source_location": "L105",
+      "weight": 1.0
+    },
+    {
+      "source": "changelog_1_1_0_sin_publicar",
       "target": "changelog_gu\u00eda_docente_y_prompt_maestro",
       "relation": "contains",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "CHANGELOG.md",
-      "source_location": "L108",
+      "source_location": "L115",
       "weight": 1.0
     },
     {
@@ -30273,7 +30296,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "CHANGELOG.md",
-      "source_location": "L118",
+      "source_location": "L125",
       "weight": 1.0
     },
     {
@@ -30284,7 +30307,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "CHANGELOG.md",
-      "source_location": "L123",
+      "source_location": "L130",
       "weight": 1.0
     },
     {
@@ -30295,7 +30318,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "CHANGELOG.md",
-      "source_location": "L133",
+      "source_location": "L140",
       "weight": 1.0
     },
     {
@@ -30306,7 +30329,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "CHANGELOG.md",
-      "source_location": "L151",
+      "source_location": "L158",
       "weight": 1.0
     },
     {
@@ -30317,7 +30340,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "CHANGELOG.md",
-      "source_location": "L161",
+      "source_location": "L168",
       "weight": 1.0
     },
     {
@@ -30328,7 +30351,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "CHANGELOG.md",
-      "source_location": "L75",
+      "source_location": "L82",
       "weight": 1.0
     },
     {
@@ -30339,18 +30362,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "CHANGELOG.md",
-      "source_location": "L84",
-      "weight": 1.0
-    },
-    {
-      "source": "changelog_1_1_0_sin_publicar",
-      "target": "changelog_portal_centrado_en_estudiantes",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "CHANGELOG.md",
-      "source_location": "L98",
+      "source_location": "L91",
       "weight": 1.0
     },
     {
@@ -30361,12 +30373,12 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "CHANGELOG.md",
-      "source_location": "L166",
+      "source_location": "L173",
       "weight": 1.0
     },
     {
       "source": "changelog_cambios",
-      "target": "changelog_sin_versi\u00f3n_openclass_live_en_desarrollo",
+      "target": "changelog_1_2_0_2026_10_27",
       "relation": "contains",
       "_origin": "ast",
       "confidence": "EXTRACTED",
@@ -30383,7 +30395,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "CHANGELOG.md",
-      "source_location": "L70",
+      "source_location": "L77",
       "weight": 1.0
     },
     {
@@ -30549,6 +30561,17 @@
       "confidence_score": 1.0,
       "source_file": "docs/GUIA-DEL-CREADOR.md",
       "source_location": "L10",
+      "weight": 1.0
+    },
+    {
+      "source": "docs_guia_del_creador_manual_del_creador_de_openclass_uniminuto_reveal_js",
+      "target": "docs_guia_del_creador_actualizaci\u00f3n_segura_1_2_0",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "docs/GUIA-DEL-CREADOR.md",
+      "source_location": "L104",
       "weight": 1.0
     },
     {
@@ -32478,13 +32501,24 @@
     },
     {
       "source": "readme_openclass_uniminuto_reveal_js",
+      "target": "readme_desarrollo_del_generador",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "README.md",
+      "source_location": "L100",
+      "weight": 1.0
+    },
+    {
+      "source": "readme_openclass_uniminuto_reveal_js",
       "target": "readme_limitaciones_conocidas",
       "relation": "contains",
       "_origin": "ast",
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "README.md",
-      "source_location": "L117",
+      "source_location": "L123",
       "weight": 1.0
     },
     {
@@ -32495,7 +32529,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "README.md",
-      "source_location": "L126",
+      "source_location": "L132",
       "weight": 1.0
     },
     {
@@ -32517,7 +32551,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "README.md",
-      "source_location": "L28",
+      "source_location": "L34",
       "weight": 1.0
     },
     {
@@ -32528,7 +32562,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "README.md",
-      "source_location": "L46",
+      "source_location": "L52",
       "weight": 1.0
     },
     {
@@ -32539,7 +32573,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "README.md",
-      "source_location": "L58",
+      "source_location": "L64",
       "weight": 1.0
     },
     {
@@ -32550,18 +32584,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "README.md",
-      "source_location": "L81",
-      "weight": 1.0
-    },
-    {
-      "source": "readme_openclass_uniminuto_reveal_js",
-      "target": "readme_desarrollo_del_generador",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "README.md",
-      "source_location": "L94",
+      "source_location": "L87",
       "weight": 1.0
     },
     {
@@ -41947,7 +41970,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "README.md",
-      "source_location": "L26",
+      "source_location": "L32",
       "weight": 1.0
     },
     {
@@ -42836,5 +42859,5 @@
     }
   ],
   "hyperedges": [],
-  "built_at_commit": "604c77dfd39c1e19748f513f87626fa711c47e5f"
+  "built_at_commit": "f236bed58646e0a28f69e5358e45b19997d260f5"
 }

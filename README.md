@@ -19,6 +19,12 @@ El docente escribe **Markdown**; no necesita saber React.
 
 ## Requisitos
 
+Versión estable del generador: **1.2.0**. Incluye Build Tech (notas, relojes y controles multimedia),
+exportación PDF y el adaptador Live v0.2 apagado por defecto. El servicio Live no se incluye en npm.
+El adaptador exige protocolo v2: no activar ni actualizar Live en un curso que usa un servidor v0.1.
+Para actualizar cursos, validar primero una copia privada y reconciliar `src/plugins/fase2.mjs`,
+que `--update-theme` sobrescribe; conservar sus valores LIVE/FASE2 sin restaurar el módulo antiguo.
+
 - [Node.js](https://nodejs.org/) **20.19 o posterior** (incluye npm). La CI (`.github/workflows/ci.yml`)
   está configurada para Node 20.19, 22 y 24; el estado real de cada ejecución se consulta en la
   pestaña *Actions* del repositorio.

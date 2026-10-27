@@ -4,7 +4,7 @@
 Read only this file at session start. Before source exploration, run `graphify query "<question>"`, `graphify explain "<node>"`, or `graphify path "<A>" "<B>"` from the master root. Both agents (Claude, Codex) use `graphify-out/graph.json`. Open only files identified by the graph; do not scan the whole repository or read all of GRAPH_REPORT.md at startup. After each functional change: verify, then `graphify update .`.
 
 ## Architecture and key files
-- Master package: `package.json`, version `1.1.0` (release candidate, not yet published; see `CHANGELOG.md`); Node >=20.19.0, ES modules. Public repo `herrerawilliamh/create-openclass-uniminuto-revealjs`, npm `create-openclass-uniminuto-revealjs`.
+- Master package: `package.json`, version `1.2.0` (release prepared; confirm publication in the npm registry; see `CHANGELOG.md`); Node >=20.19.0, ES modules. Public repo `herrerawilliamh/create-openclass-uniminuto-revealjs`, npm `create-openclass-uniminuto-revealjs`.
 - CLI: `bin/create-openclass-uniminuto-revealjs.mjs`; copies `template/` into a new course, `--assets <dir>` overlays local images on `public/`, `--update-theme` updates a recognized course with backups.
 - Template: React 19, Reveal.js 6, Vite 7; independent from Slidev.
 - `template/src/main.jsx` entry; `Portal.jsx` student-first portal (P3): course identity → «Comenzar aquí» (general, how to use, route) → `#ruta` published weeks (`ol.week-grid`, activeWeeks only, ascending, continuity line) → `#recorridos` three complementary paths (not official modalities) → `#recursos` secondary block (VER DEMOSTRACIÓN COMPLETA, galería, demo-layouts, laboratorio, guía). Skip link to `#ruta`.

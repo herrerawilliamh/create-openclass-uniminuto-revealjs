@@ -2,7 +2,7 @@
 
 Participación en tiempo real (encuestas y preguntas) para clases que el docente presenta **en su propio computador** con OpenClass Reveal.js y comparte por Zoom, Teams o Meet. Los estudiantes entran desde el teléfono con un QR o un código de 6 caracteres; no necesitan cuenta.
 
-**Restricción de diseño:** las diapositivas, fondos, logotipos, Markdown y notas del presentador nunca llegan al servidor. Solo viaja la encuesta que el docente abre expresamente (enunciado, código opcional, opciones, respuesta correcta opcional y explicación), las respuestas y las preguntas de los estudiantes, y todo se borra al finalizar o vencer la sala.
+**Restricción de diseño:** las diapositivas, fondos, logotipos, Markdown y notas del presentador nunca llegan al servidor. Al crear una encuesta solo viajan enunciado, código opcional, tipo y opciones. El contrato v0.2 rechaza `correctas` y `explicacion` en `encuesta:crear`: la solución permanece local hasta la revelación explícita mediante `encuesta:revelar`, con la votación cerrada. También viajan las respuestas y las preguntas de los participantes; el estado se borra al finalizar o vencer la sala.
 
 - Guía para docentes: [docs/GUIA-DOCENTE.md](docs/GUIA-DOCENTE.md)
 - Protocolo Socket.IO: [docs/PROTOCOLO.md](docs/PROTOCOLO.md)

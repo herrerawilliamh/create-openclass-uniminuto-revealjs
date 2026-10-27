@@ -100,3 +100,7 @@ No modificar los proyectos Slidev ni `openclass-prueba-reveal` (referencia visua
 
 El sitio de cada curso es estático. Seminar/Poll/Questions requieren un servicio separado con
 HTTPS/WSS, autenticación, salas y protección frente a abuso; Zoom es una fase futura.
+
+## Actualización segura 1.2.0
+
+Build Tech, multimedia y PDF se incluyen en el generador. Live v0.2 exige protocolo v2; su servicio no se publica en npm. Probar `npx create-openclass-uniminuto-revealjs@1.2.0 <copia-privada> --update-theme` antes de tocar el curso original. Respaldar y reconciliar los valores LIVE/FASE2 de `src/plugins/fase2.mjs`, conservando el módulo nuevo y sus dependencias v2. No activar Live contra v0.1. Revisar el PDF guardado antes de aprobar la entrega.
