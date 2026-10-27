@@ -52,6 +52,14 @@ jobs:
       - run: npm ci --prefix services/openclass-live --ignore-scripts --no-audit --no-fund
       - name: Pruebas unitarias, integración y preparación
         run: npm --prefix services/openclass-live test
+      - name: Instalar y comprobar extractor PDF
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install --yes --no-install-recommends poppler-utils
+          command -v pdftotext
+          pdftotext -v
       - name: Navegador, privacidad y protocolo
         run: npm --prefix services/openclass-live run test:navegador
       - name: Validar contexto de construcción y exportar evidencia

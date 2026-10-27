@@ -46,6 +46,47 @@ Mantenerlos desactivados hasta una decisión posterior explícita del propietari
 
 ## Definición que usará Dockhand
 
+### Bloqueo de auto-sync por procedencia
+
+`AUTOSYNC_PROVENANCE=FAIL` para el mecanismo actual: una variable
+`LIVE_REVISION` fija de 40 caracteres no demuestra qué commit se construyó.
+Si avanza la rama, Compose puede etiquetar código nuevo con el SHA anterior.
+La comprobación sintáctica de `verificar-gitops.mjs` y una label OCI igual a esa
+variable no detectan por sí solas este desacoplamiento. Scheduled Sync, webhook
+y redeploy automático deben permanecer OFF; CI PASS no levanta este bloqueo.
+
+Política requerida antes de considerar automatismos:
+
+1. Consumir exclusivamente una revisión promovida, protegida e inmutable,
+   con CI PASS del SHA exacto y aprobación humana registrada. Una rama móvil
+   más una variable fija no constituye una revisión promovida.
+2. En el checkout efectivo que se usará para construir, obtener el commit con
+   `git rev-parse --verify HEAD` y exigir igualdad con el SHA promovido y
+   `LIVE_REVISION`. Rechazar un árbol con cambios o entradas de construcción
+   no controladas. Si no se puede inspeccionar ese checkout, detener antes
+   del build; una comprobación hecha en otro checkout no sirve.
+3. Mantener el checkout y sus entradas inmutables desde la comprobación hasta
+   terminar el build, evitando una sincronización concurrente. Derivar tag y
+   revisión OCI del SHA comprobado, sin una variable independiente persistente.
+4. Antes de reemplazar el servicio, cotejar versión, source, revisión OCI e ID
+   de la imagen construida; registrar SHA resuelto, SHA promovido, CI y hashes
+   de evidencia. Ante cualquier diferencia o evidencia ausente, abortar sin
+   desplegar y conservar la imagen anterior.
+5. Probar el mecanismo en un entorno aislado: SHA coincidente permite construir;
+   rama avanzada con variable anterior, checkout alterado, ref movida y cambio
+   concurrente deben impedir construcción/promoción. Exigir evidencia de estos
+   rechazos y de las capacidades reales de la versión de Dockhand antes de
+   solicitar autorización independiente para activar Scheduled Sync.
+
+Alternativa: promover una imagen ya construida por CI mediante digest inmutable,
+con evidencia que vincule ese digest al SHA aprobado, sin reconstrucción local.
+También requiere diseñar y verificar su integración antes de habilitarla.
+
+Esta sección define la política; no implementa un bloqueo dentro de Dockhand ni
+acredita su configuración remota. En esta reparación no se accede a la VPS ni
+se habilitan automatismos. Mientras falte el mecanismo efectivo, el gate de
+auto-sync sigue FAIL y la revisión integral de release no queda aprobada.
+
 Repositorio: `https://github.com/herrerawilliamh/create-openclass-uniminuto-revealjs`.
 Ref inicial: etiqueta inmutable `openclass-live-v0.2.0` que resuelva al SHA revisado;
 si la versión instalada solo admite ramas, usar la rama protegida y comprobar el SHA
