@@ -44,7 +44,7 @@ instalación existente. No crear un servicio paralelo.
   debe afectar solo este servicio. Si Dockhand no permite fijar esa autoridad o garantizar
   ese alcance, **detenerse**, sin usar Force redeployment ni Create/Deploy alternativo.
 
-No hay un commit nuevo publicado por esta preparación. La ruta Git queda condicionada
+La publicación autorizada se revisa en el PR de release/openclass-live; comprobar su SHA y CI. La ruta Git queda condicionada
 a que el propietario disponga de esa revisión aprobada; la ruta local requiere haber
 resuelto previamente la autoridad de Dockhand. Una actualización automática posterior
 no puede quedar apuntando al código anterior.

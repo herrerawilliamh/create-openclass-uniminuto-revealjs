@@ -4,8 +4,8 @@
 
 Rama local preparada: `release/openclass-live`, creada desde
 `8f58229ed787228445d36a8ec444e4d46d27f6c2`, conservando los cambios locales existentes.
-No hay commit nuevo, push, etiqueta publicada, merge ni cambio en npm, VPS o Dockhand.
-La rama todavía apunta al commit base: **no desplegar ese SHA como si contuviera esta preparación**.
+Publicación de rama y PR de revisión autorizada por el propietario el 2026-10-27. Sin merge, etiqueta de promoción ni cambios en npm, VPS o Dockhand.
+El SHA publicado y su CI se consultan en el PR. El commit base no contiene esta preparación.
 La aceptación funcional de Live v2 en producción sigue pendiente. El curso conserva `LIVE.activa=false`.
 
 Artefacto existente: `despliegue/openclass-live-0.2.0.tar.gz`, SHA-256
