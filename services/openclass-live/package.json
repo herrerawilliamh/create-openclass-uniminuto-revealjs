@@ -1,6 +1,6 @@
 {
   "name": "openclass-live",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "description": "OpenClass Live: participación en tiempo real (encuestas y preguntas) para clases presentadas localmente con OpenClass Reveal.js",
   "author": "William Herrera",

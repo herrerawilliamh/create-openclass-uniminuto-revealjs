@@ -8,6 +8,7 @@
  * une un estudiante por WSS, vota y finaliza la sala.
  */
 import { io } from 'socket.io-client';
+import { PROTOCOLO } from '../src/protocolo.mjs';
 
 const base = (process.argv[2] ?? '').replace(/\/+$/, '');
 if (!/^https?:\/\/[^/]+$/.test(base)) { console.error('Uso: node scripts/verificar-despliegue.mjs <APP_URL>'); process.exit(2); }
@@ -25,6 +26,7 @@ function conectar(ns, opciones) {
     // engine.io-client fija rejectUnauthorized: true; solo se relaja con OCLIVE_INSEGURO (certificado de prueba).
     const s = io(`${base}${ns}`, { forceNew: true, reconnection: false, timeout: 10000, extraHeaders: { origin: base },
       rejectUnauthorized: process.env.OCLIVE_INSEGURO !== '1', ...opciones });
+    s.on('sesion', (datos) => { s.protocoloLive = datos.protocolo; });
     const fin = (r) => { s.disconnect(); resolve(r); };
     s.on('connect', () => resolve({ s, transporte: s.io.engine.transport.name }));
     s.on('connect_error', (e) => fin({ error: e.message }));
@@ -59,7 +61,9 @@ const poll = await conectar('/participante', { transports: ['polling'], auth: { 
 ok('polling: handshake alcanzado y código inexistente rechazado', poll.error === 'sala_inexistente', poll.error);
 const ws = await conectar('/participante', { transports: ['websocket'], auth: { codigo: 'ZZZZZZ' } });
 ok(`${base.startsWith('https') ? 'WSS' : 'WS'}: handshake alcanzado y código inexistente rechazado`, ws.error === 'sala_inexistente', ws.error);
-const doc = await conectar('/docente', { transports: ['websocket'] });
+const antiguo = await conectar('/docente', { transports: ['websocket'], auth: { clave: 'prueba-invalida' } });
+ok('presentador antiguo rechazado por protocolo', antiguo.error === 'protocolo', antiguo.error);
+const doc = await conectar('/docente', { transports: ['websocket'], auth: { protocolo: PROTOCOLO.version, capacidades: PROTOCOLO.capacidades } });
 ok('docente sin credencial: rechazado', doc.error === 'no_autenticado', doc.error);
 const ajeno = await conectar('/participante', { transports: ['websocket'], auth: { codigo: 'ZZZZZZ' }, extraHeaders: { origin: 'https://evil.example' } });
 ok('WebSocket desde otro origen: rechazado', Boolean(ajeno.error) && ajeno.error !== 'sala_inexistente', ajeno.error);
@@ -70,14 +74,15 @@ if (process.env.OCLIVE_PASSWORD) {
   ok('login docente', login.status === 200);
   const galleta = (login.headers.get('set-cookie') ?? '').split(';')[0];
   ok('cookie HttpOnly; Secure; SameSite=Strict', /HttpOnly/.test(login.headers.get('set-cookie')) && /SameSite=Strict/.test(login.headers.get('set-cookie')) && (!base.startsWith('https') || /Secure/.test(login.headers.get('set-cookie'))));
-  const d = await conectar('/docente', { transports: ['websocket'], extraHeaders: { origin: base, cookie: galleta } });
+  const d = await conectar('/docente', { transports: ['websocket'], auth: { protocolo: PROTOCOLO.version, capacidades: PROTOCOLO.capacidades }, extraHeaders: { origin: base, cookie: galleta } });
   ok('docente por WSS', Boolean(d.s), d.error);
   if (d.s) {
     const sala = await d.s.timeout(8000).emitWithAck('sala:crear', { titulo: 'Verificación de despliegue' });
+    ok('protocolo v2 anunciado por servidor', d.s.protocoloLive?.version === 2 && PROTOCOLO.capacidades.every((c) => d.s.protocoloLive?.capacidades?.includes(c)));
     ok('sala creada', sala.ok);
     const e = await conectar('/participante', { transports: ['websocket'], auth: { codigo: sala.sala.codigo } });
     ok('estudiante por WSS', Boolean(e.s), e.error);
-    const enc = await d.s.timeout(8000).emitWithAck('encuesta:crear', { salaId: sala.sala.id, abrir: true, encuesta: { enunciado: 'Prueba de despliegue', opciones: ['Sí', 'No'], correctas: [0] } });
+    const enc = await d.s.timeout(8000).emitWithAck('encuesta:crear', { salaId: sala.sala.id, abrir: true, encuesta: { enunciado: 'Prueba de despliegue', tipo: 'unica', opciones: ['Sí', 'No'] } });
     const voto = e.s ? await e.s.timeout(8000).emitWithAck('encuesta:responder', { encuestaId: enc.encuesta.id, ronda: 1, seleccion: [0] }) : { ok: false };
     ok('voto registrado', voto.ok);
     const est = await d.s.timeout(8000).emitWithAck('sala:seguir', { salaId: sala.sala.id });

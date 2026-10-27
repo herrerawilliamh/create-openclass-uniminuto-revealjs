@@ -1,0 +1,129 @@
+{
+  "version": "0.2.0",
+  "protocol": 2,
+  "archive": "openclass-live-0.2.0.tar.gz",
+  "archiveSha256": "33dafa439f9640fcd7f887b4b43ee1d35e617d4ac1162050f5a51beab7cf0bb1",
+  "sourceBase": "8f58229ed787228445d36a8ec444e4d46d27f6c2",
+  "files": [
+    {
+      "path": ".dockerignore",
+      "sha256": "2674a5534f16f7be72d97f64d60351be347b5fb769f626f3c261e340b924d6b5",
+      "gitSha256": "2674a5534f16f7be72d97f64d60351be347b5fb769f626f3c261e340b924d6b5"
+    },
+    {
+      "path": ".env.example",
+      "sha256": "0500c9f0eb6d9e486cf257872e64be7bfacaf9b9e21d707d7037e48595da3d41",
+      "gitSha256": "0500c9f0eb6d9e486cf257872e64be7bfacaf9b9e21d707d7037e48595da3d41"
+    },
+    {
+      "path": "docker-compose.yml",
+      "sha256": "17d2a26dde30bdaa0c6413101728eba406401217b9ff7afb111d46f581a28226",
+      "gitSha256": "fe9ac02ea1cdc6e1e4c53dcf4d7d5fc6058c85baa04659a1a21471da68c199b0"
+    },
+    {
+      "path": "Dockerfile",
+      "sha256": "6db8f8965a92ab779cbb1e11be3430e2923b93fd485a72aaf4e84aae373c3729",
+      "gitSha256": "6db8f8965a92ab779cbb1e11be3430e2923b93fd485a72aaf4e84aae373c3729"
+    },
+    {
+      "path": "package-lock.json",
+      "sha256": "ffc426189a5ff2b2e882c3cc6d3013722ee66db8bbed59b6e69749133a5ea344",
+      "gitSha256": "906f31ccc1e466979028de351a0c6091d598c292017c845dcc9a6154735532a2"
+    },
+    {
+      "path": "package.json",
+      "sha256": "3dc076c0542b6d13f378afa015f0338a77c16304984ead89e91b33fc312c6e57",
+      "gitSha256": "f4d1199844e1cfaac3ab729624bb919828ff93b8e15847de0788a7a481ee50ed"
+    },
+    {
+      "path": "public/assets/comun.mjs",
+      "sha256": "3f91eb2d00c0b3fbacc9aa46f636cef407f778503a518e279e7a58acfcb64aad",
+      "gitSha256": "3f91eb2d00c0b3fbacc9aa46f636cef407f778503a518e279e7a58acfcb64aad"
+    },
+    {
+      "path": "public/assets/docente.mjs",
+      "sha256": "8561725a64ecab3e198e85e17255e83135db9a8cb3fd125d52c97b637cb6479b",
+      "gitSha256": "8561725a64ecab3e198e85e17255e83135db9a8cb3fd125d52c97b637cb6479b"
+    },
+    {
+      "path": "public/assets/estilos.css",
+      "sha256": "d66ef3ef24a5ab810da52324bd5f22de4e53d0bce0baa545e307a3e536a34000",
+      "gitSha256": "d66ef3ef24a5ab810da52324bd5f22de4e53d0bce0baa545e307a3e536a34000"
+    },
+    {
+      "path": "public/assets/estudiante.mjs",
+      "sha256": "404f9bffcb88af7a6b0de46a5a298f46a7a49fddea9473a895201f62f7d72682",
+      "gitSha256": "404f9bffcb88af7a6b0de46a5a298f46a7a49fddea9473a895201f62f7d72682"
+    },
+    {
+      "path": "public/docente/index.html",
+      "sha256": "f51be52e65c88013eddd7faeed651e860642c74f9bb5b96d33eb2507291929b2",
+      "gitSha256": "f51be52e65c88013eddd7faeed651e860642c74f9bb5b96d33eb2507291929b2"
+    },
+    {
+      "path": "public/favicon.svg",
+      "sha256": "22180e79dcb9a0a0f9fa4d736e02229bd0dd8d9cdbd4adcc54a9f00419742db8",
+      "gitSha256": "22180e79dcb9a0a0f9fa4d736e02229bd0dd8d9cdbd4adcc54a9f00419742db8"
+    },
+    {
+      "path": "public/index.html",
+      "sha256": "455edc21f381de964630027e9176bb4530736ab6be8c61d767cb0eb6d9fdc25a",
+      "gitSha256": "455edc21f381de964630027e9176bb4530736ab6be8c61d767cb0eb6d9fdc25a"
+    },
+    {
+      "path": "scripts/hash-password.mjs",
+      "sha256": "21b45c789233f7c085c74b73a25f1307ee6d74aaa9d5014cb2cd790cf6411b96",
+      "gitSha256": "21b45c789233f7c085c74b73a25f1307ee6d74aaa9d5014cb2cd790cf6411b96"
+    },
+    {
+      "path": "src/app.mjs",
+      "sha256": "7ac8892f19e44a524dd1d4cb4d0314291eb0ce5c814c0e59eb5fbbaffbf80c2e",
+      "gitSha256": "7ac8892f19e44a524dd1d4cb4d0314291eb0ce5c814c0e59eb5fbbaffbf80c2e"
+    },
+    {
+      "path": "src/auth.mjs",
+      "sha256": "28f9d027b5dca470abc51549e746039cc85a9251b6c10314d94559293ce6d96c",
+      "gitSha256": "28f9d027b5dca470abc51549e746039cc85a9251b6c10314d94559293ce6d96c"
+    },
+    {
+      "path": "src/config.mjs",
+      "sha256": "1b6f1ef4cafae21158fd6e339da3c2b400bd4f1cf6c6a4ec2572fd1e3e27ad96",
+      "gitSha256": "1b6f1ef4cafae21158fd6e339da3c2b400bd4f1cf6c6a4ec2572fd1e3e27ad96"
+    },
+    {
+      "path": "src/http.mjs",
+      "sha256": "25e4d3ff5f4a14f70bdf212bdf0a5b47ab198f5447cf7f7087f5829fcd97e0ae",
+      "gitSha256": "25e4d3ff5f4a14f70bdf212bdf0a5b47ab198f5447cf7f7087f5829fcd97e0ae"
+    },
+    {
+      "path": "src/limites.mjs",
+      "sha256": "c8f015ce058738593e7a92ffc7014f8bd54f41ab5065ed5efa8ce7635f8c349e",
+      "gitSha256": "c8f015ce058738593e7a92ffc7014f8bd54f41ab5065ed5efa8ce7635f8c349e"
+    },
+    {
+      "path": "src/protocolo.mjs",
+      "sha256": "e3c0958c482b0eb99338b7c4a50fa278153f520948ce69eefa659c2d6e74b3e0",
+      "gitSha256": "e3c0958c482b0eb99338b7c4a50fa278153f520948ce69eefa659c2d6e74b3e0"
+    },
+    {
+      "path": "src/salas.mjs",
+      "sha256": "c04aa14767d3ad6f5a234ee78ec896178b8494cfbe0c054d01f1e7d6b90f7a82",
+      "gitSha256": "c04aa14767d3ad6f5a234ee78ec896178b8494cfbe0c054d01f1e7d6b90f7a82"
+    },
+    {
+      "path": "src/server.mjs",
+      "sha256": "47e3975e92b2fc96c66365e977d5cc4fb5b1a15ca1df1166153a06324243ccba",
+      "gitSha256": "47e3975e92b2fc96c66365e977d5cc4fb5b1a15ca1df1166153a06324243ccba"
+    },
+    {
+      "path": "src/sockets.mjs",
+      "sha256": "4ae15467e4caa9f9ef4af4e30adcee1c2289e8cf062edad6c8f86f28b577fcec",
+      "gitSha256": "4ae15467e4caa9f9ef4af4e30adcee1c2289e8cf062edad6c8f86f28b577fcec"
+    },
+    {
+      "path": "src/validar.mjs",
+      "sha256": "586ffe58db7d1fab2506f08d70f55723f7f0b20dcebe905b58b5edeb2689a77a",
+      "gitSha256": "586ffe58db7d1fab2506f08d70f55723f7f0b20dcebe905b58b5edeb2689a77a"
+    }
+  ]
+}
