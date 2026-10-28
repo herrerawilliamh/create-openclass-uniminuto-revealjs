@@ -19,7 +19,7 @@ El docente escribe **Markdown**; no necesita saber React.
 
 ## Requisitos
 
-Versión de referencia del generador: **1.2.0**. El candidato **1.3.0** (pendiente de publicación npm) añade arranque local seguro y avisos informativos de versión. Mantiene Build Tech (notas, relojes y controles multimedia),
+Versión del generador: **1.3.0**. Incluye arranque local seguro y avisos informativos de versión. Mantiene Build Tech (notas, relojes y controles multimedia),
 exportación PDF y el adaptador Live v0.2 apagado por defecto. El servicio Live no se incluye en npm.
 El adaptador exige protocolo v2: no activar ni actualizar Live en un curso que usa un servidor v0.1.
 Para actualizar cursos, validar primero una copia privada y reconciliar `src/plugins/fase2.mjs`,
