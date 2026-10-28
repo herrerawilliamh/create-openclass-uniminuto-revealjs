@@ -3,6 +3,13 @@
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/); versiones según
 [SemVer](https://semver.org/lang/es/). Entre paréntesis, la suite que acredita cada punto.
 
+## [1.3.0] — candidato 2026-10-27 (publicación npm pendiente)
+
+- **Inicio estable en Windows**: `Iniciar OpenClass.cmd` ejecuta el Vite instalado localmente sin invocar actualizaciones, instalación o recuperación automática. El arranque y navegación real de React/Reveal.js se aceptaron en Chrome y mediante doble clic en Windows; CI Windows verifica el contrato con Vite simulado.
+- **Avisos de versión informativos**: `node scripts/openclass-start.mjs --check-version` permite consultar metadatos limitados de npm; los cursos nuevos contienen la versión del generador en `package.json` (`openclassGenerator`), separada de la versión académica. Sin procedencia o conexión, el aviso falla sin bloquear el arranque.
+- **Seguridad**: el autoactualizador experimental no se distribuye y la instalación automática sigue bloqueada por una condición TOCTOU demostrada. No se promete migración ni rollback automático. La actualización existente con `--update-theme` es manual, requiere respaldo y revisión de personalizaciones (especialmente Live).
+- **Compatibilidad**: conserva Live v0.2/protocolo 2, dependencias y contenido de los cursos existentes sin cambios automáticos. CI integra Windows, Node 20.19/22/24, Chrome real y manifiesto verificable de `npm pack`.
+
 ## [1.2.0] — 2026-10-27
 
 Versión estable del generador: Build Tech, controles multimedia y exportación PDF; incluye el

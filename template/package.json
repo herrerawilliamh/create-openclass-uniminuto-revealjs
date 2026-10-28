@@ -32,5 +32,9 @@
     "@vitejs/plugin-react": "^5.0.0",
     "vite": "^7.1.12"
   },
-  "openclassVariant": "uniminuto-revealjs"
+  "openclassVariant": "uniminuto-revealjs",
+  "openclassGenerator": {
+    "name": "create-openclass-uniminuto-revealjs",
+    "installedVersion": "1.3.0"
+  }
 }
