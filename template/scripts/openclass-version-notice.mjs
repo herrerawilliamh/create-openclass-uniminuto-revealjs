@@ -7,7 +7,15 @@ const newer = (a,b) => { const aa=a.split('.').map(Number),bb=b.split('.').map(N
 export async function versionNotice(root, { request = fetch } = {}) {
   try {
     // La versión académica de package.json NO es la del generador.
-    const metadata = JSON.parse(readFileSync(path.join(root,'.openclass/generator.json'),'utf8'));
+    // Los cursos nuevos conservan la versión del generador en su package.json,
+    // independientemente de la versión académica del curso.
+    // Se acepta la procedencia previa cuando no existe el marcador nuevo.
+    let metadata;
+    try {
+      const coursePackage = JSON.parse(readFileSync(path.join(root, 'package.json'), 'utf8'));
+      metadata = coursePackage.openclassGenerator;
+    } catch {}
+    if (!metadata) metadata = JSON.parse(readFileSync(path.join(root,'.openclass/generator.json'),'utf8'));
     if(metadata.name !== NAME || !valid(metadata.installedVersion)) throw Error('sin procedencia');
     const response = await request('https://registry.npmjs.org/' + NAME + '/latest', {
       signal: AbortSignal.timeout(2500), redirect: 'error', headers: { accept: 'application/json' }

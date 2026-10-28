@@ -35,6 +35,13 @@ test('consulta informativa: versión nueva, igual, antigua, inválida, offline y
  assert.match(await versionNotice(root,{request:async()=>new Response('x'.repeat(65537))}),/no disponible/);
  assert.equal(requests,4);assert.deepEqual(snapshot(root),before);
 });
+test('curso nuevo: la procedencia de 1.3.0 viene de package.json de plantilla',async()=>{
+ const root=fixture();
+ fs.unlinkSync(path.join(root,'.openclass/generator.json'));
+ fs.copyFileSync(new URL('../template/package.json',import.meta.url),path.join(root,'package.json'));
+ assert.match(await versionNotice(root,{request:async()=>data('1.4.0')}),/Hay una versión 1.4.0; instalada: 1.3.0/);
+});
+
 test('curso heredado sin procedencia: no usar versión académica ni acceder a red',async()=>{
  const root=fixture();fs.unlinkSync(path.join(root,'.openclass/generator.json'));
  assert.match(await versionNotice(root,{request:()=>{assert.fail('red no autorizada');}}),/sin procedencia/);

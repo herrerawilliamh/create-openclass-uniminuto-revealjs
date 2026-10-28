@@ -19,7 +19,7 @@ El docente escribe **Markdown**; no necesita saber React.
 
 ## Requisitos
 
-Versión estable del generador: **1.2.0**. Incluye Build Tech (notas, relojes y controles multimedia),
+Versión de referencia del generador: **1.2.0**. El candidato **1.3.0** (pendiente de publicación npm) añade arranque local seguro y avisos informativos de versión. Mantiene Build Tech (notas, relojes y controles multimedia),
 exportación PDF y el adaptador Live v0.2 apagado por defecto. El servicio Live no se incluye en npm.
 El adaptador exige protocolo v2: no activar ni actualizar Live en un curso que usa un servidor v0.1.
 Para actualizar cursos, validar primero una copia privada y reconciliar `src/plugins/fase2.mjs`,
@@ -49,12 +49,28 @@ Con los recursos institucionales (solo docentes autorizados, carpeta entregada p
 npm create openclass-uniminuto-revealjs@latest mi-curso -- --assets "RUTA/recursos-institucionales"
 ```
 
-## Actualizar un curso existente
+## Arranque local en Windows (cursos nuevos de 1.3.0)
+
+Después de `npm install`, abre **`Iniciar OpenClass.cmd`** desde el Explorador.
+Inicia Vite local en `127.0.0.1:8600` sin descargar ni instalar versiones.
+También puedes ejecutar `node scripts/openclass-start.mjs` desde el curso.
+El comando opcional `node scripts/openclass-start.mjs --check-version` consulta únicamente
+metadatos de npm y muestra un aviso si existe una versión posterior; no instala nada.
+Los cursos nuevos registran la versión del generador en `package.json` bajo
+`openclassGenerator`; en cursos antiguos sin procedencia verificable el aviso
+puede no estar disponible, pero el arranque no depende de él.
+
+**No existe actualización automática de archivos ni rollback automático en 1.3.0.**
+El motor experimental permanece bloqueado por una vulnerabilidad de rutas TOCTOU.
+El lanzador no debe usarse para intentar migraciones.
+
+## Actualizar manualmente un curso existente
 
 ```bash
 npx create-openclass-uniminuto-revealjs@latest <carpeta-del-curso> --update-theme
 ```
 
+Esta es una operación **manual y explícita**, distinta del aviso de versiones y del lanzador.
 Actualiza la infraestructura (scripts, componentes, estilos, guía) y guarda una copia previa en
 `respaldos/`; conserva el Markdown de las semanas y `openclass.config.json`. Las semanas ya
 elaboradas no se regeneran: para la nueva apertura (diapositiva 3) añade `weeks[].opening` y copia la

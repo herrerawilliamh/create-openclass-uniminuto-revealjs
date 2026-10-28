@@ -32,7 +32,7 @@ jobs:
               New-Item -ItemType Directory -Path (Join-Path $sandbox $dir) -Force | Out-Null
             }
             # La suite conserva sus rutas relativas; ninguna fixture queda junto al checkout.
-            foreach ($file in @('tests/stable-startup.test.mjs', 'template/Iniciar OpenClass.cmd', 'template/scripts/openclass-start.mjs', 'template/scripts/openclass-version-notice.mjs', 'template/src/plugins/protocolo-live.mjs')) {
+            foreach ($file in @('tests/stable-startup.test.mjs', 'template/Iniciar OpenClass.cmd', 'template/package.json', 'template/scripts/openclass-start.mjs', 'template/scripts/openclass-version-notice.mjs', 'template/src/plugins/protocolo-live.mjs')) {
               Copy-Item -LiteralPath $file -Destination (Join-Path $sandbox ('repo/' + $file))
             }
             $env:TEMP = Join-Path $sandbox 'cache'
