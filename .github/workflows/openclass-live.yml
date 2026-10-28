@@ -1,0 +1,102 @@
+name: OpenClass Live
+
+on:
+  pull_request:
+    branches: [main, release/openclass-live]
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: 'Etiqueta aprobada e inmutable (openclass-live-v0.2.0)'
+        required: true
+        default: openclass-live-v0.2.0
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: live-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  checks:
+    name: Live release checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || inputs.release_tag }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.23.1'
+      - name: Registrar SHA probado
+        id: identity
+        run: echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+      - name: Identidad de promoción manual
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          RELEASE_TAG: ${{ inputs.release_tag }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          VERSION=$(node -p "require('./services/openclass-live/package.json').version")
+          test "$RELEASE_TAG" = "openclass-live-v$VERSION"
+          test "$(git rev-parse HEAD)" = "$(git rev-parse "refs/tags/$RELEASE_TAG^{commit}")"
+          test "$(git rev-parse HEAD)" = "$(git rev-parse origin/release/openclass-live)"
+      - name: Payload aprobado, lockfile y Compose
+        run: node services/openclass-live/scripts/verificar-gitops.mjs
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - run: npm ci --prefix services/openclass-live --ignore-scripts --no-audit --no-fund
+      - name: Pruebas unitarias, integración y preparación
+        run: npm --prefix services/openclass-live test
+      - name: Instalar y comprobar extractor PDF
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install --yes --no-install-recommends poppler-utils
+          command -v pdftotext
+          pdftotext -v
+      - name: Navegador, privacidad y protocolo
+        run: npm --prefix services/openclass-live run test:navegador
+      - name: Validar contexto de construcción y exportar evidencia
+        env:
+          APP_URL: https://live.example.invalid
+          APP_HOST: live.example.invalid
+          SESSION_SECRET: synthetic-ci-only-secret-with-more-than-32-characters
+          ADMIN_PASSWORD_HASH: synthetic-ci-compose-validation-only
+        shell: bash
+        run: |
+          set -euo pipefail
+          export LIVE_REVISION=$(git rev-parse HEAD)
+          VERSION=$(node -p "require('./services/openclass-live/package.json').version")
+          node services/openclass-live/scripts/verificar-gitops.mjs
+          docker compose -f services/openclass-live/docker-compose.gitops.yml config --quiet
+          docker compose -f services/openclass-live/docker-compose.gitops.yml build openclass-live
+          IMAGE="openclass-live:$VERSION-$LIVE_REVISION"
+          test "$(docker image inspect "$IMAGE" --format '{{index .Config.Labels "org.opencontainers.image.revision"}}')" = "$LIVE_REVISION"
+          mkdir live-evidence
+          docker image inspect "$IMAGE" --format '{{.Id}}' > live-evidence/image-id.txt
+          printf '%s\n' "$LIVE_REVISION" > live-evidence/source-commit.txt
+          cp services/openclass-live/releases/"$VERSION".json live-evidence/payload.json
+          docker image save "$IMAGE" | gzip > live-evidence/openclass-live-image.tar.gz
+          (cd live-evidence && sha256sum * > SHA256SUMS)
+      - uses: actions/upload-artifact@v4
+        with:
+          name: openclass-live-${{ steps.identity.outputs.sha }}
+          path: live-evidence/
+          retention-days: 30
+          if-no-files-found: error
+
+  approved:
+    name: Live manual release approval
+    if: github.event_name == 'workflow_dispatch'
+    needs: checks
+    runs-on: ubuntu-latest
+    environment: openclass-live-release
+    steps:
+      - name: Promoción disponible para el propietario
+        run: echo 'Pruebas aprobadas. El propietario debe verificar SHA y aprobar la promoción en Dockhand. No se despliega ni publica automáticamente.'
