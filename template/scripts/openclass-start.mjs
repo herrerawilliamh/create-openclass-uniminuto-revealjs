@@ -6,6 +6,12 @@ import os from 'node:os';
 import { pathToFileURL, fileURLToPath } from 'node:url';
 import { versionNotice } from './openclass-version-notice.mjs';
 
+// Live autoriza el origen http://localhost:8600 (PRESENTER_ORIGINS); el navegador debe abrir ese origen,
+// aunque el servidor siga escuchando solo en la interfaz de bucle local IPv4.
+export const PUERTO = 8600;
+export const HOST_ESCUCHA = '127.0.0.1';
+export const ORIGEN_PRESENTADOR = `http://localhost:${PUERTO}`;
+
 export async function start(root, args = [], { load = url => import(url), log = console.log } = {}) {
   if (args.some(a => !['--disable-updates', '--preview'].includes(a) && !/^--route=\/(?:[a-zA-Z0-9_-][a-zA-Z0-9/_-]*)?$/.test(a))) {
     throw Error('AUTOUPDATE=BLOCKED. Opción no admitida; el arranque no permite actualizar, adoptar ni recuperar archivos.');
@@ -19,11 +25,12 @@ export async function start(root, args = [], { load = url => import(url), log = 
   const cacheDir = mkdtempSync(path.join(os.tmpdir(), 'openclass-start-'));
   const route = args.find(a => a.startsWith('--route='))?.slice(8) || '/';
   const options = { root, cacheDir, configLoader: 'runner',
-    server: { host: '127.0.0.1', port: 8600, strictPort: true, open: route },
-    preview: { host: '127.0.0.1', port: 8600, strictPort: true, open: route } };
+    server: { host: HOST_ESCUCHA, port: PUERTO, strictPort: true, open: ORIGEN_PRESENTADOR + route },
+    preview: { host: HOST_ESCUCHA, port: PUERTO, strictPort: true, open: ORIGEN_PRESENTADOR + route } };
   const server = args.includes('--preview') ? await vite.preview(options) : await vite.createServer(options);
   if (!args.includes('--preview')) await server.listen();
   server.printUrls();
+  log('Origen del presentador (autorizado por OpenClass Live): ' + ORIGEN_PRESENTADOR + route);
   log('OPENCLASS_STABLE_READY; caché temporal: ' + cacheDir);
   return server;
 }
