@@ -4,10 +4,15 @@ import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import { spawn, spawnSync } from 'node:child_process';
+import os from 'node:os';
+import { after as afterAll } from 'node:test';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { start } from '../template/scripts/openclass-start.mjs';
 import { versionNotice } from '../template/scripts/openclass-version-notice.mjs';
-const sandbox=fileURLToPath(new URL('../../',import.meta.url));
+// Directorio temporal propio de la prueba: se crea aquí y se elimina al terminar.
+const sandbox=fs.mkdtempSync(path.join(os.tmpdir(),'openclass-stable-startup-'));
+for(const d of ['fixtures','evidence'])fs.mkdirSync(path.join(sandbox,d));
+afterAll(()=>fs.rmSync(sandbox,{recursive:true,force:true}));
 const hash=p=>crypto.createHash('sha256').update(fs.readFileSync(p)).digest('hex');
 function snapshot(root,out={},prefix=''){for(const e of fs.readdirSync(root,{withFileTypes:true})){const p=path.join(root,e.name),r=prefix+e.name;if(e.isDirectory()){out[r]='dir';snapshot(p,out,r+'/');}else out[r]=hash(p);}return out;}
 function fixture(){
@@ -35,11 +40,11 @@ test('consulta informativa: versión nueva, igual, antigua, inválida, offline y
  assert.match(await versionNotice(root,{request:async()=>new Response('x'.repeat(65537))}),/no disponible/);
  assert.equal(requests,4);assert.deepEqual(snapshot(root),before);
 });
-test('curso nuevo: la procedencia de 1.3.0 viene de package.json de plantilla',async()=>{
+test('curso nuevo: la procedencia de 1.3.1 viene de package.json de plantilla',async()=>{
  const root=fixture();
  fs.unlinkSync(path.join(root,'.openclass/generator.json'));
  fs.copyFileSync(new URL('../template/package.json',import.meta.url),path.join(root,'package.json'));
- assert.match(await versionNotice(root,{request:async()=>data('1.4.0')}),/Hay una versión 1.4.0; instalada: 1.3.0/);
+ assert.match(await versionNotice(root,{request:async()=>data('1.4.0')}),/Hay una versión 1.4.0; instalada: 1.3.1/);
 });
 
 test('curso heredado sin procedencia: no usar versión académica ni acceder a red',async()=>{
@@ -53,8 +58,9 @@ for(const mode of ['offline','actualizador bloqueado','Windows CMD'])test('arran
  const root=fixture(),before=snapshot(root);
  const guard=path.join(root,'offline-guard.mjs');fs.writeFileSync(guard,"globalThis.fetch=()=>{throw Error('NETWORK_FORBIDDEN')};");
  const ready=new Promise((resolve,reject)=>{
+ // cmd.exe no resuelve `call "nombre con espacios.cmd"` sin ruta; con prefijo .\ sí (equivale a la ruta completa del doble clic).
  const win=mode==='Windows CMD';
- const child=spawn(win?(process.env.ComSpec||'cmd.exe'):process.execPath,win?['/d','/s','/c','call "Iniciar OpenClass.cmd"']:['--import',pathToFileURL(guard).href,path.join(root,'scripts/openclass-start.mjs')],{cwd:root,windowsHide:true,windowsVerbatimArguments:win,stdio:['ignore','pipe','pipe'],env:{...process.env,NODE_OPTIONS:'--import='+JSON.stringify(pathToFileURL(guard).href)}});
+ const child=spawn(win?(process.env.ComSpec||'cmd.exe'):process.execPath,win?['/d','/s','/c','call ".\\Iniciar OpenClass.cmd"']:['--import',pathToFileURL(guard).href,path.join(root,'scripts/openclass-start.mjs')],{cwd:root,windowsHide:true,windowsVerbatimArguments:win,stdio:['ignore','pipe','pipe'],env:{...process.env,NODE_OPTIONS:'--import='+JSON.stringify(pathToFileURL(guard).href)}});
  let output='';const timer=setTimeout(()=>{child.kill();reject(Error('timeout '+output));},10000);
  child.stdout.on('data',b=>{output+=b;if(output.includes('OPENCLASS_STABLE_READY')){clearTimeout(timer);resolve({child,output});}});child.stderr.on('data',b=>output+=b);child.on('error',reject);child.on('exit',code=>{clearTimeout(timer);if(!output.includes('OPENCLASS_STABLE_READY'))reject(Error(code+': '+output));});
  });

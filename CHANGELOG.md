@@ -3,6 +3,14 @@
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/); versiones según
 [SemVer](https://semver.org/lang/es/). Entre paréntesis, la suite que acredita cada punto.
 
+## [1.3.1] — 2026-10-30
+
+- **Origen de Live**: `Iniciar OpenClass.cmd` y `scripts/openclass-start.mjs` abren ahora `http://localhost:8600`, el origen que OpenClass Live autoriza en `PRESENTER_ORIGINS`; antes abrían `http://127.0.0.1:8600`, un origen distinto que Live rechazaría.
+- **Servidor loopback IPv4**: sin cambios; sigue escuchando solo en `127.0.0.1:8600` con puerto fijo y `strictPort`.
+- **Pruebas**: nueva regresión `tests/startup-origin.test.mjs` (origen del lanzador frente a la configuración de Live; host, puerto y `strictPort`). Se corrigió el arnés Windows CMD de `stable-startup` (`call ".\Iniciar OpenClass.cmd"`; `cmd.exe` no resuelve nombres con espacios sin ruta) y la prueba ya no depende de carpetas `fixtures`/`evidence` externas al repositorio: usa un directorio temporal que crea y elimina.
+- **Sin cambios funcionales adicionales**: contenido de los cursos, dependencias, Live v0.2/protocolo 2 y versión académica de la plantilla (1.0.0) permanecen iguales.
+- **Verificación pendiente (no probado)**: vista del presentador de Reveal en Chrome externo (el popup está bloqueado en el navegador integrado) y conexión real con OpenClass Live en una sala autorizada. La comprobación de Vite real y navegación se hizo en el Chromium integrado.
+
 ## [1.3.0] — 2026-10-28
 
 - **Inicio estable en Windows**: `Iniciar OpenClass.cmd` ejecuta el Vite instalado localmente sin invocar actualizaciones, instalación o recuperación automática. El arranque y navegación real de React/Reveal.js se aceptaron en Chrome y mediante doble clic en Windows; CI Windows verifica el contrato con Vite simulado.
