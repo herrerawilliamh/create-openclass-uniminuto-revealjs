@@ -56,7 +56,7 @@ Base `5b0aad87d6db2ab8110a7c31b5df407f301cdf16`. Solo documentación y grafo; no
 
 ### Qué indexa realmente Graphify
 - Extensiones con nodos en `graphify-out/graph.json`: `.mjs`, `.js`, `.jsx`, `.md`, `.yml`, `.json`, `.mermaid`. Los nodos AST de este panel salen de `public/assets/docente.mjs` y `public/assets/comun.mjs` (funciones como `pintarPreguntas()`, `pintarActiva()`, `dejarSala()`).
-- **`.css` y `.html` no producen nodos** (0 nodos con origen `docente.css` o `docente/index.html`). El extractor no se modificó y no se fabricaron nodos. La relación con HTML/CSS existe solo como texto de este documento (nodos `.md`) y es verificable leyendo los archivos citados, no mediante consultas de grafo sobre selectores.
+- **HTML** es reconocido como documento, pero no genera nodos AST en el grafo actual (0 nodos con origen `docente/index.html`). **CSS** carece de extractor y no genera nodos (0 nodos con origen `docente.css`). El extractor no se modificó y no se fabricaron nodos. La tabla Markdown de esta sección aporta la trazabilidad documental verificable (nodos `.md` recuperables con `graphify query`); los selectores y el HTML se comprueban leyendo los archivos citados, no mediante consultas de grafo sobre selectores.
 
 ### Tabla de trazabilidad (pantalla → HTML → CSS → JS → pruebas)
 Archivos: HTML `public/docente/index.html`, CSS `public/assets/docente.css`, JS `public/assets/docente.mjs`.
@@ -69,15 +69,15 @@ Archivos: HTML `public/docente/index.html`, CSS `public/assets/docente.css`, JS 
 | Encuesta (pregunta activa, tiempo, acción principal, tendencias, «Quién ve qué») | `section.hoja#encuesta` > `#panel-activa` | `.hoja`, `.columna-mesa`, `.aviso(.ok/.error/.alerta)` | `pintar()` → `pintarActiva()`, `refrescarActiva()`, `reglaQuienVeQue()`, `tictac()`, `pintarHistorial()`; `socket.on('estado')`; botones `btn-cerrar`, `btn-publicar`, `btn-ronda2`, `btn-revelar` → `revelar()` | `panel-foco` (orden de foco de los botones), `panel-contexto`, `panel-recuperacion`, `panel-soluciones`, `live-navegador` (`btn-publicar`) |
 | Preguntas de estudiantes + contador de pendientes | `section.hoja#preguntas`, `#lista-preguntas`, `#cuenta-pendientes` | `.hoja`, `.contador` | `pintarPreguntas()` (actualiza `#cuenta-pendientes`) | `live-navegador` (localiza `#lista-preguntas` con `.closest('.hoja, .tarjeta')`) |
 | Compartir con la clase (QR, código, enlace) | `section.hoja.salida#compartir`, `#codigo-sala`, `btn-copiar`, `btn-volver` | `.salida`, `.salida-datos`, `.codigo-sala`, `.columna-apoyo` | `btn-copiar` click; `btn-volver` click → `dejarSala()`/`listar()`; `btn-clave` | `panel-contexto` (`dejarSala`, borrador) |
-| Cierre («Terminar la clase») | `section.hoja.cierre#cierre`, `table.salidas`, `btn-revocar`, `btn-finalizar` | `.cierre`, `.salidas` (th/td/thead/tbody) | `btn-revocar` click (cerrar sesión → `terminarSesion()`); `btn-finalizar` click con `confirm()` nativo; `socket.on('sala:cerrada')` | `panel-soluciones` (`btn-finalizar`), `panel-recuperacion` |
+| Cierre («Terminar la clase») | `section.hoja.cierre#cierre`, `table.salidas`, `btn-revocar`, `btn-finalizar` | `.cierre`, `.salidas` (th/td/thead/tbody) | `btn-revocar` click con `confirm()` → `emitir('sala:revocarClaves')` (revoca claves de presentador; no cierra la sesión ni la sala); `btn-finalizar` click con `confirm()` → `emitir('sala:finalizar')`; `socket.on('sala:cerrada')` → `olvidarSoluciones()` + `dejarSala()` + `listar()` | `panel-soluciones` (`btn-finalizar`), `panel-recuperacion` |
 
 ### Relación encuesta → navegación → preguntas → compartir → cierre
 1. `mostrar('vista-sala')` hace visibles la cinta y `#nav-secciones`; `pintar()` fija el código de sala.
 2. `#nav-secciones` enlaza por `href` a los `id` de las cuatro hojas: `#encuesta`, `#preguntas`, `#compartir`, `#cierre` (coincidencia verificada en `index.html` líneas 30–33, 76, 80, 113, 160).
 3. Encuesta y Preguntas están en la columna principal (`columna-mesa`); Compartir y Cierre, en la secundaria (`columna-apoyo`), después en el DOM.
-4. El cierre actúa sobre lo creado antes: `btn-finalizar` y `btn-revocar` llaman a `olvidarSoluciones()`/`terminarSesion()`, que borran las soluciones improvisadas de la encuesta; la tabla `.salidas` lo declara.
+4. El cierre actúa sobre lo creado antes: `btn-revocar` solo emite `sala:revocarClaves` (revoca claves de presentador, sin limpieza local). `btn-finalizar` emite `sala:finalizar`; la limpieza local (`olvidarSoluciones()`, `dejarSala()`, `listar()`) ocurre al recibir `sala:cerrada`, según el manejador de `docente.mjs`. `terminarSesion()` no es llamada por estos botones (se invoca ante `no_autenticado`). La tabla `.salidas` declara lo que se elimina.
 
 ### Limitaciones reales
-- Sin nodos CSS/HTML en Graphify; las filas «selectores» y «HTML» no son recuperables como nodos, solo por texto.
+- Sin nodos AST de HTML ni CSS en Graphify; las filas «selectores» y «HTML» no son recuperables como nodos, solo por texto (tabla Markdown).
 - Las anclas de navegación, el enlace «Saltar» y el contador de pendientes no tienen prueba E2E directa; la cobertura citada es indirecta. No se añadieron pruebas (fuera de alcance).
 - Esta trazabilidad documenta el estado de la base; no se repitió la suite (no hay cambios funcionales). Evidencia I4 previa: sección anterior y `C:\tmp\openclass-i4-evidencia\`.

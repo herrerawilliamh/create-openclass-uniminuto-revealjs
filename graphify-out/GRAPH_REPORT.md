@@ -1,17 +1,17 @@
 # Graph Report - openclass-vnext  (2026-11-05)
 
 ## Corpus Check
-- 124 files · ~129,767 words
+- 124 files · ~129,847 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 24 file(s) not represented in the graph (top: (none) 10, .css 9, .example 1)
 
 ## Summary
-- 1546 nodes · 2686 edges · 91 communities (85 shown, 6 thin omitted)
-- Extraction: 97% EXTRACTED · 3% INFERRED · 0% AMBIGUOUS · INFERRED: 87 edges (avg confidence: 0.89)
+- 1546 nodes · 2687 edges · 91 communities (85 shown, 6 thin omitted)
+- Extraction: 97% EXTRACTED · 3% INFERRED · 0% AMBIGUOUS · INFERRED: 88 edges (avg confidence: 0.89)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `5b0aad87`
+- Built from commit: `0c1651ac`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
