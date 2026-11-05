@@ -25,7 +25,7 @@ test('paquete reproducible, aislado y con versiones coherentes; rechaza archivos
     utimesSync(path.join(dir, 'src/server.mjs'), new Date(), new Date());
     assert.equal(run().status, 0);
     assert.deepEqual(readFileSync(archive), first, 'mtime no altera el artefacto');
-    const listing = spawnSync('tar', ['-tzf', archive], { encoding: 'utf8' });
+    const listing = spawnSync('tar', ['-tzf', path.relative(dir, archive).split(path.sep).join('/')], { cwd: dir, encoding: 'utf8' });
     assert.equal(listing.status, 0);
     assert.doesNotMatch(listing.stdout, /(?:\/\.env\n|\.md\n|node_modules|tests\/)/);
     writeFileSync(path.join(dir, 'public/private.md'), 'PRIVATE_SENTINEL');
