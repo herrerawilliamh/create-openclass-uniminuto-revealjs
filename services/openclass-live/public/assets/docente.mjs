@@ -54,6 +54,9 @@ guardarSoluciones(); // reescribe sin entradas inválidas o de un formato anteri
 function mostrar(vista) {
   for (const id of ['vista-login', 'vista-salas', 'vista-sala']) $(id).classList.toggle('oculto', id !== vista);
   $('btn-salir').classList.toggle('oculto', vista === 'vista-login');
+  // La cinta solo muestra el código y las secciones dentro de una sala.
+  $('nav-secciones').classList.toggle('oculto', vista !== 'vista-sala');
+  $('cinta-codigo-caja').classList.toggle('oculto', vista !== 'vista-sala');
 }
 function aviso(id, texto, tipo = '') { const n = $(id); n.textContent = texto ?? ''; n.className = `aviso ${tipo}${texto ? '' : ' oculto'}`; }
 // Un acuse que no llega (sin socket, desconexión o 10 s sin respuesta) es `transitorio`: no prueba que la
@@ -189,6 +192,8 @@ let salasConocidas = [];
 const AVISO_SALA_AUSENTE = 'La sala ya no está disponible: el docente la finalizó o venció, y sus datos se eliminaron del servidor.';
 
 async function listar() {
+  const lista = $('lista-salas');
+  if (!lista.childElementCount) lista.append(el('li', { clase: 'suave', texto: 'Cargando salas…' }));
   const r = await emitir('sala:listar');
   if (r.ok) { salasConocidas = r.salas; soloSalas(r.salas); pintarSalas(r.salas); return; }
   // Sin respuesta: se muestra la última lista conocida y no se toca nada privado.
@@ -200,7 +205,7 @@ function pintarSalas(salas) {
   mostrar('vista-salas');
   const lista = $('lista-salas');
   lista.replaceChildren();
-  if (!salas.length) lista.append(el('li', { clase: 'suave', texto: 'No hay salas abiertas.' }));
+  if (!salas.length) lista.append(el('li', { clase: 'suave', texto: 'No hay salas abiertas. Cree una para empezar la clase.' }));
   for (const s of salas) {
     lista.append(el('li', { clase: 'pregunta' },
       el('div', { clase: 'codigo-sala', texto: s.codigo }),
@@ -266,6 +271,8 @@ function pintar(e) {
   estado = e;
   cuenta.sincronizar(e.servidor);
   $('codigo-sala').textContent = e.sala.codigo;
+  $('cinta-codigo').textContent = e.sala.codigo;
+  $('cinta-codigo').setAttribute('aria-label', [...e.sala.codigo].join(' '));
   $('titulo-panel').textContent = e.sala.titulo || 'Sala sin título';
   $('m-conectados').textContent = String(e.sala.conectados);
   $('m-unidos').textContent = String(e.sala.participantes);
@@ -375,19 +382,45 @@ function pintarActiva(enc, sala) {
     botones.append(el('button', { type: 'button', id: 'btn-cerrar', texto: 'Cerrar ahora', onclick: accion('encuesta:cerrar', enc.id, { silencio: ['no_abierta'] }) }));
     if (ronda?.cierra) botones.append(el('button', { type: 'button', clase: 'secundario', id: 'btn-extender', texto: '+30 segundos', onclick: accion('encuesta:extender', enc.id) }));
   } else if (!enc.resultadosPublicados && !enc.correctaRevelada) {
-    botones.append(el('button', { type: 'button', id: 'btn-publicar', texto: 'Mostrar resultados', onclick: accion('encuesta:publicar', enc.id, { exito: 'Resultados visibles en los teléfonos. En la presentación: «En vivo» → «Mostrar resultados».' }) }));
+    botones.append(el('button', { type: 'button', id: 'btn-publicar', texto: 'Publicar en teléfonos', onclick: accion('encuesta:publicar', enc.id, { exito: 'Resultados visibles en los teléfonos. Para proyectarlos, en la presentación: «En vivo» → «Mostrar resultados».' }) }));
   } else {
     if (enc.ronda === 1 && !enc.correctaRevelada) botones.append(el('button', { type: 'button', id: 'btn-ronda2', texto: 'Discutir y repetir', onclick: accion('encuesta:segundaRonda', enc.id) }));
     if (puedeRevelar) botones.append(el('button', { type: 'button', clase: enc.ronda === 1 ? 'secundario' : '', id: 'btn-revelar', texto: 'Revelar explicación', onclick: () => revelar(enc.id, local) }));
   }
   botones.append(el('button', { type: 'button', clase: 'secundario', id: 'btn-retirar', texto: 'Retirar de las pantallas', onclick: accion('encuesta:retirar') }));
   panel.append(botones);
+  // Alcance real de cada paso: qué cambia en teléfonos y qué NO cambia solo en la presentación.
+  const alcance = abierta ? 'Cerrar no publica resultados ni revela la respuesta.'
+    : enc.correctaRevelada ? 'Los teléfonos ven la respuesta correcta y la explicación; no se puede deshacer.'
+    : enc.resultadosPublicados ? 'Los teléfonos ven las barras, todavía sin la correcta. La presentación no cambia sola.'
+    : 'Los teléfonos saben que terminó, pero no ven resultados hasta que usted los publique.';
+  panel.append(el('p', { clase: 'suave nota-alcance', texto: alcance }));
   if (!abierta && !enc.correctaRevelada && !local) {
     panel.append(el('p', { clase: 'suave', id: 'revelar-en-presentacion', texto: 'La solución de esta pregunta no está en este navegador. Si la pregunta viene de la presentación, revélela allí: «En vivo» → «Revelar explicación» (o desde Build Tech).' }));
   }
+  panel.append(reglaQuienVeQue(enc, abierta, local));
   // Principal del paso: cerrar → mostrar resultados → discutir y repetir → revelar → retirar.
   restaurarFoco(abierta ? 'btn-cerrar' : !enc.resultadosPublicados && !enc.correctaRevelada ? 'btn-publicar'
     : enc.ronda === 1 && !enc.correctaRevelada ? 'btn-ronda2' : puedeRevelar ? 'btn-revelar' : 'btn-retirar');
+}
+
+/** «Quién ve qué ahora»: solo afirma lo que este panel sabe; la presentación no es detectable desde aquí. */
+function reglaQuienVeQue(enc, abierta, local) {
+  const telefonos = abierta ? 'Ven la pregunta y el tiempo. No ven barras.'
+    : enc.correctaRevelada ? 'Ven la respuesta correcta y la explicación.'
+    : enc.resultadosPublicados ? 'Ven las barras, todavía sin la correcta.'
+    : 'Saben que terminó. No ven resultados.';
+  const solucion = enc.correctaRevelada ? 'Ya fue revelada a la clase.'
+    : local ? 'Sellada en esta pestaña. No ha salido de aquí.'
+    : 'No está en este navegador.';
+  const fila = (signo, titulo, texto) => el('div', {}, el('dt', {}, el('span', { clase: `signo ${signo}`, 'aria-hidden': 'true' }), titulo), el('dd', { texto }));
+  return el('div', { clase: 'regla-caja' },
+    el('h3', { id: 't-regla', texto: 'Quién ve qué ahora' }),
+    el('dl', { clase: 'regla', 'aria-labelledby': 't-regla' },
+      fila('s-privado', 'Este panel', abierta ? 'Usted ve las tendencias en vivo, sin marcar la correcta.' : 'Usted ve la distribución de respuestas.'),
+      fila('s-telefonos', 'Teléfonos', telefonos),
+      fila('s-nosabe', 'Presentación', 'Este panel no lo detecta. Compruébelo en «En vivo».'),
+      fila('s-sello', 'Solución', solucion)));
 }
 
 /** La solución sale de esta pestaña solo aquí, con la votación ya cerrada; el servidor la valida y la revela de una vez. */
@@ -454,6 +487,11 @@ function pintarHistorial(lista, activaId) {
  * desaparece (p. ej. «Aprobar») pasa al siguiente control de la misma pregunta.
  */
 function pintarPreguntas(preguntas) {
+  const pendientes = preguntas.filter((q) => q.estado === 'pendiente').length;
+  const contador = $('cuenta-pendientes');
+  contador.textContent = String(pendientes);
+  contador.classList.toggle('oculto', !pendientes);
+  contador.setAttribute('aria-label', `${pendientes} pendientes`);
   sincronizarLista($('lista-preguntas'), preguntas, {
     clave: (q) => q.id,
     firma: (q) => JSON.stringify([q.estado, q.proyectada, q.alias, q.texto, q.estado === 'pendiente' && !desveladas.has(q.id)]),
