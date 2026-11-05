@@ -36,17 +36,21 @@
 
     <section id="vista-sala" class="oculto">
       <div id="aviso-sala" class="aviso oculto" role="status"></div>
-      <nav class="pestanas" role="tablist" aria-label="Secciones">
-        <button type="button" role="tab" id="tab-encuesta" aria-selected="true" aria-controls="panel-encuesta">Encuesta</button>
-        <button type="button" role="tab" id="tab-preguntas" aria-selected="false" aria-controls="panel-preguntas">Preguntas</button>
-      </nav>
-      <section class="tarjeta" id="panel-encuesta" role="tabpanel" aria-labelledby="tab-encuesta" aria-live="polite"></section>
+      <div class="pestanas" role="tablist" aria-label="Secciones">
+        <button type="button" role="tab" id="tab-encuesta" aria-selected="true" aria-controls="panel-encuesta" tabindex="0">Encuesta</button>
+        <button type="button" role="tab" id="tab-preguntas" aria-selected="false" aria-controls="panel-preguntas" tabindex="-1">Preguntas</button>
+      </div>
+      <section class="tarjeta" id="panel-encuesta" role="tabpanel" aria-labelledby="tab-encuesta" aria-live="polite" tabindex="0"></section>
       <section class="tarjeta oculto" id="panel-preguntas" role="tabpanel" aria-labelledby="tab-preguntas">
         <form id="form-pregunta" autocomplete="off">
           <label for="texto-pregunta">Escriba su pregunta</label>
           <textarea id="texto-pregunta" maxlength="280" minlength="3" required></textarea>
           <div class="fila"><span class="suave crece" id="cuenta-pregunta">0 / 280</span><button type="submit" id="btn-preguntar">Enviar pregunta</button></div>
           <div id="aviso-pregunta" class="aviso oculto" role="status"></div>
+          <div id="recuperacion-pregunta" class="fila oculto">
+            <button type="button" class="mini secundario" id="btn-revisar-pregunta">Revisar si se registró</button>
+            <button type="button" class="mini secundario" id="btn-descartar-pregunta">Descartar borrador</button>
+          </div>
         </form>
         <h3>Preguntas de la clase</h3>
         <ul class="preguntas" id="lista-preguntas"></ul>
