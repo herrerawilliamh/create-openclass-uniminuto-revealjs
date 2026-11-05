@@ -13,3 +13,16 @@ Base auditada: `2006af3907026c5bf4997ca4890e484adc386ab9`. Copia aislada local, 
 - Archivos: `src/salas.mjs`, `src/sockets.mjs`, `tests/unidad.test.mjs`, `tests/integracion.test.mjs`.
 - Pruebas: unidad + Socket.IO nuevas; `npm test` 36/37.
 - Pendiente: `gitops-release.test.mjs` falla porque `releases/0.2.0.json` certifica el payload aprobado. Cualquier cambio en `src/` exige una versión nueva y su manifiesto; no se regeneró.
+
+## I2 — Recuperación y confiabilidad del panel (OC-A01, OC-A06, OC-A10, O-01, O-09)
+Los textos originales de los hallazgos no están en la copia aislada; el alcance se tomó del encargo. Solo cambia el cliente del panel (`public/assets/docente.mjs`, `comun.mjs`, `docente/index.html`). Sin cambios en autenticación, cookies, CSRF ni protocolo Socket.IO.
+- `api()` nunca rechaza: red y tiempo agotado (10 s) → `{ estado: 0, falla }`. `mensajeHttp()`/`esTransitorio()` (en `comun.mjs`, puras y probadas) traducen red, timeout, 401, 403, 429 y 5xx. Transitorio = red, timeout, 429, 5xx.
+- `emitir()` marca `transitorio: true` cuando no hay socket o el acuse no llega; así ningún llamador confunde «sin respuesta» con «la sala ya no existe».
+- Acceso: botón «Entrando…» con `aria-busy`, siempre reutilizable; foco vuelve a la contraseña; la contraseña se borra solo si fue rechazada (401/403), no ante fallos pasajeros. Si la conexión en vivo falla tras el acceso se avisa.
+- Comprobación de sesión al abrir: solo `200 sin autenticar`, 401 y 403 limpian lo privado; ante red/429/5xx se conservan soluciones y borradores y aparece «Reintentar conexión».
+- Salir: el estado local se limpia siempre; solo con HTTP 200 se omite el aviso. Si falla, el aviso dice que NO se pudo confirmar el cierre en el servidor (el servidor responde 200 incluso sin sesión, así que 200 es la única confirmación).
+- «Copiar enlace»: «Enlace copiado.» solo si `writeText` resolvió; si falla o no existe el API, el enlace queda seleccionado con instrucción de Ctrl+C.
+- Recepción/moderación de preguntas y tiempo de votación: ante rechazo o timeout la casilla vuelve a `estado.sala` (valor confirmado) y se explica.
+- `sala:seguir`: un timeout o desconexión ya no llama a `dejarSala()`; conserva soluciones y borrador, avisa y reintenta (3 veces, 2/4/6 s) además del reintento natural en cada `sesion`. Solo `sala_inexistente`/`sala_vencida` (o la sala ausente de la lista) limpian, con el aviso «La sala ya no está disponible…». Ciclo de vida de limpieza sin cambios (revelar, salir, sesión vencida, cambiar/dejar sala, fin/vencimiento).
+- Pruebas: `tests/interfaz.test.mjs` (2) y `tests/e2e/panel-recuperacion-navegador.test.mjs` (7, Chrome real; fallos simulados en el cliente con fetch/acuses). Regresión: `panel-contexto` y `panel-soluciones` verdes (una ejecución de panel-contexto falló con `EBUSY` en el perfil temporal de Chrome en Windows; reejecutada sola pasa).
+- Gate GitOps: sigue fallando solo por el manifiesto histórico `releases/0.2.0.json` (el payload `public/` cambió). Sin regenerar.

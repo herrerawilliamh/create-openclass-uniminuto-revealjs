@@ -98,3 +98,20 @@ export const MENSAJES_ERROR = {
   validacion: 'Datos no válidos. Revise el código.',
   origen: 'Origen no permitido.',
 };
+
+/**
+ * Mensaje comprensible para un fallo de la API HTTP del panel. `r` = { estado, falla } de api():
+ * estado 0 con falla 'red' | 'timeout' cuando no hubo respuesta. `contexto: 'login'` distingue 401.
+ */
+export function mensajeHttp({ estado = 0, falla } = {}, contexto = '') {
+  if (falla === 'timeout') return 'El servidor tardó demasiado en responder. Inténtelo de nuevo.';
+  if (falla === 'red' || estado === 0) return 'Sin conexión con el servidor. Revise su red e inténtelo de nuevo.';
+  if (estado === 401) return contexto === 'login' ? 'Contraseña incorrecta.' : 'La sesión venció. Entre de nuevo.';
+  if (estado === 403) return 'El servidor rechazó la solicitud (origen o sesión no válidos). Recargue la página e inténtelo de nuevo.';
+  if (estado === 429) return 'Demasiados intentos. Espere unos minutos.';
+  if (estado >= 500) return 'El servidor tuvo un problema. Inténtelo de nuevo en unos minutos.';
+  return `No se pudo completar la acción (código ${estado}).`;
+}
+
+/** ¿Un fallo HTTP puede ser pasajero (red, tiempo agotado, 429 o 5xx)? Si lo es, no se borra nada local. */
+export const esTransitorio = ({ estado = 0, falla } = {}) => Boolean(falla) || estado === 0 || estado === 429 || estado >= 500;

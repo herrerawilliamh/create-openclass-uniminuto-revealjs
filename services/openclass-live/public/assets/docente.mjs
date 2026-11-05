@@ -7,7 +7,7 @@
  * improvisada, historial, configuración de la sesión). Las tendencias se actualizan en el sitio con
  * cada respuesta (sin rehacer la tarjeta ni perder el foco) y nunca marcan la correcta con la votación abierta.
  */
-import { el, letra, textoConCodigo, barras, refrescarBarras, comparar, ESTADOS, crearCuenta, formatoTiempo, textoDuracion } from './comun.mjs';
+import { el, letra, textoConCodigo, barras, refrescarBarras, comparar, ESTADOS, crearCuenta, formatoTiempo, textoDuracion, mensajeHttp, esTransitorio } from './comun.mjs';
 
 const $ = (id) => document.getElementById(id);
 let csrf = '';
@@ -56,21 +56,32 @@ function mostrar(vista) {
   $('btn-salir').classList.toggle('oculto', vista === 'vista-login');
 }
 function aviso(id, texto, tipo = '') { const n = $(id); n.textContent = texto ?? ''; n.className = `aviso ${tipo}${texto ? '' : ' oculto'}`; }
+// Un acuse que no llega (sin socket, desconexión o 10 s sin respuesta) es `transitorio`: no prueba que la
+// sala o la sesión hayan desaparecido, así que quien llama no debe borrar nada privado por ese motivo.
 const emitir = (evento, datos = {}) => new Promise((resolve) => {
+  if (!socket) return resolve({ ok: false, error: 'sin_conexion', mensaje: 'Sin conexión con el servidor', transitorio: true });
   socket.timeout(10_000).emit(evento, datos, (err, r) => {
+    if (err) return resolve({ ok: false, error: 'timeout', mensaje: 'Sin respuesta del servidor', transitorio: true });
     if (r?.error === 'no_autenticado') terminarSesion(); // vencida o revocada: el servidor cierra después del acuse
-    resolve(err ? { ok: false, mensaje: 'Sin respuesta del servidor' } : r);
+    resolve(r);
   });
 });
 
 // ---------------- Sesión HTTP ----------------
+/** Nunca rechaza: un fallo de red o un tiempo agotado vuelve como { estado: 0, falla: 'red' | 'timeout' }. */
 async function api(ruta, cuerpo) {
-  const r = await fetch(ruta, {
-    method: cuerpo === undefined ? 'GET' : 'POST', credentials: 'same-origin',
-    headers: cuerpo === undefined ? {} : { 'Content-Type': 'application/json', 'X-OC-CSRF': csrf },
-    body: cuerpo === undefined ? undefined : JSON.stringify(cuerpo),
-  });
-  return { estado: r.status, datos: await r.json().catch(() => ({})) };
+  const control = new AbortController();
+  const limite = setTimeout(() => control.abort(), 10_000);
+  try {
+    const r = await fetch(ruta, {
+      method: cuerpo === undefined ? 'GET' : 'POST', credentials: 'same-origin', signal: control.signal,
+      headers: cuerpo === undefined ? {} : { 'Content-Type': 'application/json', 'X-OC-CSRF': csrf },
+      body: cuerpo === undefined ? undefined : JSON.stringify(cuerpo),
+    });
+    return { estado: r.status, datos: await r.json().catch(() => ({})) };
+  } catch (error) {
+    return { estado: 0, datos: {}, falla: error?.name === 'AbortError' ? 'timeout' : 'red' };
+  } finally { clearTimeout(limite); }
 }
 
 /**
@@ -81,28 +92,65 @@ function terminarSesion() {
   socket?.disconnect();
   socket = null; csrf = '';
   dejarSala();
+  aviso('error-login', '');
+  $('btn-reintentar').classList.add('oculto');
   mostrar('vista-login');
 }
 
+/**
+ * Comprobar la sesión al abrir. Solo una respuesta que confirma que NO hay sesión (200 sin autenticar,
+ * 401, 403) limpia lo privado de la pestaña. Si el servidor no responde (red, tiempo, 429, 5xx) no se sabe
+ * nada: se conservan soluciones y borradores y se ofrece reintentar.
+ */
 async function iniciar() {
-  const { datos } = await api('/api/docente/sesion');
-  if (datos.autenticado) { csrf = datos.csrf; conectar(); } else terminarSesion();
+  $('btn-reintentar').disabled = true;
+  const r = await api('/api/docente/sesion');
+  $('btn-reintentar').disabled = false;
+  if (r.estado === 200 && r.datos.autenticado) { csrf = r.datos.csrf; aviso('error-login', ''); $('btn-reintentar').classList.add('oculto'); conectar(); return; }
+  if (esTransitorio(r)) {
+    mostrar('vista-login');
+    $('btn-reintentar').classList.remove('oculto');
+    aviso('error-login', `${mensajeHttp(r)} No se verificó su sesión; lo que tenía en esta pestaña no se ha borrado.`, 'alerta');
+    return;
+  }
+  terminarSesion();
 }
+$('btn-reintentar').addEventListener('click', () => { aviso('error-login', ''); iniciar(); });
 
+let entrando = false;
 $('form-login').addEventListener('submit', async (ev) => {
   ev.preventDefault();
-  $('btn-login').disabled = true;
-  const { estado: s, datos } = await api('/api/docente/login', { password: $('password').value });
-  $('btn-login').disabled = false;
-  $('password').value = '';
-  if (s === 200) { csrf = datos.csrf; aviso('error-login', ''); conectar(); return; }
-  aviso('error-login', s === 429 ? 'Demasiados intentos. Espere unos minutos.' : 'Contraseña incorrecta.', 'error');
+  if (entrando) return;
+  entrando = true;
+  const boton = $('btn-login');
+  boton.disabled = true; boton.textContent = 'Entrando…'; boton.setAttribute('aria-busy', 'true');
+  aviso('error-login', '');
+  let r;
+  try { r = await api('/api/docente/login', { password: $('password').value }); } finally {
+    entrando = false;
+    boton.disabled = false; boton.textContent = 'Entrar'; boton.removeAttribute('aria-busy');
+  }
+  if (r.estado === 200 && r.datos.csrf) { $('password').value = ''; csrf = r.datos.csrf; $('btn-reintentar').classList.add('oculto'); conectar(); return; }
+  // Una contraseña rechazada se borra; ante un fallo del servidor o de la red se conserva para reintentar.
+  if (!esTransitorio(r)) $('password').value = '';
+  aviso('error-login', mensajeHttp(r, 'login'), r.estado === 401 ? 'error' : 'alerta');
+  $('password').focus();
 });
 
+/**
+ * Salir: el estado local se limpia siempre, también si la petición falla. Solo se afirma que la sesión
+ * del servidor se cerró cuando respondió 200 (revoca la sesión y borra la cookie).
+ */
 $('btn-salir').addEventListener('click', async () => {
   if (!descartarBorrador()) return;
-  await api('/api/docente/logout', {});
+  const boton = $('btn-salir');
+  boton.disabled = true;
+  const r = await api('/api/docente/logout', {});
   terminarSesion();
+  boton.disabled = false;
+  if (r.estado !== 200) {
+    aviso('error-login', `${mensajeHttp(r)} Se cerró el panel y se borró lo privado de este navegador, pero NO se pudo confirmar que el servidor haya cerrado la sesión. Si el equipo es compartido, cierre el navegador o espere a que la sesión venza.`, 'alerta');
+  }
 });
 
 // ---------------- Socket ----------------
@@ -113,13 +161,19 @@ function conectar() {
   socket.on('disconnect', () => { $('conexion').textContent = 'Reconectando…'; $('conexion').classList.add('offline'); });
   socket.on('connect_error', (e) => {
     if (e.message === 'no_autenticado') terminarSesion();
+    else if (!$('vista-login').classList.contains('oculto')) aviso('error-login', 'Sesión iniciada, pero no se pudo abrir la conexión en vivo. Se reintentará sola.', 'alerta');
   });
   socket.on('sesion', ({ salas }) => {
+    salasConocidas = salas;
     soloSalas(salas); // salas finalizadas o vencidas mientras la pestaña estaba cerrada o sin conexión
     const deRuta = /#sala=([A-Za-z0-9_-]+)/.exec(location.hash)?.[1];
+    const esperada = deRuta || salaId;
     if (deRuta && salas.some((s) => s.id === deRuta)) seguir(deRuta);
     else if (salaId && salas.some((s) => s.id === salaId)) seguir(salaId);
-    else { dejarSala(); pintarSalas(salas); }
+    else {
+      dejarSala(); pintarSalas(salas);
+      if (esperada) aviso('aviso-salas', AVISO_SALA_AUSENTE, 'alerta');
+    }
   });
   socket.on('estado', (e) => { if (e.sala.id === salaId) pintar(e); });
   socket.io.on('reconnect_attempt', () => { $('conexion').textContent = 'Sin conexión: reintentando…'; $('conexion').classList.add('offline'); });
@@ -131,9 +185,15 @@ function conectar() {
   });
 }
 
+let salasConocidas = [];
+const AVISO_SALA_AUSENTE = 'La sala ya no está disponible: el docente la finalizó o venció, y sus datos se eliminaron del servidor.';
+
 async function listar() {
   const r = await emitir('sala:listar');
-  if (r.ok) { soloSalas(r.salas); pintarSalas(r.salas); }
+  if (r.ok) { salasConocidas = r.salas; soloSalas(r.salas); pintarSalas(r.salas); return; }
+  // Sin respuesta: se muestra la última lista conocida y no se toca nada privado.
+  if (!salaId) pintarSalas(salasConocidas);
+  aviso('aviso-salas', `${r.mensaje}. La lista puede estar desactualizada.`, 'alerta');
 }
 
 function pintarSalas(salas) {
@@ -159,9 +219,35 @@ $('form-sala').addEventListener('submit', async (ev) => {
   seguir(r.sala.id);
 });
 
-async function seguir(id) {
+/**
+ * Entrar o reanudar una sala. Una falla pasajera (sin respuesta, desconexión) NO borra soluciones ni
+ * borrador: se avisa y se reintenta. Solo una respuesta del servidor que dice que la sala ya no existe o
+ * venció (o que no hay permiso) lleva a dejar la sala y limpiar.
+ */
+let reintentoSeguir = null;
+async function seguir(id, intento = 0) {
+  clearTimeout(reintentoSeguir);
   const r = await emitir('sala:seguir', { salaId: id });
-  if (!r.ok) { dejarSala(); return listar(); }
+  if (!r.ok) {
+    if (r.transitorio) {
+      if (salaId === id) avisoSala('Sin respuesta al reanudar la sala. Reintentando; su borrador y las soluciones siguen guardados.', 'error');
+      else {
+        pintarSalas(salasConocidas);
+        aviso('aviso-salas', 'No hubo respuesta al abrir la sala. Sus soluciones y borradores siguen guardados; pulse «Abrir panel» para reintentar.', 'alerta');
+      }
+      if (intento < 3 && socket) reintentoSeguir = setTimeout(() => seguir(id, intento + 1), 2000 * (intento + 1));
+      return;
+    }
+    if (r.error === 'no_autenticado') return; // terminarSesion() ya limpió y mostró el acceso
+    const ausente = ['sala_inexistente', 'sala_vencida'].includes(r.error);
+    dejarSala();
+    await listar();
+    aviso('aviso-salas', ausente ? AVISO_SALA_AUSENTE : r.mensaje, ausente ? 'alerta' : 'error');
+    return;
+  }
+  clearTimeout(reintentoSeguir);
+  if ($('aviso-sala').textContent.startsWith('Sin respuesta al reanudar')) avisoSala('');
+  if (id !== salaId) aviso('aviso-enlace', '');
   // Otra sala: nada del formulario ni de las soluciones de la anterior. La misma (recarga o
   // reconexión) conserva su solución y el borrador.
   if (id !== salaId) reiniciarComposer();
@@ -225,7 +311,7 @@ document.addEventListener('change', async (ev) => {
   if (ev.target.name !== 'duracion') return;
   const segundos = Number(ev.target.value);
   const r = await emitir('sala:ajustar', { salaId, duracionVotacion: segundos });
-  if (!r.ok) { avisoSala(r.mensaje, 'error'); pintarDuracion(estado.sala.duracionVotacion); return; }
+  if (!r.ok) { avisoSala(`${r.mensaje}. El ajuste no se aplicó; se muestra el valor vigente.`, 'error'); if (estado) pintarDuracion(estado.sala.duracionVotacion); return; }
   avisoSala(`Las próximas votaciones durarán ${textoDuracion(segundos)}.${estado?.activa?.estado === 'abierta' ? ' La votación en curso conserva su tiempo.' : ''}`);
 });
 
@@ -369,10 +455,14 @@ function pintarPreguntas(preguntas) {
   }
 }
 
-for (const [id, campo] of [['q-abiertas', 'abiertas'], ['q-premod', 'preModeracion']]) {
+// El interruptor muestra siempre el valor CONFIRMADO por el servidor: si lo rechaza o no responde,
+// vuelve a ese valor (estado.sala) en lugar de quedar marcado con algo que no se aplicó.
+for (const [id, campo, clave] of [['q-abiertas', 'abiertas', 'preguntasAbiertas'], ['q-premod', 'preModeracion', 'preModeracion']]) {
   $(id).addEventListener('change', async (ev) => {
     const r = await emitir('preguntas:ajustar', { salaId, [campo]: ev.target.checked });
-    if (!r.ok) avisoSala(r.mensaje, 'error');
+    if (r.ok) return;
+    if (estado) ev.target.checked = estado.sala[clave];
+    avisoSala(`${r.mensaje}. El ajuste no se aplicó; se muestra el valor vigente.`, 'error');
   });
 }
 
@@ -405,7 +495,9 @@ const descartarBorrador = () => !hayBorrador()
  * formulario improvisado no pasan a la lista de salas ni a otra sala.
  */
 function dejarSala() {
+  clearTimeout(reintentoSeguir);
   salaId = ''; firmaActiva = ''; estado = null;
+  aviso('aviso-enlace', '');
   olvidarSoluciones();
   reiniciarComposer();
   $('panel-activa').replaceChildren();
@@ -440,7 +532,24 @@ $('btn-guardar').addEventListener('click', () => guardarEncuesta(false));
 
 // ---------------- Acciones de sala ----------------
 $('btn-volver').addEventListener('click', () => { if (descartarBorrador()) { dejarSala(); listar(); } });
-$('btn-copiar').addEventListener('click', () => navigator.clipboard?.writeText($('enlace').textContent));
+/** Confirma la copia solo si el portapapeles la aceptó; si no, deja el enlace seleccionado para copiarlo a mano. */
+let relojEnlace = null;
+$('btn-copiar').addEventListener('click', async () => {
+  clearTimeout(relojEnlace);
+  const enlace = $('enlace');
+  try {
+    if (!navigator.clipboard?.writeText) throw new Error('sin_portapapeles');
+    await navigator.clipboard.writeText(enlace.textContent);
+    aviso('aviso-enlace', 'Enlace copiado.', 'ok');
+    relojEnlace = setTimeout(() => aviso('aviso-enlace', ''), 4000);
+  } catch {
+    const rango = document.createRange();
+    rango.selectNodeContents(enlace);
+    const seleccion = getSelection();
+    seleccion.removeAllRanges(); seleccion.addRange(rango);
+    aviso('aviso-enlace', 'No se pudo copiar automáticamente. El enlace quedó seleccionado: cópielo con Ctrl+C (⌘+C en Mac).', 'alerta');
+  }
+});
 $('btn-clave').addEventListener('click', async () => {
   const r = await emitir('sala:clave', { salaId });
   if (!r.ok) return aviso('aviso-clave', r.mensaje, 'error');

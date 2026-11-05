@@ -29,7 +29,8 @@
         <label for="password">Contraseña</label>
         <input type="password" id="password" name="password" autocomplete="current-password" required>
         <div id="error-login" class="aviso error oculto" role="alert"></div>
-        <button type="submit" id="btn-login">Entrar</button>
+        <div class="fila"><button type="submit" id="btn-login">Entrar</button>
+          <button type="button" class="secundario oculto" id="btn-reintentar">Reintentar conexión</button></div>
       </form>
       <p class="suave">El enlace o QR de los estudiantes nunca concede acceso a este panel.</p>
     </section>
@@ -63,6 +64,7 @@
             <p class="texto-plano"><a id="enlace" target="_blank" rel="noopener noreferrer"></a></p>
             <div class="fila"><button type="button" class="mini secundario" id="btn-copiar">Copiar enlace</button>
               <span class="suave" id="vence"></span></div>
+            <div id="aviso-enlace" class="aviso oculto" role="status"></div>
             <div class="metricas">
               <div class="metrica"><b id="m-conectados">0</b><span class="suave">conectados ahora</span></div>
               <div class="metrica"><b id="m-unidos">0</b><span class="suave">han entrado</span></div>
