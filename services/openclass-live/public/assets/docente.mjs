@@ -7,7 +7,7 @@
  * improvisada, historial, configuración de la sesión). Las tendencias se actualizan en el sitio con
  * cada respuesta (sin rehacer la tarjeta ni perder el foco) y nunca marcan la correcta con la votación abierta.
  */
-import { el, letra, textoConCodigo, barras, refrescarBarras, comparar, ESTADOS, crearCuenta, formatoTiempo, textoDuracion, mensajeHttp, esTransitorio } from './comun.mjs';
+import { el, letra, textoConCodigo, barras, refrescarBarras, comparar, ESTADOS, crearCuenta, formatoTiempo, textoDuracion, mensajeHttp, esTransitorio, sincronizarLista } from './comun.mjs';
 
 const $ = (id) => document.getElementById(id);
 let csrf = '';
@@ -324,11 +324,21 @@ function pintarActiva(enc, sala) {
   const firma = JSON.stringify(enc ? [enc.id, enc.estado, enc.ronda, enc.resultadosPublicados, enc.correctaRevelada, ronda?.cierra, sala.duracionVotacion] : [null, sala.duracionVotacion]);
   if (firma === firmaActiva) return refrescarActiva(enc, sala);
   firmaActiva = firma;
-  const foco = panel.contains(document.activeElement) ? document.activeElement.id : null;
+  // Mapa de foco: solo si el foco estaba DENTRO de la tarjeta. Si su control sigue existiendo se queda en él;
+  // si la acción desapareció (cerrar, publicar, repetir, revelar, retirar) pasa a la principal del paso nuevo.
+  const dentro = panel.contains(document.activeElement);
+  const foco = dentro ? document.activeElement.id : '';
+  const enSumario = dentro && document.activeElement.tagName === 'SUMMARY';
+  const restaurarFoco = (destino) => {
+    if (!dentro) return;
+    const objetivo = (foco && $(foco)) || (enSumario && panel.querySelector('summary')) || $(destino) || $('titulo-activa');
+    objetivo?.focus();
+  };
   panel.replaceChildren();
   if (!enc) {
-    panel.append(el('h2', { texto: 'Sin votación en curso' }),
+    panel.append(el('h2', { id: 'titulo-activa', tabindex: '-1', texto: 'Sin votación en curso' }),
       el('p', { clase: 'suave', texto: `En la presentación, vaya a la diapositiva de la pregunta y pulse «En vivo» → «Iniciar votación · ${textoDuracion(sala.duracionVotacion)}». Aquí verá el tiempo y las tendencias en privado.` }));
+    restaurarFoco('titulo-activa');
     return;
   }
   const abierta = enc.estado === 'abierta';
@@ -339,7 +349,7 @@ function pintarActiva(enc, sala) {
   const correctasVisibles = abierta ? [] : enc.correctas ?? local?.correctas ?? [];
   const explicacion = enc.explicacion || local?.explicacion;
   panel.append(...[
-    el('div', { clase: 'fila entre' }, el('h2', { texto: titulo }),
+    el('div', { clase: 'fila entre' }, el('h2', { id: 'titulo-activa', tabindex: '-1', texto: titulo }),
       el('div', { clase: 'fila' }, enc.ronda ? el('span', { clase: 'chip', texto: `Ronda ${enc.ronda}` }) : null,
         enc.resultadosPublicados ? el('span', { clase: 'chip', texto: 'Resultados visibles para estudiantes' }) : null,
         enc.correctaRevelada ? el('span', { clase: 'chip abierta', texto: 'Respuesta revelada' }) : null)),
@@ -375,7 +385,9 @@ function pintarActiva(enc, sala) {
   if (!abierta && !enc.correctaRevelada && !local) {
     panel.append(el('p', { clase: 'suave', id: 'revelar-en-presentacion', texto: 'La solución de esta pregunta no está en este navegador. Si la pregunta viene de la presentación, revélela allí: «En vivo» → «Revelar explicación» (o desde Build Tech).' }));
   }
-  if (foco) $(foco)?.focus();
+  // Principal del paso: cerrar → mostrar resultados → discutir y repetir → revelar → retirar.
+  restaurarFoco(abierta ? 'btn-cerrar' : !enc.resultadosPublicados && !enc.correctaRevelada ? 'btn-publicar'
+    : enc.ronda === 1 && !enc.correctaRevelada ? 'btn-ronda2' : puedeRevelar ? 'btn-revelar' : 'btn-retirar');
 }
 
 /** La solución sale de esta pestaña solo aquí, con la votación ya cerrada; el servidor la valida y la revela de una vez. */
@@ -413,28 +425,41 @@ function tictac() {
 
 function pintarHistorial(lista, activaId) {
   const ul = $('historial');
-  ul.replaceChildren();
   $('cuenta-historial').textContent = lista.length ? `· ${lista.length}` : '';
   // Una pregunta guardada para después queda a la vista: hay algo que abrir.
   if (lista.some((e) => e.estado === 'lista')) $('bloque-historial').open = true;
-  if (!lista.length) ul.append(el('li', { clase: 'suave', texto: 'Todavía no hay preguntas en esta sesión.' }));
-  for (const e of lista) {
-    const resumen = e.rondas.map((r) => `R${r.numero}: ${r.respondientes} resp.${r.porcentajeCorrecto !== undefined ? `, ${r.porcentajeCorrecto}% acierto` : ''}`).join(' · ');
-    ul.append(el('li', { clase: 'pregunta' },
+  const duracion = estado?.sala.duracionVotacion ?? 30;
+  const resumenDe = (e) => e.rondas.map((r) => `R${r.numero}: ${r.respondientes} resp.${r.porcentajeCorrecto !== undefined ? `, ${r.porcentajeCorrecto}% acierto` : ''}`).join(' · ');
+  sincronizarLista(ul, lista, {
+    clave: (e) => e.id,
+    firma: (e) => JSON.stringify([e.estado, e.enunciado, resumenDe(e), e.opciones.length, e.tipo, e.id === activaId, duracion]),
+    vacio: () => el('li', { clase: 'suave', texto: 'Todavía no hay preguntas en esta sesión.' }),
+    crear: (e) => {
+    const resumen = resumenDe(e);
+    return (el('li', { clase: 'pregunta' },
       el('span', { clase: `chip ${e.estado}`, texto: ESTADOS[e.estado] }),
       el('div', {}, el('div', { clase: 'texto-plano', texto: e.enunciado.length > 140 ? `${e.enunciado.slice(0, 140)}…` : e.enunciado }),
         el('div', { clase: 'suave', texto: resumen || `${e.opciones.length} opciones · ${e.tipo === 'multiple' ? 'múltiple' : 'única'}` })),
       el('div', { clase: 'acciones' },
-        e.estado === 'lista' ? el('button', { type: 'button', clase: 'mini', texto: `Abrir votación · ${textoDuracion(estado?.sala.duracionVotacion ?? 30)}`, onclick: accion('encuesta:abrir', e.id) }) : null,
+        e.estado === 'lista' ? el('button', { type: 'button', clase: 'mini', 'data-slot': 'abrir', texto: `Abrir votación · ${textoDuracion(duracion)}`, onclick: accion('encuesta:abrir', e.id) }) : null,
         e.id === activaId ? el('span', { clase: 'suave', texto: 'Activa' }) : null)));
-  }
+    },
+  });
 }
 
+/**
+ * Preguntas de los estudiantes: cada una conserva su nodo mientras no cambie su estado; los apoyos se
+ * actualizan en el sitio y el orden por apoyos no se aplica mientras se interactúa con la lista.
+ * Mapa de foco por `data-slot`: proyectar ↔ quitar y ocultar ↔ restaurar conservan el foco; si la acción
+ * desaparece (p. ej. «Aprobar») pasa al siguiente control de la misma pregunta.
+ */
 function pintarPreguntas(preguntas) {
-  const ul = $('lista-preguntas');
-  ul.replaceChildren();
-  if (!preguntas.length) ul.append(el('li', { clase: 'suave', texto: 'Sin preguntas por ahora.' }));
-  for (const q of preguntas) {
+  sincronizarLista($('lista-preguntas'), preguntas, {
+    clave: (q) => q.id,
+    firma: (q) => JSON.stringify([q.estado, q.proyectada, q.alias, q.texto, q.estado === 'pendiente' && !desveladas.has(q.id)]),
+    vacio: () => el('li', { clase: 'suave', texto: 'Sin preguntas por ahora.' }),
+    actualizar: (nodo, q) => { const b = nodo.querySelector('.votos b'); if (b && b.textContent !== `▲ ${q.votos}`) b.textContent = `▲ ${q.votos}`; },
+    crear: (q) => {
     const moderar = (accionModeracion, confirmar) => async () => {
       if (confirmar && !confirm(confirmar)) return;
       const r = await emitir('pregunta:moderar', { salaId, preguntaId: q.id, accion: accionModeracion });
@@ -442,17 +467,18 @@ function pintarPreguntas(preguntas) {
     };
     const velada = q.estado === 'pendiente' && !desveladas.has(q.id);
     const texto = el('div', { clase: `texto-plano${velada ? ' velo' : ''}`, texto: q.texto });
-    ul.append(el('li', { clase: `pregunta ${q.estado}` },
+    return (el('li', { clase: `pregunta ${q.estado}` },
       el('div', { clase: 'votos' }, el('b', { texto: `▲ ${q.votos}` })),
       el('div', {}, texto, el('div', { clase: 'suave', texto: [q.alias ? `Alias: ${q.alias}` : 'Anónima', q.estado, q.proyectada ? 'proyectada' : ''].filter(Boolean).join(' · ') })),
       el('div', { clase: 'acciones' },
-        velada ? el('button', { type: 'button', clase: 'mini secundario', texto: 'Leer', onclick: () => { desveladas.add(q.id); pintarPreguntas(estado.preguntas); } }) : null,
-        q.estado === 'pendiente' ? el('button', { type: 'button', clase: 'mini', texto: 'Aprobar', onclick: moderar('aprobar') }) : null,
-        q.estado !== 'oculta' ? el('button', { type: 'button', clase: 'mini', texto: q.proyectada ? 'Quitar de la presentación' : 'Proyectar en la presentación', onclick: moderar(q.proyectada ? 'quitarProyeccion' : 'proyectar') }) : null,
-        q.estado !== 'respondida' && q.estado !== 'oculta' ? el('button', { type: 'button', clase: 'mini secundario', texto: 'Marcar respondida', onclick: moderar('respondida') }) : null,
-        q.estado !== 'oculta' ? el('button', { type: 'button', clase: 'mini secundario', texto: 'Ocultar', onclick: moderar('ocultar') }) : el('button', { type: 'button', clase: 'mini secundario', texto: 'Restaurar', onclick: moderar('aprobar') }),
-        el('button', { type: 'button', clase: 'mini peligro', texto: 'Bloquear autor', onclick: moderar('bloquearAutor', '¿Bloquear al autor? Sus preguntas se ocultan y no podrá seguir participando desde ese dispositivo.') }))));
-  }
+        velada ? el('button', { type: 'button', clase: 'mini secundario', 'data-slot': 'leer', texto: 'Leer', onclick: () => { desveladas.add(q.id); pintarPreguntas(estado.preguntas); } }) : null,
+        q.estado === 'pendiente' ? el('button', { type: 'button', clase: 'mini', 'data-slot': 'aprobar', texto: 'Aprobar', onclick: moderar('aprobar') }) : null,
+        q.estado !== 'oculta' ? el('button', { type: 'button', clase: 'mini', 'data-slot': 'proyeccion', texto: q.proyectada ? 'Quitar de la presentación' : 'Proyectar en la presentación', onclick: moderar(q.proyectada ? 'quitarProyeccion' : 'proyectar') }) : null,
+        q.estado !== 'respondida' && q.estado !== 'oculta' ? el('button', { type: 'button', clase: 'mini secundario', 'data-slot': 'respondida', texto: 'Marcar respondida', onclick: moderar('respondida') }) : null,
+        q.estado !== 'oculta' ? el('button', { type: 'button', clase: 'mini secundario', 'data-slot': 'ocultar', texto: 'Ocultar', onclick: moderar('ocultar') }) : el('button', { type: 'button', clase: 'mini secundario', 'data-slot': 'ocultar', texto: 'Restaurar', onclick: moderar('aprobar') }),
+        el('button', { type: 'button', clase: 'mini peligro', 'data-slot': 'bloquear', texto: 'Bloquear autor', onclick: moderar('bloquearAutor', '¿Bloquear al autor? Sus preguntas se ocultan y no podrá seguir participando desde ese dispositivo.') }))));
+    },
+  });
 }
 
 // El interruptor muestra siempre el valor CONFIRMADO por el servidor: si lo rechaza o no responde,
@@ -471,11 +497,26 @@ function filaOpcion(valor = '') {
   const fila = el('div', { clase: 'fila' },
     el('input', { type: 'text', maxlength: 200, placeholder: 'Texto de la opción', 'aria-label': 'Opción', value: valor }),
     el('label', { clase: 'fila suave' }, el('input', { type: 'checkbox', 'aria-label': 'Correcta' }), 'Correcta'),
-    el('button', { type: 'button', clase: 'mini secundario', 'aria-label': 'Quitar opción', texto: '×', onclick: () => { if ($('opciones').children.length > 2) fila.remove(); renombrar(); } }));
+    el('button', { type: 'button', clase: 'mini secundario', 'aria-label': 'Quitar opción', texto: '×', onclick: () => {
+      const filas = [...$('opciones').children];
+      if (filas.length <= 2) return;
+      const i = filas.indexOf(fila);
+      fila.remove(); renombrar();
+      // El botón enfocado desaparece: el foco pasa a la opción que ocupa su lugar (o a la anterior).
+      const quedan = [...$('opciones').children];
+      quedan[Math.min(i, quedan.length - 1)].querySelector('input[type=text]').focus();
+    } }));
   return fila;
 }
+/** Etiquetas accesibles distintas por fila: «Opción A», «Respuesta correcta de A», «Quitar opción A». */
 function renombrar() {
-  [...$('opciones').children].forEach((f, i) => { f.querySelector('input[type=text]').placeholder = `Opción ${letra(i)}`; });
+  [...$('opciones').children].forEach((f, i) => {
+    const l = letra(i);
+    const texto = f.querySelector('input[type=text]');
+    texto.placeholder = `Opción ${l}`; texto.setAttribute('aria-label', `Opción ${l}`);
+    f.querySelector('input[type=checkbox]').setAttribute('aria-label', `Respuesta correcta de ${l}`);
+    f.querySelector('button').setAttribute('aria-label', `Quitar opción ${l}`);
+  });
 }
 function reiniciarComposer() {
   $('form-encuesta').reset();

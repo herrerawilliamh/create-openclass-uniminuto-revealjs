@@ -115,3 +115,62 @@ export function mensajeHttp({ estado = 0, falla } = {}, contexto = '') {
 
 /** ¿Un fallo HTTP puede ser pasajero (red, tiempo agotado, 429 o 5xx)? Si lo es, no se borra nada local. */
 export const esTransitorio = ({ estado = 0, falla } = {}) => Boolean(falla) || estado === 0 || estado === 429 || estado >= 500;
+
+/**
+ * Nodo que debe recibir el foco dentro de `raiz`: el control de la misma `data-slot` si existe y, si no,
+ * el primer control disponible (la acción desapareció: se pasa a la siguiente del mismo elemento).
+ */
+export const enfocable = (raiz, slot) =>
+  (slot && raiz.querySelector(`[data-slot="${slot}"]:not(:disabled)`)) || raiz.querySelector('button:not(:disabled), input:not(:disabled), a[href]');
+
+/**
+ * Sincroniza una lista por clave sin rehacerla: un elemento sin cambios conserva su nodo (y su foco);
+ * uno cambiado se reemplaza y el foco pasa al control de su mismo `data-slot`; `actualizar` ajusta en el
+ * sitio lo que cambia sin que importe (p. ej. el contador de apoyos). El orden del servidor (por apoyos)
+ * NO se aplica mientras la persona interactúa con la lista (foco dentro o puntero encima): los
+ * elementos nuevos se añaden al final y el orden se actualiza al salir.
+ * opciones: { clave(item), firma(item), crear(item) → <li>, actualizar?(nodo, item), vacio?() → <li> }
+ */
+export function sincronizarLista(ul, items, opciones) {
+  const { clave, firma, crear, actualizar, vacio } = opciones;
+  ul.__sync = { items, opciones };
+  if (!ul.__enlazada) {
+    ul.__enlazada = true;
+    const resincronizar = () => setTimeout(() => {
+      if (!ul.matches(':focus-within') && !ul.matches(':hover')) sincronizarLista(ul, ul.__sync.items, ul.__sync.opciones);
+    }, 0);
+    ul.addEventListener('focusout', resincronizar);
+    ul.addEventListener('mouseleave', resincronizar);
+  }
+  const interactuando = ul.matches(':focus-within') || ul.matches(':hover');
+  for (const n of ul.querySelectorAll(':scope > [data-vacio]')) n.remove();
+  const actuales = new Map([...ul.children].filter((n) => n.dataset.clave !== undefined).map((n) => [n.dataset.clave, n]));
+  const activo = ul.contains(document.activeElement) ? document.activeElement : null;
+  const claveFoco = activo?.closest('[data-clave]')?.dataset.clave ?? null;
+  const slot = activo?.dataset.slot ?? null;
+  const vivos = new Set(items.map((i) => String(clave(i))));
+  for (const [k, n] of actuales) if (!vivos.has(k)) { n.remove(); actuales.delete(k); }
+  let foco = null;
+  for (const item of items) {
+    const k = String(clave(item)), f = firma(item);
+    let nodo = actuales.get(k);
+    if (!nodo) {
+      nodo = crear(item); nodo.dataset.clave = k; nodo.dataset.firma = f;
+      ul.append(nodo); actuales.set(k, nodo);
+    } else if (nodo.dataset.firma !== f) {
+      const nuevo = crear(item); nuevo.dataset.clave = k; nuevo.dataset.firma = f;
+      nodo.replaceWith(nuevo); actuales.set(k, nuevo); nodo = nuevo;
+      if (k === claveFoco) foco = enfocable(nuevo, slot);
+    }
+    actualizar?.(nodo, item);
+  }
+  if (!interactuando) {
+    items.forEach((item, i) => {
+      const n = actuales.get(String(clave(item)));
+      if (ul.children[i] !== n) ul.insertBefore(n, ul.children[i] ?? null);
+    });
+  }
+  if (!items.length && vacio) { const v = vacio(); v.dataset.vacio = ''; ul.append(v); }
+  if (foco) foco.focus();
+  else if (activo && !activo.isConnected) (enfocable(ul, slot) ?? ul).focus?.();
+}

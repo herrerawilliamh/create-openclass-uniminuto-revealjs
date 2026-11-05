@@ -4,7 +4,7 @@
  * teléfono se bloquea o se recarga la página, vuelve como el mismo participante y conserva su respuesta.
  * Esta vista no controla la presentación del docente: solo responde, pregunta y vota preguntas.
  */
-import { el, letra, textoConCodigo, barras, comparar, MENSAJES_ERROR, crearCuenta, formatoTiempo } from './comun.mjs';
+import { el, letra, textoConCodigo, barras, comparar, MENSAJES_ERROR, crearCuenta, formatoTiempo, sincronizarLista } from './comun.mjs';
 
 const $ = (id) => document.getElementById(id);
 const CLAVE = (codigo) => `oclive:${codigo}`;
@@ -97,16 +97,23 @@ function fin(texto) {
 const cuenta = crearCuenta();
 let tic = null;
 
+// La encuesta solo se rehace si ELLA cambia: un apoyo, una pregunta nueva o un cambio de moderación
+// llegan en el mismo estado y no deben destruir los controles (ni el foco) de quien está votando.
+let firmaEncuesta = null;
 function pintar(e) {
   estado = e;
   cuenta.sincronizar(e.servidor);
   $('titulo-sala').textContent = e.sala.titulo || 'Participación en clase';
-  pintarEncuesta(e.encuesta);
+  const firma = JSON.stringify(e.encuesta ?? null);
+  if (firma !== firmaEncuesta) { firmaEncuesta = firma; pintarEncuesta(e.encuesta); }
   pintarPreguntas(e);
 }
 
 function pintarEncuesta(enc) {
   const panel = $('panel-encuesta');
+  // Foco: solo se restaura si estaba dentro de la tarjeta (opción elegida o botón de envío).
+  const activo = panel.contains(document.activeElement) ? document.activeElement : null;
+  const foco = activo ? { opcion: activo.name === 'opcion' ? activo.value : null, enviar: activo.id === 'btn-enviar' } : null;
   panel.replaceChildren();
   clearInterval(tic);
   if (!enc) {
@@ -145,7 +152,7 @@ function pintarEncuesta(enc) {
   }));
   panel.append(lista);
 
-  const botonEnviar = el('button', { type: 'button', disabled: !abierta || borrador.seleccion.length === 0, texto: enviada ? 'Actualizar respuesta' : 'Enviar respuesta' });
+  const botonEnviar = el('button', { type: 'button', id: 'btn-enviar', disabled: !abierta || borrador.seleccion.length === 0, texto: enviada ? 'Actualizar respuesta' : 'Enviar respuesta' });
   const estadoEnvio = el('div', { role: 'status', clase: 'aviso oculto' });
   botonEnviar.addEventListener('click', () => {
     botonEnviar.disabled = true;
@@ -187,6 +194,7 @@ function pintarEncuesta(enc) {
     const tabla = comparar(enc.opciones, enc.rondas, correctas);
     if (tabla) panel.append(el('h3', { texto: 'Comparación entre rondas' }), tabla);
   }
+  restaurarFocoEncuesta(panel, foco);
   if (enc.correctaRevelada) {
     if (correctas.length && enviada) {
       const acierto = enc.miSeleccion.join(',') === correctas.join(',');
@@ -196,6 +204,15 @@ function pintarEncuesta(enc) {
   }
 }
 
+/** Devuelve el foco al mismo control tras rehacer la tarjeta; si ya no existe o no admite foco, al enunciado. */
+function restaurarFocoEncuesta(panel, foco) {
+  if (!foco) return;
+  const nodo = (foco.opcion !== null && panel.querySelector(`input[name=opcion][value="${foco.opcion}"]`)) || (foco.enviar && $('btn-enviar'));
+  if (nodo && !nodo.disabled) { nodo.focus(); return; }
+  const enunciado = panel.querySelector('.enunciado');
+  if (enunciado) { enunciado.tabIndex = -1; enunciado.focus(); }
+}
+
 function pintarPreguntas(e) {
   const abiertas = e.sala.preguntasAbiertas && !e.yo.bloqueado;
   $('texto-pregunta').disabled = !abiertas;
@@ -203,20 +220,30 @@ function pintarPreguntas(e) {
   if (!abiertas) aviso('aviso-pregunta', 'La recepción de preguntas está cerrada.', 'alerta');
   else if ($('aviso-pregunta').textContent === 'La recepción de preguntas está cerrada.') aviso('aviso-pregunta', '');
 
-  const lista = $('lista-preguntas');
-  lista.replaceChildren();
-  if (!e.preguntas.length) lista.append(el('li', { clase: 'suave', texto: 'Aún no hay preguntas publicadas.' }));
-  for (const q of e.preguntas) {
-    const votar = el('button', {
-      type: 'button', 'aria-pressed': q.votada ? 'true' : 'false', disabled: q.propia || q.estado === 'pendiente',
-      'aria-label': `Apoyar pregunta (${q.votos} votos)`, texto: `▲ ${q.votos}`,
-      onclick: () => socket.emit('pregunta:votar', { preguntaId: q.id }, (r) => { if (!r?.ok) aviso('aviso-pregunta', r?.mensaje, 'error'); }),
-    });
-    lista.append(el('li', { clase: `pregunta ${q.estado}` },
-      el('div', { clase: 'votos' }, votar),
-      el('div', {}, el('div', { clase: 'texto-plano', texto: q.texto }),
-        el('div', { clase: 'suave', texto: [q.propia ? 'Su pregunta' : '', q.estado === 'pendiente' ? 'en revisión del docente' : '', q.estado === 'respondida' ? 'respondida' : ''].filter(Boolean).join(' · ') }))));
-  }
+  // Cada pregunta conserva su nodo: los apoyos se actualizan en el sitio (el foco del botón no se pierde)
+  // y el orden por apoyos no se reaplica mientras la persona usa la lista.
+  sincronizarLista($('lista-preguntas'), e.preguntas, {
+    clave: (q) => q.id,
+    firma: (q) => JSON.stringify([q.estado, q.propia, q.texto]),
+    vacio: () => el('li', { clase: 'suave', texto: 'Aún no hay preguntas publicadas.' }),
+    actualizar: (nodo, q) => {
+      const b = nodo.querySelector('button');
+      b.setAttribute('aria-pressed', q.votada ? 'true' : 'false');
+      b.setAttribute('aria-label', `Apoyar pregunta (${q.votos} votos)`);
+      if (b.textContent !== `▲ ${q.votos}`) b.textContent = `▲ ${q.votos}`;
+    },
+    crear: (q) => {
+      const votar = el('button', {
+        type: 'button', 'data-slot': 'apoyo', 'aria-pressed': q.votada ? 'true' : 'false', disabled: q.propia || q.estado === 'pendiente',
+        'aria-label': `Apoyar pregunta (${q.votos} votos)`, texto: `▲ ${q.votos}`,
+        onclick: () => socket.emit('pregunta:votar', { preguntaId: q.id }, (r) => { if (!r?.ok) aviso('aviso-pregunta', r?.mensaje, 'error'); }),
+      });
+      return el('li', { clase: `pregunta ${q.estado}` },
+        el('div', { clase: 'votos' }, votar),
+        el('div', {}, el('div', { clase: 'texto-plano', texto: q.texto }),
+          el('div', { clase: 'suave', texto: [q.propia ? 'Su pregunta' : '', q.estado === 'pendiente' ? 'en revisión del docente' : '', q.estado === 'respondida' ? 'respondida' : ''].filter(Boolean).join(' · ') })));
+    },
+  });
 }
 
 // ---------------- Eventos de la página ----------------
