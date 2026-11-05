@@ -287,8 +287,7 @@ export function crearSockets(servidorHttp, { config, almacen, firmador, sesiones
       const { encuesta, abrir, ...otros } = resto;
       if (Object.keys(otros).length) throw new V.ErrorValidacion('mensaje: campos no admitidos');
       const def = V.definicionEncuesta(encuesta);
-      let e = almacen.crearEncuesta(salaId, def);
-      if (abrir === true) e = almacen.abrirEncuesta(salaId, e.id);
+      const e = almacen.crearEncuesta(salaId, def, { abrir: abrir === true });
       log('encuesta_creada', { sala: salaId.slice(0, 6), opciones: def.opciones.length });
       return conEstado(salaId, { encuesta: e });
     });

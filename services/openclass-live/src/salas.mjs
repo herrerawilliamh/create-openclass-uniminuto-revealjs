@@ -230,11 +230,15 @@ export function crearAlmacen({ ttlMin, maxParticipantes, maxSalas, ahora = () =>
     versionPresentador: (salaId) => sala(salaId).versionPresentador,
 
     // ---------- Encuestas ----------
-    crearEncuesta(salaId, def) {
+    /** Con `abrir` es atómica: toda validación ocurre antes de mutar, así un rechazo no deja encuestas residuales. */
+    crearEncuesta(salaId, def, { abrir = false } = {}) {
       const s = sala(salaId);
       if (s.encuestas.size >= LIMITES_SALA.encuestas) falla('limite_encuestas', 'Se alcanzó el máximo de encuestas de la sesión');
+      const otra = abrir && s.activa ? s.encuestas.get(s.activa) : null;
+      if (otra && estadoEncuesta(otra) === 'abierta') falla('otra_abierta', 'Cierre primero la votación abierta');
       const e = { id: nuevoId(9), def, rondas: [], resultadosPublicados: false, correctaRevelada: false, solucion: null, creada: ahora() };
       s.encuestas.set(e.id, e);
+      if (abrir) { e.rondas.push(nuevaRonda(s, 1)); s.activa = e.id; }
       return vistaEncuestaDocente(e);
     },
 

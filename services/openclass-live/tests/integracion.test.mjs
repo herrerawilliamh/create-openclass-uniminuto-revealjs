@@ -454,3 +454,15 @@ test('privacidad: registros sin alias, textos, respuestas ni IP; rutas sin conte
   const salud = await srv.peticion('/healthz');
   assert.deepEqual(salud.json, { estado: 'ok' }, 'healthz no expone datos de salas');
 });
+
+test('OC-A02 (Socket.IO): encuesta:crear con abrir y otra votación abierta responde otra_abierta sin encuesta residual', async (t) => {
+  const { srv, doc, sala } = await preparar(t);
+  const primera = (await pedir(doc, 'encuesta:crear', { salaId: sala.id, encuesta: ENCUESTA, abrir: true })).encuesta;
+  const total = () => srv.app.almacen.historial(sala.id).length;
+  const antes = total();
+  const r = await pedir(doc, 'encuesta:crear', { salaId: sala.id, encuesta: { ...ENCUESTA, enunciado: 'Segunda' }, abrir: true });
+  assert.equal(r.ok, false);
+  assert.equal(r.error, 'otra_abierta');
+  assert.equal(total(), antes);
+  assert.equal(srv.app.almacen.estadoDocente(sala.id).activa.id, primera.id);
+});
