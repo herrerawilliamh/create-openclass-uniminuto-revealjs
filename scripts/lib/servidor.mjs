@@ -15,6 +15,7 @@ const TIPOS = {
 };
 
 export function servir(raiz, { base = '/', puerto = 0 } = {}) {
+  const raizAbsoluta = path.resolve(raiz);
   const prefijo = base.endsWith('/') ? base : `${base}/`;
   const solicitudes = [];
   // Chrome mantiene conexiones keep-alive y flujos de vídeo por rangos: server.close() solo espera, no los corta.
@@ -27,8 +28,9 @@ export function servir(raiz, { base = '/', puerto = 0 } = {}) {
     try { url = decodeURIComponent(new URL(req.url, 'http://x').pathname); } catch { res.writeHead(400); return res.end('400'); }
     solicitudes.push(url);
     if (!url.startsWith(prefijo) && `${url}/` !== prefijo) { res.writeHead(404); return res.end('404'); }
-    let archivo = path.join(raiz, url.slice(prefijo.length));
-    if (!archivo.startsWith(path.resolve(raiz))) { res.writeHead(403); return res.end(); }
+    let archivo = path.resolve(raizAbsoluta, url.slice(prefijo.length));
+    const relativa = path.relative(raizAbsoluta, archivo);
+    if (relativa.startsWith('..') || path.isAbsolute(relativa)) { res.writeHead(403); return res.end(); }
     if (existsSync(archivo) && statSync(archivo).isDirectory()) {
       if (!url.endsWith('/')) { res.writeHead(301, { Location: `${url}/` }); return res.end(); }
       archivo = path.join(archivo, 'index.html');
@@ -38,7 +40,8 @@ export function servir(raiz, { base = '/', puerto = 0 } = {}) {
     const tipo = TIPOS[path.extname(archivo).toLowerCase()] || 'application/octet-stream';
     const rango = req.headers.range?.match(/bytes=(\d*)-(\d*)/);
     if (rango) {
-      const inicio = Number(rango[1] || 0), fin = rango[2] ? Number(rango[2]) : size - 1;
+      const inicio = Number(rango[1] || 0), fin = rango[2] ? Math.min(Number(rango[2]), size - 1) : size - 1;
+      if (inicio > fin || inicio >= size) { res.writeHead(416, { 'Content-Range': `bytes */${size}` }); return res.end(); }
       res.writeHead(206, { 'Content-Type': tipo, 'Content-Range': `bytes ${inicio}-${fin}/${size}`, 'Accept-Ranges': 'bytes', 'Content-Length': fin - inicio + 1 });
       return enviar(createReadStream(archivo, { start: inicio, end: fin }), res);
     }
