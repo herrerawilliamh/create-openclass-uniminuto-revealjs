@@ -15,6 +15,7 @@
  * cubre cualquier temporizador perdido; no depende del navegador del docente.
  */
 import { Server } from 'socket.io';
+import { panelVigente } from './auth.mjs';
 import { sesionDesdeCookie } from './http.mjs';
 import { crearLimitador, ipCliente } from './limites.mjs';
 import { PROTOCOLO, presentadorCompatible } from './protocolo.mjs';
@@ -68,8 +69,8 @@ export function crearSockets(servidorHttp, { config, almacen, firmador, sesiones
   // ---------- H02: autorización del destinatario en el momento de enviar ----------
   /** Credencial del socket docente vigente AHORA (sesión del panel o clave de presentador de su sala). */
   function destinatarioVigente(socket) {
-    const { rol, sid, salaId, version } = socket.data;
-    if (rol === 'docente') return sesiones.valida(sid);
+    const { rol, salaId, version } = socket.data;
+    if (rol === 'docente') return panelVigente(socket.data, sesiones);
     if (rol === 'presentador') return almacen.existe(salaId) && almacen.versionPresentador(salaId) === version;
     return false;
   }
@@ -217,7 +218,7 @@ export function crearSockets(servidorHttp, { config, almacen, firmador, sesiones
   /** Corta los sockets del panel cuya sesión ya no es válida (revocada o vencida). Los presentadores no se tocan. */
   function cortarSesionesInvalidas() {
     for (const socket of docentes.sockets.values()) {
-      if (socket.data.rol === 'docente' && !sesiones.valida(socket.data.sid)) cortarSocket(socket);
+      if (socket.data.rol === 'docente' && !panelVigente(socket.data, sesiones)) cortarSocket(socket);
     }
   }
   sesiones.alRevocar((sid) => {
@@ -247,7 +248,9 @@ export function crearSockets(servidorHttp, { config, almacen, firmador, sesiones
     if (!origenAdmitido(headers, [config.appUrl])) return next(new Error('origen'));
     const s = sesionDesdeCookie(headers.cookie, { firmador, sesiones });
     if (!s) return next(new Error('no_autenticado'));
-    socket.data = { rol: 'docente', sid: s.sid };
+    // H02: se conserva el exp VERIFICADO de la cookie (nunca un valor del cliente) para revalidarlo en cada envío.
+    socket.data = { rol: 'docente', sid: s.sid, exp: s.exp };
+    if (!panelVigente(socket.data, sesiones)) return next(new Error('no_autenticado'));
     return next();
   });
 
@@ -255,7 +258,7 @@ export function crearSockets(servidorHttp, { config, almacen, firmador, sesiones
     const { rol } = socket.data;
     // H02: el panel se une a una sala propia de su sesión; permite cortar todas sus pestañas a la vez.
     if (rol === 'docente') {
-      if (!sesiones.valida(socket.data.sid)) return cortarSocket(socket);
+      if (!panelVigente(socket.data, sesiones)) return cortarSocket(socket);
       socket.join(`sid:${socket.data.sid}`);
     }
 
@@ -265,7 +268,7 @@ export function crearSockets(servidorHttp, { config, almacen, firmador, sesiones
     /** Autorización por evento: sesión aún válida (logout revoca) y sala dentro del alcance del rol. */
     function autorizar(salaId, { soloDocente = false } = {}) {
       if (rol === 'docente') {
-        if (!sesiones.valida(socket.data.sid)) { expulsar(); throw new ErrorSala('no_autenticado', 'Sesión docente vencida'); }
+        if (!panelVigente(socket.data, sesiones)) { expulsar(); throw new ErrorSala('no_autenticado', 'Sesión docente vencida'); }
       } else {
         if (soloDocente) throw new ErrorSala('prohibido', 'Operación reservada al panel docente');
         if (salaId && salaId !== socket.data.salaId) throw new ErrorSala('prohibido', 'La clave no corresponde a esta sala');
