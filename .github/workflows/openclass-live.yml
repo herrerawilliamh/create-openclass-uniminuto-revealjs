@@ -44,6 +44,8 @@ jobs:
           set -euo pipefail
           VERSION=$(node -p "require('./services/openclass-live/package.json').version")
           test "$RELEASE_TAG" = "openclass-live-v$VERSION"
+          test "$GITHUB_REF" = "refs/tags/$RELEASE_TAG"
+          test "$GITHUB_SHA" = "$(git rev-parse HEAD)"
           test "$(git rev-parse HEAD)" = "$(git rev-parse "refs/tags/$RELEASE_TAG^{commit}")"
           test "$(git rev-parse HEAD)" = "$(git rev-parse origin/release/openclass-live)"
       - name: Payload aprobado, lockfile y Compose
