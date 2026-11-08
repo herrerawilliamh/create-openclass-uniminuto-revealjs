@@ -398,7 +398,9 @@ test('cierre de sesión docente: revoca la cookie para HTTP y Socket.IO; CSRF ob
   assert.equal(sinCsrf.estado, 403);
   const ok = await srv.peticion('/api/docente/logout', { metodo: 'POST', cuerpo: {}, cabeceras: { cookie, 'x-oc-csrf': csrf } });
   assert.equal(ok.estado, 200);
-  assert.equal((await pedir(doc, 'sala:seguir', { salaId: sala.id })).error, 'no_autenticado');
+  // H02: el servidor corta el socket del panel al cerrar sesión (ya no queda abierto para recibir estado).
+  await esperar(200);
+  assert.equal(doc.connected, false);
   assert.equal(await rechazo(srv.conectar('/docente', { cabeceras: { cookie } })), 'no_autenticado');
   assert.equal((await srv.peticion('/api/docente/sesion', { cabeceras: { cookie } })).json.autenticado, false);
 });

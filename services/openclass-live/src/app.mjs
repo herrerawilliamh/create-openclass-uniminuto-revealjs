@@ -20,7 +20,7 @@ export function crearLog(salida = (linea) => process.stdout.write(`${linea}\n`))
   return (evento, datos = {}) => salida(JSON.stringify({ t: new Date().toISOString(), evento, ...datos }));
 }
 
-export function crearApp(config, { log = crearLog(), ahora } = {}) {
+export function crearApp(config, { log = crearLog(), ahora, intervaloSesionesMs } = {}) {
   const firmador = crearFirmador(config.secreto);
   const sesiones = crearSesiones();
   const almacen = crearAlmacen({ ttlMin: config.salaTtlMin, maxParticipantes: config.maxParticipantes, maxSalas: config.maxSalas, ahora });
@@ -31,7 +31,7 @@ export function crearApp(config, { log = crearLog(), ahora } = {}) {
   });
   const servidor = createServer({ requestTimeout: 15_000, headersTimeout: 10_000 }, manejar);
   servidor.keepAliveTimeout = 65_000;
-  const sockets = crearSockets(servidor, { config, almacen, firmador, sesiones, log, ...(ahora ? { ahora } : {}) });
+  const sockets = crearSockets(servidor, { config, almacen, firmador, sesiones, log, ...(ahora ? { ahora } : {}), ...(intervaloSesionesMs ? { intervaloSesionesMs } : {}) });
 
   return {
     servidor, almacen, sockets, firmador, sesiones,
