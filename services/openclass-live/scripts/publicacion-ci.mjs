@@ -108,7 +108,7 @@ export function auditarWorkflow(text) {
   const parts = t.slice(jobsAt + 7).split(/^  (?=[a-z][\w-]*:\n)/m);
   for (const p of parts) { const n = p.match(/^([\w-]+):\n/); if (n) blocks[n[1]] = p; }
   const dispatchOnly = /if:\s*github\.event_name == 'workflow_dispatch'/;
-  const sensible = /GITHUB_TOKEN|secrets\.|skopeo login|attest-build-provenance|packages:|id-token|attestations:/;
+  const sensible = /GITHUB_TOKEN|github\.token|secrets\.|skopeo login|docker\/login-action|attest-build-provenance|packages:|id-token|attestations:/;
   for (const nombre of ['checks', 'build', 'approval', 'publish']) bad(blocks[nombre], `Falta el job ${nombre}`);
   for (const [nombre, b] of Object.entries(blocks)) {
     const w = [...b.matchAll(/^ {6}(contents|packages|id-token|attestations|actions|pull-requests|issues|checks|deployments): *write/gm)];
@@ -133,6 +133,57 @@ export function auditarWorkflow(text) {
     'publish: solo packages, id-token y attestations en write');
   bad(/ bytes --lock/.test(publish) && / mismos --a/.test(publish),
     'publish debe verificar bytes aprobados y publicados');
+  /* ---- Comprobaciones estructurales por job y por paso ---- */
+  const pasos = b => b.split(/^ {6}- /m).slice(1);
+  const cond = b => (b.match(/^ {4}if:[ 	]*(.*)$/m) || [])[1]?.trim().replace(/\s+/g, ' ');
+  const EXIGIDO = { build: "github.event_name == 'workflow_dispatch'", approval: "github.event_name == 'workflow_dispatch'",
+    publish: "github.event_name == 'workflow_dispatch' && startsWith(github.ref, 'refs/tags/openclass-live-v')" };
+  // A. La aprobación debe ser efectiva: sin condición alterada, sin always()/failure()/cancelled(), sin continue-on-error.
+  for (const [nombre, esperado] of Object.entries(EXIGIDO)) {
+    bad(cond(blocks[nombre] ?? '') === esperado, `La condición del job ${nombre} no es la aprobada (no puede omitirse ni forzarse)`);
+  }
+  for (const [nombre, b] of Object.entries(blocks)) {
+    bad(!/\b(always|failure|cancelled|success)\s*\(/.test(b.replace(/^\s*#.*$/gm, '')),
+      `El job ${nombre} no puede usar funciones de estado (always/failure/cancelled)`);
+    bad(!/continue-on-error/.test(b), `El job ${nombre} no puede tolerar errores (continue-on-error)`);
+    // C. Ningún error de integridad puede silenciarse.
+    bad(!/\|\|\s*(true|:|exit\s+0)(?![\w-])|set \+e\b|\bset\s+\+o\s+errexit/.test(b),
+      `El job ${nombre} no puede silenciar errores (|| true, set +e)`);
+  }
+  bad(/needs:\s*approval\b|needs:\s*\[[^\]]*\bapproval\b/.test(publish) && /needs:\s*build\b/.test(approval),
+    'publish depende de approval y approval de build');
+  // B. La fuente es el SHA inmutable aprobado, nunca una rama.
+  const cmdsArchive = [...t.matchAll(/git archive\s+(\S+)/g)].map(m => m[1].replace(/^["']|["']$/g, ''));
+  bad(cmdsArchive.length === 1 && cmdsArchive[0] === '$GITHUB_SHA' && /git archive[^\n]*/.test(build),
+    'build debe archivar exactamente $GITHUB_SHA (commit aprobado e inmutable)');
+  bad(!/\b(origin\/)?(main|master|HEAD)\b[^\n]*\|\s*tar|\|\s*tar[^\n]*\b(main|master)\b/.test(build.replace(/^\s*#.*$/gm, '')),
+    'build no puede tomar la fuente de una rama');
+  for (const nombre of ['build', 'publish']) {
+    for (const p of pasos(blocks[nombre] ?? '').filter(x => /uses:\s*actions\/checkout@/.test(x))) {
+      bad(/^ {10}ref:\s*\$\{\{ github\.sha \}\}\s*$/m.test(p), `Checkout de ${nombre} debe fijarse a github.sha`);
+    }
+  }
+  bad(/TESTED_SHA/.test(build) && /rev-parse HEAD\)" = "\$TESTED_SHA"/.test(build),
+    'build debe comprobar que construye el SHA probado');
+  // Integridad del artefacto: verificación presente, estricta y en orden antes de extraer/publicar.
+  const pb = pasos(publish);
+  const ix = re => pb.findIndex(x => re.test(x));
+  const iBytes = ix(/sha256sum --check SHA256SUMS/), iPush = ix(/skopeo copy/), iLogin = ix(/uses:\s*docker\/login-action@/);
+  const iAtt = ix(/uses:\s*actions\/attest-build-provenance@/);
+  bad(iBytes >= 0 && /set -euo pipefail/.test(pb[iBytes] ?? '') && /tar -xf live-build\/image\.oci\.tar/.test(pb[iBytes] ?? ''),
+    'publish debe verificar sumas y bytes del tar en modo estricto (set -euo pipefail)');
+  bad(iBytes >= 0 && iPush > iBytes, 'La verificación de integridad debe preceder a la publicación');
+  bad(/set -euo pipefail/.test(pasos(build).find(x => /id: lock/.test(x)) ?? ''), 'build/lock debe ser estricto (set -euo pipefail)');
+  // P1. Credenciales Docker (~/.docker/config.json) antes de publicar y de atestiguar.
+  bad(iLogin >= 0 && iPush > iLogin && iAtt > iLogin, 'publish: docker/login-action debe preceder a skopeo copy y a la attestation');
+  const login = pb[iLogin] ?? '';
+  bad(/^ {10}registry:\s*ghcr\.io\s*$/m.test(login) && /^ {10}password:\s*\$\{\{ github\.token \}\}\s*$/m.test(login)
+    && /^ {10}username:\s*\$\{\{ github\.actor \}\}\s*$/m.test(login), 'El login de GHCR debe usar ghcr.io con github.actor y github.token');
+  bad(!/skopeo login|--password(?!-stdin)\b|echo[^\n]*(token|password)/i.test(publish), 'publish no puede exponer ni pasar credenciales por línea de comandos');
+  const att = pb[iAtt] ?? '';
+  bad(/subject-name:\s*\$\{\{ steps\.push\.outputs\.image \}\}/.test(att) && /subject-digest:\s*\$\{\{ steps\.push\.outputs\.digest \}\}/.test(att)
+    && /push-to-registry:\s*true/.test(att), 'La attestation debe vincular el digest OCI publicado (steps.push.outputs)');
+  bad(iAtt > ix(/id: push/), 'La attestation debe seguir a la publicación');
   return v;
 }
 

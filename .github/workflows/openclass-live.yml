@@ -204,18 +204,22 @@ jobs:
           mkdir -p "$RUNNER_TEMP/built"
           tar -xf live-build/image.oci.tar -C "$RUNNER_TEMP/built"
           node $S layout --layout "$RUNNER_TEMP/built" --lock live-build/release-lock.json
+      - name: Iniciar sesión en GHCR (credenciales Docker; el token no se imprime)
+        uses: docker/login-action@74a5d142397b4f367a81961eba4e8cd7edddf772 # v3.4.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ github.token }}
       - name: Publicar los mismos bytes en GHCR (digest conservado)
         id: push
         shell: bash
-        env:
-          REGISTRY_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           S=services/openclass-live/scripts/publicacion-ci.mjs
           command -v skopeo
           IMAGE=$(node -p "require('./live-build/release-lock.json').imageRepository")
           DIGEST=$(node -p "require('./live-build/release-lock.json').manifestDigest")
-          printf '%s' "$REGISTRY_TOKEN" | skopeo login ghcr.io --username "$GITHUB_ACTOR" --password-stdin
+          # Credenciales: las aporta docker/login-action (~/.docker/config.json), que skopeo y la attestation leen.
           # La tag es un alias informativo; la autoridad es siempre el digest.
           skopeo copy --preserve-digests "oci:$RUNNER_TEMP/built" "docker://$IMAGE:sha-$GITHUB_SHA"
           mkdir -p "$RUNNER_TEMP/published"

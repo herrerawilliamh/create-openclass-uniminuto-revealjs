@@ -71,6 +71,46 @@ test('2. mutaciones del workflow se detectan (acción móvil, permisos, credenci
   mut('node $S mismos --a', 'echo skip --a', /bytes aprobados y publicados/);
 });
 
+test('2b. mutaciones del informe Codex: aprobación omitida, fuente cambiada, integridad ignorada, login ausente', () => {
+  const mutar = (desde, hacia, esperado) => {
+    assert.ok(workflow.includes(desde), `Mutación sin ancla: ${desde}`);
+    const problemas = auditarWorkflow(workflow.replace(desde, hacia));
+    assert.ok(problemas.length > 0 && problemas.some(p => esperado.test(p)), `${desde} → ${problemas.join('|')}`);
+  };
+  // A. approval se omite con una condición falsa y publish continúa con always().
+  const dispatch = "if: github.event_name == 'workflow_dispatch'";
+  const aprobacion = `  approval:\n    name: Live aprobación humana\n    ${dispatch}`;
+  const publicacion = "if: github.event_name == 'workflow_dispatch' && startsWith(github.ref, 'refs/tags/openclass-live-v')";
+  let a = workflow.replace(aprobacion, aprobacion.replace(dispatch, 'if: ${{ false }}'));
+  assert.notEqual(a, workflow);
+  a = a.replace(publicacion, `if: always() && ${publicacion.slice(4)}`);
+  const pa = auditarWorkflow(a);
+  assert.ok(pa.some(p => /job approval/.test(p)) && pa.some(p => /job publish/.test(p)), pa.join('|'));
+  mutar(dispatch + "\n    needs: build\n    runs-on: ubuntu-24.04\n    environment", "if: ${{ false }}\n    needs: build\n    runs-on: ubuntu-24.04\n    environment", /job approval/);
+  mutar('    environment: openclass-live-release\n', '    environment: openclass-live-release\n    continue-on-error: true\n', /continue-on-error/);
+  // B. La fuente deja de ser el SHA aprobado.
+  mutar('git archive "$GITHUB_SHA" services/openclass-live', 'git archive main services/openclass-live', /\$GITHUB_SHA/);
+  mutar('git archive "$GITHUB_SHA" services/openclass-live', 'git archive origin/main services/openclass-live', /\$GITHUB_SHA/);
+  mutar('          ref: ${{ github.sha }}\n          fetch-depth: 1', '          ref: main\n          fetch-depth: 1', /github\.sha/);
+  // C. Errores de integridad silenciados.
+  mutar('(cd live-build && sha256sum --check SHA256SUMS)', '(cd live-build && sha256sum --check SHA256SUMS) || true', /silenciar/);
+  mutar('tar -xf live-build/image.oci.tar -C "$RUNNER_TEMP/built"', 'tar -xf live-build/image.oci.tar -C "$RUNNER_TEMP/built" || true', /silenciar/);
+  mutar('node $S bytes --lock live-build/release-lock.json --archive live-build/image.oci.tar', 'node $S bytes --lock live-build/release-lock.json --archive live-build/image.oci.tar || :', /silenciar/);
+  mutar('          set -euo pipefail\n          S=services/openclass-live/scripts/publicacion-ci.mjs\n          (cd live-build', '          set -u\n          S=services/openclass-live/scripts/publicacion-ci.mjs\n          (cd live-build', /estricto/);
+  // P1. El login Docker debe existir, precederla publicación/attestation y no usar skopeo login.
+  const login = workflow.match(/ {6}- name: Iniciar sesión en GHCR[\s\S]*?password: \$\{\{ github\.token \}\}\n/)[0];
+  assert.deepEqual(auditarWorkflow(workflow.replace(login, '')).filter(p => /login-action/.test(p)).length, 1);
+  const pasoAtt = workflow.match(/ {6}- name: Attestation de procedencia[\s\S]*?push-to-registry: true\n/)[0];
+  const orden = workflow.replace(login, '').replace(pasoAtt, login + pasoAtt); // login tras publicar, pero antes de attestation
+  assert.deepEqual(auditarWorkflow(orden).filter(p => /login-action/.test(p)).length, 1, 'login tras skopeo copy debe rechazarse');
+  const tarde = workflow.replace(login, '').replace(pasoAtt, pasoAtt + login);
+  assert.ok(auditarWorkflow(tarde).some(p => /login-action/.test(p)), 'login después de la attestation debe rechazarse');
+  mutar('password: ${{ github.token }}', 'password: ${{ secrets.GHCR_PAT }}', /login de GHCR/);
+  mutar('subject-digest: ${{ steps.push.outputs.digest }}', 'subject-digest: sha256:deadbeef', /vincular el digest/);
+  mutar('        run: |\n          set -euo pipefail\n          S=services/openclass-live/scripts/publicacion-ci.mjs\n          command -v skopeo',
+    '        run: |\n          set -euo pipefail\n          S=services/openclass-live/scripts/publicacion-ci.mjs\n          echo x | skopeo login ghcr.io --username u --password-stdin\n          command -v skopeo', /credenciales/);
+});
+
 test('3. identidad: tag, ref, SHA, HEAD y rama de release deben coincidir exactamente', () => {
   assert.equal(verificarIdentidad(ident()), SHA);
   const otros = { b: 'b'.repeat(40) };
