@@ -17,7 +17,7 @@
     "LICENSE"
   ],
   "scripts": {
-    "test": "node --test tests/creator.test.mjs tests/contenido.test.mjs tests/semana.test.mjs",
+    "test": "node --test tests/creator.test.mjs tests/contenido.test.mjs tests/semana.test.mjs tests/lib-servidor-basico.test.mjs tests/lib-servidor-seguridad.test.mjs",
     "test:p2": "node --test tests/portada-pedagogica.test.mjs",
     "test:docente": "node --test tests/docente-p3.test.mjs",
     "test:seguridad": "node --test tests/publicacion-seguridad.test.mjs",

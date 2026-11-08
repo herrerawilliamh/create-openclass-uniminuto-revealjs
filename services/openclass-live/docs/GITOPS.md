@@ -1,5 +1,10 @@
 # GitOps de OpenClass Live: preparación local, promoción manual
 
+Actualización 2026-10-27: para el futuro autosync, la decisión y el contrato de
+promoción por digest están en [AUTOSYNC-PROVENANCE.md](AUTOSYNC-PROVENANCE.md).
+La ruta manual descrita aquí se conserva; no habilita Scheduled Sync. El cierre
+operativo continúa bloqueado hasta completar la autoridad y validación allí indicadas.
+
 ## Estado y alcance
 
 Rama local preparada: `release/openclass-live`, creada desde
