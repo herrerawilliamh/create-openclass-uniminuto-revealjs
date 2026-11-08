@@ -158,10 +158,41 @@ test('2c. P2: validación canónica del paso de integridad rechaza toda forma de
   rechaza('YAML no analizable falla cerrado', w => w + '\n\tbasura: [\n');
 });
 
+test('2c-bis. P2 YAML: escapes Unicode/hex y duplicados tras decodificar', async () => {
+  const { parse: refParse } = await import('yaml');
+  // Referencia independiente: estas formas son la MISMA clave en YAML 1.2.
+  const FORMAS = ['continue-on-error', '"continue-on-\\u0065rror"', '"continue-on-\\x65rror"'];
+  for (const k of FORMAS) assert.deepEqual(Object.keys(refParse(`${k}: true\n`)), ['continue-on-error'], k);
+  assert.deepEqual(Object.keys(refParse('"r\\u0075n": 1\n')), ['run']);
+  assert.deepEqual(Object.keys(parseWorkflowYaml('"r\\u0075n": 1\n')), ['run']);
+  for (const k of FORMAS) {
+    const paso = workflow.replace('        id: push\n', `        id: push\n        ${k}: true\n`);
+    assert.notEqual(paso, workflow);
+    assert.ok(auditarWorkflow(paso).length > 0, `paso ${k} aceptado`);
+    const job = workflow.replace(/^(  publish:\n)/m, `$1    ${k}: true\n`);
+    assert.notEqual(job, workflow);
+    assert.ok(auditarWorkflow(job).length > 0, `job ${k} aceptado`);
+    const raiz = workflow.replace(/^jobs:/m, `${k}: true\njobs:`);
+    assert.notEqual(raiz, workflow);
+    assert.ok(auditarWorkflow(raiz).length > 0, `workflow ${k} aceptado`);
+  }
+  for (const dup of ['run', '"r\\u0075n"', '"r\\x75n"', '"\\U00000072un"']) {
+    const mod = workflow.replace('        shell: bash\n        run: |\n          set -euo pipefail\n          S=services/openclass-live/scripts/publicacion-ci.mjs\n          (cd live-build',
+      `        shell: bash\n        ${dup}: echo noop\n        run: |\n          set -euo pipefail\n          S=services/openclass-live/scripts/publicacion-ci.mjs\n          (cd live-build`);
+    assert.notEqual(mod, workflow);
+    assert.ok(auditarWorkflow(mod).length > 0, `run duplicado ${dup} aceptado`);
+  }
+  // \U: la biblioteca lo degrada en silencio, así que se rechaza de forma expresa.
+  assert.throws(() => parseWorkflowYaml('"continue-on-\\U00000065rror": true\n'), /Escape YAML no admitido/);
+  assert.throws(() => parseWorkflowYaml('a: "\\q"\n'), /Invalid escape|Escape YAML/);
+  for (const mal of ['a: 1\n"\\u0061": 2\n', 'a: &x 1\n', 'a: *x\n', 'a: !!str 1\n', '? [a]\n: 1\n', '1: a\n', 'a: 1\n---\nb: 2\n', '<<: {a: 1}\n', 'a: [\n'])
+    assert.throws(() => parseWorkflowYaml(mal), undefined, JSON.stringify(mal));
+});
+
 test('2d. lector YAML estricto: estructura, bloques literales y construcciones prohibidas', () => {
   const d = parseWorkflowYaml('a:\n  - x: 1\n    y: "z"  # c\n  - k: |\n      l1\n      l2\nb: [p, q]\n');
-  assert.deepEqual(d, { a: [{ x: '1', y: 'z' }, { k: 'l1\nl2\n' }], b: ['p', 'q'] });
-  for (const mal of ['a: 1\na: 2\n', 'a: &x 1\n', 'a: *x\n', 'a: !t 1\n', '\ta: 1\n', 'a: >\n  x\n', 'a: {b: 1}\n'])
+  assert.deepEqual(d, { a: [{ x: 1, y: 'z' }, { k: 'l1\nl2\n' }], b: ['p', 'q'] });
+  for (const mal of ['a: 1\na: 2\n', 'a: &x 1\n', 'a: *x\n', 'a: !t 1\n', '\ta: 1\n'])
     assert.throws(() => parseWorkflowYaml(mal), undefined, JSON.stringify(mal));
   assert.equal(parseWorkflowYaml(workflow).jobs.publish.needs.join(), 'build,approval');
 });

@@ -48,12 +48,13 @@ jobs:
         env:
           RELEASE_TAG: ${{ inputs.release_tag }}
         run: node services/openclass-live/scripts/publicacion-ci.mjs identidad
+      - name: Dependencias del auditor (yaml fijado por lockfile)
+        run: npm ci --prefix services/openclass-live --ignore-scripts --no-audit --no-fund
       - name: Contrato del workflow
         run: node services/openclass-live/scripts/publicacion-ci.mjs workflow
       - name: Payload aprobado, lockfile y Compose
         run: node services/openclass-live/scripts/verificar-gitops.mjs
       - run: npm ci --ignore-scripts --no-audit --no-fund
-      - run: npm ci --prefix services/openclass-live --ignore-scripts --no-audit --no-fund
       - name: Pruebas unitarias, integración y preparación
         run: npm --prefix services/openclass-live test
       - name: Instalar y comprobar extractor PDF

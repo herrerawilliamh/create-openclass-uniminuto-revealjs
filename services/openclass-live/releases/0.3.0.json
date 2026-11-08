@@ -2,7 +2,7 @@
   "version": "0.3.0",
   "protocol": 2,
   "archive": "openclass-live-0.3.0.tar.gz",
-  "archiveSha256": "f2fdfa324dc003636316e3c16a75e12755a8753ba61e495d7a50fa9267c3748c",
+  "archiveSha256": "4aa4a0dab6dfbe3f494707cdcacad83fc0ebd555a2eb8503c22df38c18c3e63c",
   "sourceBase": "5c35888d1c8bc25231d773de5cfc23d3467802f4",
   "files": [
     {
@@ -27,13 +27,13 @@
     },
     {
       "path": "package-lock.json",
-      "sha256": "01e9b6ac465197f9bb3c424485eb0b7b4cb343def9e3b014329323a6f40ccbe2",
-      "gitSha256": "01e9b6ac465197f9bb3c424485eb0b7b4cb343def9e3b014329323a6f40ccbe2"
+      "sha256": "48c03f4374483ff7d9bd6a8ad4e5462e2fbc1889731d84be6e1a07177f0427d0",
+      "gitSha256": "48c03f4374483ff7d9bd6a8ad4e5462e2fbc1889731d84be6e1a07177f0427d0"
     },
     {
       "path": "package.json",
-      "sha256": "eec9c8071733d3c69813b7c9d84505c77ff9495d9b9703a27773a95cfdd8f3dc",
-      "gitSha256": "eec9c8071733d3c69813b7c9d84505c77ff9495d9b9703a27773a95cfdd8f3dc"
+      "sha256": "cfacaaeee3c62687420c148ccc9d264d8ce197c9f507a9f6425468679f626f67",
+      "gitSha256": "cfacaaeee3c62687420c148ccc9d264d8ce197c9f507a9f6425468679f626f67"
     },
     {
       "path": "public/assets/comun.mjs",
