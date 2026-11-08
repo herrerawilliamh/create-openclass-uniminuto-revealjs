@@ -69,10 +69,9 @@ El servidor se niega a arrancar si falta un secreto, si conserva el valor de eje
 Destino: `/home/openclass-live/`, red Docker externa `web`, Traefik con `myresolver`, dominio `openclass-live.apps.willedtech.io`. El contenedor no publica puertos: solo entra tráfico por Traefik/HTTPS.
 
 > El despliegue cambia el servidor: requiere **autorización expresa**. Una mutación → una verificación → siguiente paso. Si un paso falla, detenerse y diagnosticar.
+### Preparación y promoción de v0.3.0 (sustituye a la 0.2.0, que queda inmutable en `releases/0.2.0.json`)
 
-### Preparación y promoción de v0.2.0
-
-El servicio usa protocolo **2**; el generador npm permanece en **1.2.0**.
+El servicio usa protocolo **2**; el generador npm es **1.3.1**.
 
 ```bash
 cd services/openclass-live
@@ -80,7 +79,8 @@ npm ci
 npm test
 npm audit --omit=dev
 npm run empaquetar
-# despliegue/openclass-live-0.2.0.tar.gz + SHA256SUMS
+# node scripts/generar-manifiesto.mjs <SHA-base>  → releases/0.3.0.json (no sobrescribe)
+# despliegue/openclass-live-0.3.0.tar.gz + SHA256SUMS
 ```
 
 El empaquetador comprueba package/lock/Compose, rechaza enlaces y usa metadatos y orden
@@ -88,7 +88,7 @@ constantes para obtener el mismo SHA-256 con los mismos archivos y herramientas.
 Incluye únicamente archivos de ejecución, Docker/Compose, plantilla pública `.env.example`
 y el auxiliar de hash; no incluye `.env`, cursos, notas, soluciones docentes ni recursos institucionales.
 
-Para una instalación existente, seguir [el plan manual de promoción y rollback](docs/PROMOCION-0.2.0.md).
+Para una instalación existente, seguir [el plan manual de promoción y rollback](docs/PROMOCION-0.3.0.md).
 No ejecutar `gen-env`, ni copiar `.env.example` sobre la configuración real.
 Preservar todos los parámetros y secretos existentes. La selección entre Compose local y stack Git
 requiere identificar primero la autoridad efectiva en Dockhand. No activar sincronizaciones automáticas.

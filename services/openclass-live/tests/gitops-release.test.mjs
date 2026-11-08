@@ -14,7 +14,7 @@ test('gate GitOps admite checkout LF y rechaza payload, Compose o SHA divergente
     }
     const run = (revision = 'a'.repeat(40)) => spawnSync(process.execPath,
       ['scripts/verificar-gitops.mjs'], { cwd: dir, encoding: 'utf8', env: { ...process.env, LIVE_REVISION: revision } });
-    const manifest = JSON.parse(readFileSync(path.join(dir, 'releases/0.2.0.json')));
+    const manifest = JSON.parse(readFileSync(path.join(dir, 'releases/0.3.0.json')));
     for (const { path: f } of manifest.files) {
       const p = path.join(dir, f);
       writeFileSync(p, readFileSync(p, 'utf8').replace(/\r\n/g, '\n'));

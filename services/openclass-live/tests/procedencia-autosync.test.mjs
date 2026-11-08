@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
+const VERSION = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8')).version;
 import { digest, validarLock, verificarOci, verificarAutoridad, composePorDigest,
   repository, imageRepository } from '../scripts/procedencia-autosync.mjs';
 
@@ -16,13 +17,13 @@ function fixture(sha = 'a'.repeat(40), revision = sha) {
   };
   const config = put({ os: 'linux', architecture: 'amd64', config: { Labels: {
     'org.opencontainers.image.revision': revision,
-    'org.opencontainers.image.version': '0.2.0',
+    'org.opencontainers.image.version': VERSION,
     'org.opencontainers.image.source': `https://github.com/${repository}`,
   } } });
   const manifest = put({ schemaVersion: 2, mediaType: 'application/vnd.oci.image.manifest.v1+json',
     config: { ...config, mediaType: 'application/vnd.oci.image.config.v1+json' },
     layers: [put({ syntheticLayer: sha })] });
-  const lock = { schema: 1, version: '0.2.0', tag: 'openclass-live-v0.2.0',
+  const lock = { schema: 1, version: VERSION, tag: `openclass-live-v${VERSION}`,
     sourceCommit: sha, source: `https://github.com/${repository}`, imageRepository,
     manifestDigest: manifest.digest, configDigest: config.digest, ciRun: '123', platform: 'linux/amd64' };
   const calls = [];
