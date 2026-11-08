@@ -1,33 +1,33 @@
 # Graph Report - create-openclass-uniminuto-revealjs  (2026-11-08)
 
 ## Corpus Check
-- 148 files · ~163,966 words
+- 149 files · ~165,591 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 24 file(s) not represented in the graph (top: (none) 10, .css 9, .example 1)
 
 ## Summary
-- 1772 nodes · 3133 edges · 104 communities (97 shown, 7 thin omitted)
-- Extraction: 96% EXTRACTED · 4% INFERRED · 0% AMBIGUOUS · INFERRED: 112 edges (avg confidence: 0.9)
+- 1783 nodes · 3161 edges · 107 communities (100 shown, 7 thin omitted)
+- Extraction: 96% EXTRACTED · 4% INFERRED · 0% AMBIGUOUS · INFERRED: 113 edges (avg confidence: 0.9)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `772a5fed`
+- Built from commit: `0e4b7a44`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
 ## Community Hubs (Navigation)
 - generar-desde-config.mjs
 - create-openclass-uniminuto-revealjs.mjs
-- Pagina
+- vite.config.mjs
 - template/package.json
 - semana.mjs
 - portada-pedagogica.test.mjs
 - scripts
 - ayuda.mjs
-- vite.config.mjs
+- ref_node_assert
 - Guía del docente — Crear OpenClass UNIMINUTO Reveal.js
 - TEMÁTICA DE PRUEBA
-- OpenClass master: minimal AI context
+- crearSockets
 - Internet de las cosas
 - pages.yml
 - Laboratorio interactivo de OpenClass
@@ -44,6 +44,7 @@
 - Plantilla semanal para crear una OpenClass con IA
 - publicacion-seguridad.test.mjs
 - vista.mjs
+- app.mjs
 - OpenClass Live — guía para la clase
 - Presentacion.jsx
 - Microactividad interactiva (5–10 minutos)
@@ -69,9 +70,10 @@
 - openclass-live
 - index.mjs
 - GitOps de OpenClass Live: preparación local, promoción manual
-- ref_node_assert
+- chrome.mjs
 - semana.test.mjs
-- I6-C — Verificación de las hipótesis H01–H08
+- http.mjs
+- ref_node_url
 - docker-compose.yml
 - healthcheck
 - OpenClass Suite — Documento maestro de producto, requisitos y evolución
@@ -82,6 +84,7 @@
 - autoPaginar.mjs
 - Recorrido A · Docente con curso Reveal.js preparado
 - OpenClass Live
+- Manual del creador de OpenClass UNIMINUTO Reveal.js
 - Procedencia GitOps de Live: decisión y contrato de promoción
 - openclass-live/README.md
 - ref_node_fs
@@ -103,6 +106,7 @@
 - labels
 - validar.mjs
 - navegador
+- contenido.test.mjs
 - env
 - docker-compose.gitops.yml
 - healthcheck
@@ -117,7 +121,6 @@
 - build
 - permissions
 - approval
-- chrome.mjs
 
 ## God Nodes (most connected - your core abstractions)
 1. `montarBuildTech()` - 46 edges
@@ -132,10 +135,10 @@
 10. `crearSockets()` - 21 edges
 
 ## Surprising Connections (you probably didn't know these)
-- `Negociación de versión (v0.2)` --references--> `cerrar()`  [INFERRED]
-  services/openclass-live/docs/PROTOCOLO.md → scripts/lib/chrome.mjs
 - `Publication state (2026-10-21)` --references--> `main()`  [INFERRED]
   docs/AI-CONTEXT.md → services/openclass-live/scripts/publicacion-ci.mjs
+- `Integración continua y publicación` --references--> `main()`  [INFERRED]
+  docs/GUIA-DEL-CREADOR.md → services/openclass-live/scripts/publicacion-ci.mjs
 - `0.1 Niveles de certeza` --references--> `main()`  [INFERRED]
   docs/OPENCLASS_REQUERIMIENTOS_MAESTROS.md → services/openclass-live/scripts/publicacion-ci.mjs
 - `1. Estado inicial y evidencia (2026-10-30)` --references--> `main()`  [INFERRED]
@@ -146,7 +149,7 @@
 ## Import Cycles
 - None detected.
 
-## Communities (104 total, 7 thin omitted)
+## Communities (107 total, 7 thin omitted)
 
 ### Community 0 - "generar-desde-config.mjs"
 Cohesion: 0.11
@@ -156,13 +159,13 @@ Nodes (13): active, args, config, configPath, dryRun, erroresApertura(), forceWe
 Cohesion: 0.10
 Nodes (19): applyAssets(), ASSET_EXT, cfg, cfgPath, copy(), fail(), flags, gen (+11 more)
 
-### Community 2 - "Pagina"
-Cohesion: 0.28
-Nodes (3): Pagina, adjuntarNueva(), esperar()
+### Community 2 - "vite.config.mjs"
+Cohesion: 0.07
+Nodes (23): Architecture and key files, Checks and graph maintenance, Distribution decision (2026-10-21, confirmed by the user), Generation routes, Institutional and scope constraints, OpenClass master: minimal AI context, Publication state (2026-10-21), Start here (+15 more)
 
 ### Community 3 - "template/package.json"
-Cohesion: 0.10
-Nodes (24): chart.js, @fontsource/atkinson-hyperlegible, @fontsource/merriweather-sans, mermaid, react-dom, reveal.js, @revealjs/react, dependencies (+16 more)
+Cohesion: 0.09
+Nodes (29): chart.js, @fontsource/atkinson-hyperlegible, @fontsource/merriweather-sans, mermaid, react-dom, reveal.js, @revealjs/react, vite (+21 more)
 
 ### Community 4 - "semana.mjs"
 Cohesion: 0.12
@@ -177,12 +180,12 @@ Cohesion: 0.05
 Nodes (38): author, bin, create-openclass-uniminuto-revealjs, bugs, url, description, engines, node (+30 more)
 
 ### Community 7 - "ayuda.mjs"
-Cohesion: 0.06
-Nodes (57): Corrección de seguridad H02 — sockets del panel con sesión cerrada o vencida, H02 — corrección final: autorización por destinatario (hallazgo P1 de Codex), H02 — corrección P1 de Codex: vencimiento efectivo (cookie frente a SID), base, COOKIE_DOCENTE, cookieDocente(), leerCookies(), panelVigente() (+49 more)
+Cohesion: 0.14
+Nodes (25): socket.io-client, esperar(), evento(), HASH, iniciar(), ORIGEN, PASSWORD, pedir() (+17 more)
 
-### Community 8 - "vite.config.mjs"
-Cohesion: 0.15
-Nodes (13): Architecture and key files, vite, @vitejs/plugin-react, devDependencies, vite@^7.1.12, @vitejs/plugin-react@^5.0.0, activas(), CONFIG (+5 more)
+### Community 8 - "ref_node_assert"
+Cohesion: 0.12
+Nodes (12): raiz, compilarCurso(), npm(), RAIZ, SERVICIO, raiz, bin, root (+4 more)
 
 ### Community 9 - "Guía del docente — Crear OpenClass UNIMINUTO Reveal.js"
 Cohesion: 0.08
@@ -192,9 +195,9 @@ Nodes (22): 10. Actualizar el curso, 11. Problemas frecuentes, 12. Futuras funci
 Cohesion: 0.08
 Nodes (24): Actividad mediante iframe, Actividad práctica, Código desplazable (scroll), Código fuente, Código paginado, Diagrama Mermaid, Dos columnas, Dos títulos (+16 more)
 
-### Community 11 - "OpenClass master: minimal AI context"
-Cohesion: 0.22
-Nodes (8): Checks and graph maintenance, Distribution decision (2026-10-21, confirmed by the user), Generation routes, Institutional and scope constraints, OpenClass master: minimal AI context, Publication state (2026-10-21), Start here, Thirteen existing layouts
+### Community 11 - "crearSockets"
+Cohesion: 0.14
+Nodes (21): Corrección de seguridad H02 — sockets del panel con sesión cerrada o vencida, H02 — corrección final: autorización por destinatario (hallazgo P1 de Codex), H02 — corrección P1 de Codex: vencimiento efectivo (cookie frente a SID), base, panelVigente(), presentadorCompatible(), PROTOCOLO, ErrorSala (+13 more)
 
 ### Community 12 - "Internet de las cosas"
 Cohesion: 0.13
@@ -252,6 +255,10 @@ Nodes (8): evidencia(), artefactos, bin, id, listar(), M, root, SOLUCIONARIOS
 Cohesion: 0.22
 Nodes (22): configurar(), DURACIONES_CLASE, duracionValida(), fase(), formatoReloj(), iniciar(), leerTiempo(), MAX_CLASE (+14 more)
 
+### Community 28 - "app.mjs"
+Cohesion: 0.16
+Nodes (16): crearApp(), crearLog(), PUBLICO, COOKIE_DOCENTE, crearFirmador(), crearSesiones(), memoria(), SCRYPT (+8 more)
+
 ### Community 29 - "OpenClass Live — guía para la clase"
 Cohesion: 0.22
 Nodes (9): Build Tech: dirigir la clase desde el segundo monitor, Elija su recorrido, Exportar a PDF, OpenClass Live — guía para la clase, Qué hace cada persona, Salir, revocar claves y finalizar, Si se pierde la conexión, Teclado y accesibilidad (+1 more)
@@ -265,16 +272,16 @@ Cohesion: 0.50
 Nodes (3): Alternativas, Cambiar el tema, Microactividad interactiva (5–10 minutos)
 
 ### Community 35 - "publicacion-ci.test.mjs"
-Cohesion: 0.06
-Nodes (53): Actualización segura 1.2.0, Despliegue y funciones online, Distribución, Integración continua y publicación, Manual del creador de OpenClass UNIMINUTO Reveal.js, Objetivo, Opciones de CLI, Pruebas (+45 more)
+Cohesion: 0.07
+Nodes (52): 1. Identidad y autoridad efectiva (propietario, VPS, Bash), 2. Ventana sin clase y respaldo privado, 3. Transferencia manual y verificación, 4. Extracción controlada y construcción, 5. Configuración efectiva sin regenerar secretos, 6. Promoción y verificación inmediata, 7. Rollback real si falla cualquier validación, Promoción manual de OpenClass Live 0.2.0 (+44 more)
 
 ### Community 36 - "OpenClassBuildTech"
 Cohesion: 0.23
 Nodes (19): Build Tech and PDF export (template, branch feat/openclass-live-teacher-ux-v0.2, uncommitted), OpenClassBuildTech(), abrirBuildTech(), abrirSelector(), alMensaje(), alternarRelojPublico(), cerrarSelector(), ejecutar() (+11 more)
 
 ### Community 37 - "OpenClassLive"
-Cohesion: 0.09
-Nodes (60): OpenClass Live (in development, not in the npm package), extraerEncuesta(), firmaEncuesta(), normal(), separarSolucion(), textoDe(), DURACIONES, el() (+52 more)
+Cohesion: 0.07
+Nodes (70): OpenClass Live (in development, not in the npm package), Decisiones que requieren autorización adicional, H01 — Regiones ARIA durante una votación, H02 — Sesión vencida y revocación entre pestañas, H03 — Privacidad de preguntas pendientes, H04 — Reflow a 320 CSS px y zoom al 400 %, H05 — Contraste de componentes, H06 — Espacios disponibles para el QR en Reveal.js (+62 more)
 
 ### Community 38 - "portal-academico.test.mjs"
 Cohesion: 0.16
@@ -293,8 +300,8 @@ Cohesion: 0.14
 Nodes (17): el(), enlaceImprimible(), iframesImprimibles(), letra(), modoImpresion(), modoPrevia(), neutralizarMedios(), DURACIONES (+9 more)
 
 ### Community 42 - "build-site.mjs"
-Cohesion: 0.09
-Nodes (25): cfg, cfgRuta, curso, datos, esc(), html, pkg, raiz (+17 more)
+Cohesion: 0.12
+Nodes (21): cfg, cfgRuta, curso, datos, esc(), html, pkg, raiz (+13 more)
 
 ### Community 43 - "verificar-gitops.mjs"
 Cohesion: 0.18
@@ -302,7 +309,7 @@ Nodes (12): actual, archive, base, expected, json(), lock, pkg, read() (+4 more)
 
 ### Community 44 - "docente.mjs"
 Cohesion: 0.05
-Nodes (98): I0 — `preparacion-release.test.mjs:29` (commit 8b02f6e), I1 — OC-A02 atomicidad de encuestas (commit eebdc33), I2 — Recuperación y confiabilidad del panel (OC-A01, OC-A06, OC-A10, O-01, O-09), I3 — Foco, navegación y accesibilidad (OC-A03, OC-A04, OC-A07, O-02), I4 — Teacher Experience VNext (rediseño visual y de experiencia del panel docente), I4 — Trazabilidad Graphify del panel docente (cierre documental), I5 — Experiencia del estudiante (acuses, pestañas, selección), I6 — Cierre: guía docente, capturas, hipótesis, accesibilidad y aceptación (+90 more)
+Nodes (99): I0 — `preparacion-release.test.mjs:29` (commit 8b02f6e), I1 — OC-A02 atomicidad de encuestas (commit eebdc33), I2 — Recuperación y confiabilidad del panel (OC-A01, OC-A06, OC-A10, O-01, O-09), I3 — Foco, navegación y accesibilidad (OC-A03, OC-A04, OC-A07, O-02), I4 — Teacher Experience VNext (rediseño visual y de experiencia del panel docente), I4 — Trazabilidad Graphify del panel docente (cierre documental), I5 — Experiencia del estudiante (acuses, pestañas, selección), I6 — Cierre: guía docente, capturas, hipótesis, accesibilidad y aceptación (+91 more)
 
 ### Community 45 - "openclass-live/package.json"
 Cohesion: 0.08
@@ -325,8 +332,8 @@ Cohesion: 0.23
 Nodes (15): avisar(), apiYoutube(), crearMultimedia(), describir(), ejecutar(), enlazar(), enlazarHtml5(), enlazarYoutube() (+7 more)
 
 ### Community 50 - "ref_node_fs"
-Cohesion: 0.10
-Nodes (17): capturas, miniaturas, raiz, enviar(), servir(), TIPOS, compilarCurso(), npm() (+9 more)
+Cohesion: 0.12
+Nodes (13): capturas, miniaturas, raiz, enviar(), servir(), TIPOS, checks, conServidor() (+5 more)
 
 ### Community 51 - "build-tech-navegador.test.mjs"
 Cohesion: 0.13
@@ -348,17 +355,21 @@ Nodes (14): OpenClassCodigo(), puedeMover(), TECLAS, cargarFase2(), FASE2, LIVE,
 Cohesion: 0.25
 Nodes (8): Bloqueo de auto-sync por procedencia, Definición que usará Dockhand, Dockhand 1.0.33: actualización previa y cambio controlado, Estado y alcance, Fuente aprobada y CI, GitOps de OpenClass Live: preparación local, promoción manual, Si el stack actual es Internal, Variables y secretos: conservar la instalación existente
 
-### Community 56 - "ref_node_assert"
-Cohesion: 0.11
-Nodes (31): socket.io-client, abrirNavegador(), crearApp(), crearLog(), PUBLICO, b64(), crearFirmador(), crearSesiones() (+23 more)
+### Community 56 - "chrome.mjs"
+Cohesion: 0.15
+Nodes (16): abrirNavegador(), CANDIDATOS, Conexion, rutaChrome(), b64(), hashPassword(), entero(), leerConfig() (+8 more)
 
 ### Community 57 - "semana.test.mjs"
-Cohesion: 0.19
-Nodes (9): capitulo(), leer(), root, texto(), bin, curso(), readCfg(), root (+1 more)
+Cohesion: 0.24
+Nodes (6): leer(), bin, curso(), readCfg(), root, tmp()
 
-### Community 58 - "I6-C — Verificación de las hipótesis H01–H08"
-Cohesion: 0.18
-Nodes (10): Decisiones que requieren autorización adicional, H01 — Regiones ARIA durante una votación, H02 — Sesión vencida y revocación entre pestañas, H03 — Privacidad de preguntas pendientes, H04 — Reflow a 320 CSS px y zoom al 400 %, H05 — Contraste de componentes, H06 — Espacios disponibles para el QR en Reveal.js, H07 — Retiro accidental de resultados (+2 more)
+### Community 58 - "http.mjs"
+Cohesion: 0.24
+Nodes (13): cookieDocente(), leerCookies(), crearManejadorHttp(), servirArchivo(), CSP, enviar(), leerJson(), mismoOrigen() (+5 more)
+
+### Community 59 - "ref_node_url"
+Cohesion: 0.17
+Nodes (8): destino, fijarDuracion(), largoVint(), raiz, args, dist, r, raiz
 
 ### Community 60 - "docker-compose.yml"
 Cohesion: 0.33
@@ -400,6 +411,10 @@ Nodes (10): A1. Acceder al panel, A2. Crear la sala, A3. Compartir el QR o el c�
 Cohesion: 0.25
 Nodes (8): Arquitectura, Desarrollo y pruebas locales, Despliegue en la VPS (WillEdTech), OpenClass Live, Preparación y promoción de v0.3.0 (sustituye a la 0.2.0, que queda inmutable en `releases/0.2.0.json`), Privacidad y límites conocidos, Seguridad: resumen, Variables de entorno
 
+### Community 70 - "Manual del creador de OpenClass UNIMINUTO Reveal.js"
+Cohesion: 0.17
+Nodes (11): Actualización segura 1.2.0, Despliegue y funciones online, Distribución, Integración continua y publicación, Manual del creador de OpenClass UNIMINUTO Reveal.js, Objetivo, Opciones de CLI, Pruebas (+3 more)
+
 ### Community 71 - "Procedencia GitOps de Live: decisión y contrato de promoción"
 Cohesion: 0.22
 Nodes (7): Decisión al cierre de este trabajo, Diagnóstico y evidencia actual, Gate 1: autoridad y referencias, Gate 2: interacción con el Git stack existente, Gate 3: validación y límites de la evidencia, Procedencia GitOps de Live: decisión y contrato de promoción, Rollback y fallos cerrados
@@ -409,8 +424,8 @@ Cohesion: 0.25
 Nodes (4): OpenClass Live — preparación para una futura Zoom App, Principios que deben mantenerse, Qué faltaría, Qué se puede reutilizar
 
 ### Community 73 - "ref_node_fs"
-Cohesion: 0.11
-Nodes (11): HOST_ESCUCHA, ORIGEN_PRESENTADOR, PUERTO, start(), newer(), valid(), versionNotice(), bin (+3 more)
+Cohesion: 0.12
+Nodes (12): HOST_ESCUCHA, ORIGEN_PRESENTADOR, PUERTO, start(), newer(), valid(), versionNotice(), config (+4 more)
 
 ### Community 74 - "live-navegador.test.mjs"
 Cohesion: 0.25
@@ -469,8 +484,8 @@ Cohesion: 0.29
 Nodes (7): ligeras, name, runs-on, strategy, node, fail-fast, matrix
 
 ### Community 88 - "ref_node_url"
-Cohesion: 0.08
-Nodes (19): destino, fijarDuracion(), largoVint(), raiz, args, dist, r, raiz (+11 more)
+Cohesion: 0.13
+Nodes (11): hash, plantilla, raiz, salida, archivo, carpeta, destino, files (+3 more)
 
 ### Community 89 - "labels"
 Cohesion: 0.29
@@ -478,11 +493,15 @@ Nodes (7): context, dockerfile, labels, org.opencontainers.image.revision, org.o
 
 ### Community 90 - "validar.mjs"
 Cohesion: 0.08
-Nodes (44): Aplicación (cuando se autorice), Defecto, Hotfix v0.1 — sin filtración del acierto antes de revelar, Parche, Verificación hecha (2026-10-26), crearAlmacen(), cerrarRonda(), eliminar() (+36 more)
+Nodes (42): Aplicación (cuando se autorice), Defecto, Hotfix v0.1 — sin filtración del acierto antes de revelar, Parche, Verificación hecha (2026-10-26), crearAlmacen(), cerrarRonda(), eliminar() (+34 more)
 
 ### Community 91 - "navegador"
 Cohesion: 0.33
 Nodes (6): CHROME_PATH, PAGES_BASE, navegador, env, name, runs-on
+
+### Community 92 - "contenido.test.mjs"
+Cohesion: 0.40
+Nodes (3): cargarMicroactividad(), leer(), root
 
 ### Community 93 - "env"
 Cohesion: 0.22
@@ -517,8 +536,8 @@ Cohesion: 0.33
 Nodes (6): name, outputs, runs-on, timeout-minutes, checks, sha
 
 ### Community 104 - "OpenClass Live — protocolo Socket.IO"
-Cohesion: 0.25
-Nodes (7): Build Tech (puente local, no es parte de este protocolo), Espacio `/docente` (panel y presentación local), Espacio `/participante` (estudiantes), HTTP, Negociación de versión (v0.2), OpenClass Live — protocolo Socket.IO, Tiempo de votación
+Cohesion: 0.33
+Nodes (5): Build Tech (puente local, no es parte de este protocolo), Espacio `/participante` (estudiantes), HTTP, OpenClass Live — protocolo Socket.IO, Tiempo de votación
 
 ### Community 107 - "build"
 Cohesion: 0.25
@@ -532,27 +551,23 @@ Nodes (8): permissions, permissions, permissions, attestations, contents, id-tok
 Cohesion: 0.29
 Nodes (7): environment, if, name, needs, permissions, runs-on, approval
 
-### Community 112 - "chrome.mjs"
-Cohesion: 0.15
-Nodes (9): cerrar(), CANDIDATOS, Conexion, esperar(), rutaChrome(), CLASES, esperar(), IDS (+1 more)
-
 ## Knowledge Gaps
 - **7 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `main()` connect `publicacion-ci.test.mjs` to `Procedencia GitOps de Live: decisión y contrato de promoción`, `vite.config.mjs`, `Guía del docente — Crear OpenClass UNIMINUTO Reveal.js`, `OpenClass master: minimal AI context`, `GitOps de OpenClass Live: preparación local, promoción manual`, `OpenClass Suite — Documento maestro de producto, requisitos y evolución`?**
-  _High betweenness centrality (0.069) - this node is a cross-community bridge._
+- **Why does `main()` connect `publicacion-ci.test.mjs` to `vite.config.mjs`, `Manual del creador de OpenClass UNIMINUTO Reveal.js`, `Procedencia GitOps de Live: decisión y contrato de promoción`, `Guía del docente — Crear OpenClass UNIMINUTO Reveal.js`, `GitOps de OpenClass Live: preparación local, promoción manual`, `OpenClass Suite — Documento maestro de producto, requisitos y evolución`?**
+  _High betweenness centrality (0.061) - this node is a cross-community bridge._
 - **Are the 2 inferred relationships involving `montarBuildTech()` (e.g. with `sincronizarPrevias()` and `tictac()`) actually correct?**
   _`montarBuildTech()` has 2 INFERRED edges - model-reasoned connections that need verification._
 - **Should `generar-desde-config.mjs` be split into smaller, more focused modules?**
   _Cohesion score 0.10526315789473684 - nodes in this community are weakly interconnected._
-- **Why does `socket.io-client` connect `ref_node_assert` to `ref_node_fs`, `openclass-live/package.json`, `ayuda.mjs`?**
-  _High betweenness centrality (0.023) - this node is a cross-community bridge._
+- **Why does `OpenClass Live — protocolo Socket.IO` connect `OpenClass Live — protocolo Socket.IO` to `vite.config.mjs`?**
+  _High betweenness centrality (0.032) - this node is a cross-community bridge._
 - **Are the 2 inferred relationships involving `OpenClassLive()` (e.g. with `estadoBuildTech()` and `ordenBuildTech()`) actually correct?**
   _`OpenClassLive()` has 2 INFERRED edges - model-reasoned connections that need verification._
 - **Should `create-openclass-uniminuto-revealjs.mjs` be split into smaller, more focused modules?**
   _Cohesion score 0.1038961038961039 - nodes in this community are weakly interconnected._
-- **Should `template/package.json` be split into smaller, more focused modules?**
-  _Cohesion score 0.10333333333333333 - nodes in this community are weakly interconnected._
+- **Why does `codigoSala()` connect `validar.mjs` to `OpenClass Live — protocolo Socket.IO`, `http.mjs`?**
+  _High betweenness centrality (0.030) - this node is a cross-community bridge._

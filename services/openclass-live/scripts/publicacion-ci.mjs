@@ -9,6 +9,7 @@ import { readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import { pathToFileURL } from 'node:url';
 import path from 'node:path';
+import { parseWorkflowYaml } from './workflow-yaml.mjs';
 import { digest, repository, imageRepository, validarLock, verificarOci, composePorDigest }
   from './procedencia-autosync.mjs';
 
@@ -184,6 +185,76 @@ export function auditarWorkflow(text) {
   bad(/subject-name:\s*\$\{\{ steps\.push\.outputs\.image \}\}/.test(att) && /subject-digest:\s*\$\{\{ steps\.push\.outputs\.digest \}\}/.test(att)
     && /push-to-registry:\s*true/.test(att), 'La attestation debe vincular el digest OCI publicado (steps.push.outputs)');
   bad(iAtt > ix(/id: push/), 'La attestation debe seguir a la publicación');
+  v.push(...auditarEstructura(t));
+  return v;
+}
+
+/**
+ * Secuencia canónica del paso de integridad de publish. Coincidencia EXACTA línea a línea.
+ * Normalizaciones inocuas admitidas (únicas): fin de línea CRLF→LF, espacios finales, sangría
+ * de línea, líneas en blanco y líneas de comentario completas. Una continuación `\` NO se normaliza.
+ */
+export const PASO_INTEGRIDAD = Object.freeze({
+  name: 'Bytes aprobados (hash del tar, lock y layout) sin reconstruir',
+  shell: 'bash',
+  comandos: Object.freeze([
+    'set -euo pipefail',
+    'S=services/openclass-live/scripts/publicacion-ci.mjs',
+    '(cd live-build && sha256sum --check SHA256SUMS)',
+    'test "$(cat live-build/source-commit.txt)" = "$GITHUB_SHA"',
+    'test "$(node -p "require(\'./live-build/release-lock.json\').manifestDigest")" = "${{ needs.build.outputs.manifest_digest }}"',
+    'node $S bytes --lock live-build/release-lock.json --archive live-build/image.oci.tar',
+    'mkdir -p "$RUNNER_TEMP/built"',
+    'tar -xf live-build/image.oci.tar -C "$RUNNER_TEMP/built"',
+    'node $S layout --layout "$RUNNER_TEMP/built" --lock live-build/release-lock.json',
+  ]),
+});
+const SCRIPT_APROBADO = 'services/openclass-live/scripts/publicacion-ci.mjs';
+
+/** Comandos de un `run` tras las normalizaciones inocuas documentadas en PASO_INTEGRIDAD. */
+export function comandosNormalizados(run) {
+  return String(run).replace(/\r\n/g, '\n').split('\n').map(l => l.replace(/\s+$/, ''))
+    .filter(l => !/^\s*(#.*)?$/.test(l)).map(l => l.trim());
+}
+
+/** Validación sobre el YAML estructurado (no sobre texto): paso canónico y operadores de escape. */
+function auditarEstructura(texto) {
+  const v = [];
+  const bad = (cond, msg) => { if (!cond) v.push(msg); };
+  let doc;
+  try { doc = parseWorkflowYaml(texto); } catch (e) { return [`YAML del workflow no analizable (falla cerrado): ${e.message}`]; }
+  const jobs = doc && typeof doc.jobs === 'object' && doc.jobs ? doc.jobs : {};
+  bad(!Object.hasOwn(doc ?? {}, 'continue-on-error') && !Object.hasOwn(doc?.defaults ?? {}, 'continue-on-error'),
+    'continue-on-error no admitido a nivel de workflow');
+  const canon = [];
+  for (const [nombre, job] of Object.entries(jobs)) {
+    bad(!Object.hasOwn(job ?? {}, 'continue-on-error'), `El job ${nombre} no puede tolerar errores (continue-on-error)`);
+    const steps = Array.isArray(job?.steps) ? job.steps : [];
+    steps.forEach((s, n) => {
+      const id = `${nombre}[${n}]`;
+      bad(!Object.hasOwn(s ?? {}, 'continue-on-error'), `El paso ${id} no puede tolerar errores (continue-on-error)`);
+      if (typeof s?.run !== 'string') return;
+      const cmds = comandosNormalizados(s.run);
+      const unido = cmds.join('\n').replace(/\\\n\s*/g, ' ');
+      bad(!/\|\||\bset\s+\+|\btrap\b|\bexit\s+0\b/.test(unido),
+        `El paso ${id} no puede silenciar errores (||, set +e, trap, exit 0; operadores de escape prohibidos)`);
+      for (const c of cmds.filter(c => /^S=/.test(c))) {
+        bad(c === `S=${SCRIPT_APROBADO}`, `El paso ${id} sustituye el script aprobado (${c})`);
+      }
+      if (/sha256sum --check SHA256SUMS/.test(s.run)) canon.push({ nombre, n, s, cmds });
+    });
+  }
+  bad(canon.length === 1 && canon[0].nombre === 'publish',
+    'Debe existir exactamente un paso canónico de integridad, en el job publish');
+  const c = canon[0];
+  if (c) {
+    bad(JSON.stringify(Object.keys(c.s).sort()) === JSON.stringify(['name', 'run', 'shell']),
+      'El paso canónico de integridad solo admite name, shell y run (sin if, env, continue-on-error, uses, working-directory)');
+    bad(c.s.name === PASO_INTEGRIDAD.name && c.s.shell === PASO_INTEGRIDAD.shell,
+      'El paso canónico de integridad cambió de nombre o intérprete');
+    bad(JSON.stringify(c.cmds) === JSON.stringify(PASO_INTEGRIDAD.comandos),
+      'El contenido ejecutable del paso canónico de integridad difiere del aprobado');
+  }
   return v;
 }
 

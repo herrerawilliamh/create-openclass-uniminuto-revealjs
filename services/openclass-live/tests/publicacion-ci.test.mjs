@@ -7,6 +7,7 @@ import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { auditarWorkflow, verificarIdentidad, leerLayout, crearLock, bytesPublicables,
   mismosBlobs, composeCandidato, sha256Hex } from '../scripts/publicacion-ci.mjs';
+import { parseWorkflowYaml } from '../scripts/workflow-yaml.mjs';
 import { digest, verificarOci, repository } from '../scripts/procedencia-autosync.mjs';
 
 const here = p => fileURLToPath(new URL(p, import.meta.url));
@@ -109,6 +110,60 @@ test('2b. mutaciones del informe Codex: aprobación omitida, fuente cambiada, in
   mutar('subject-digest: ${{ steps.push.outputs.digest }}', 'subject-digest: sha256:deadbeef', /vincular el digest/);
   mutar('        run: |\n          set -euo pipefail\n          S=services/openclass-live/scripts/publicacion-ci.mjs\n          command -v skopeo',
     '        run: |\n          set -euo pipefail\n          S=services/openclass-live/scripts/publicacion-ci.mjs\n          echo x | skopeo login ghcr.io --username u --password-stdin\n          command -v skopeo', /credenciales/);
+});
+
+test('2c. P2: validación canónica del paso de integridad rechaza toda forma de continuar tras un fallo', () => {
+  assert.deepEqual(auditarWorkflow(workflow), []);
+  const CHECK = '(cd live-build && sha256sum --check SHA256SUMS)';
+  const rechaza = (nombre, cambiar) => {
+    const mod = cambiar(workflow);
+    assert.notEqual(mod, workflow, `${nombre}: la mutación no cambió nada`);
+    assert.ok(auditarWorkflow(mod).length > 0, `${nombre} fue aceptado`);
+  };
+  const enCheck = sufijo => w => w.replace(CHECK, CHECK + sufijo);
+  rechaza('|| true', enCheck(' || true'));
+  rechaza('|| "true"', enCheck(' || "true"'));
+  rechaza("|| 'true'", enCheck(" || 'true'"));
+  rechaza('|| continuación true', enCheck(' || \\\n          true'));
+  rechaza('||\\ true (sin espacio)', enCheck(' ||\\\n          true'));
+  rechaza('|| :', enCheck(' || :'));
+  rechaza('|| exit 0', enCheck(' || exit 0'));
+  rechaza('; true', enCheck('; true'));
+  rechaza('comando extra', enCheck('\n          echo ok'));
+  rechaza('set +e', w => w.replace('          (cd live-build && sha256sum --check', '          set +e\n          (cd live-build && sha256sum --check'));
+  rechaza('set +e en otro paso', w => w.replace('          mkdir live-release', '          set +e\n          mkdir live-release'));
+  rechaza('continue-on-error en paso crítico', w => w.replace(
+    '      - name: Bytes aprobados (hash del tar, lock y layout) sin reconstruir\n        shell: bash\n',
+    '      - name: Bytes aprobados (hash del tar, lock y layout) sin reconstruir\n        shell: bash\n        continue-on-error: true\n'));
+  rechaza('continue-on-error en otro paso', w => w.replace('        id: push\n', '        id: push\n        continue-on-error: true\n'));
+  rechaza('if en el paso canónico', w => w.replace(
+    '      - name: Bytes aprobados (hash del tar, lock y layout) sin reconstruir\n',
+    "      - name: Bytes aprobados (hash del tar, lock y layout) sin reconstruir\n        if: ${{ false }}\n"));
+  rechaza('git archive main', w => w.replace('git archive "$GITHUB_SHA" services/openclass-live', 'git archive main services/openclass-live'));
+  rechaza('always() en publish', w => w.replace("if: github.event_name == 'workflow_dispatch' && startsWith(github.ref, 'refs/tags/openclass-live-v')",
+    "if: always() && github.event_name == 'workflow_dispatch' && startsWith(github.ref, 'refs/tags/openclass-live-v')"));
+  rechaza('approval omitida con always()', w => w.replace('needs: [build, approval]', 'needs: [build]'));
+  rechaza('retirada del paso canónico', w => w.replace(CHECK + '\n', ''));
+  rechaza('paso canónico renombrado', w => w.replace('Bytes aprobados (hash del tar, lock y layout) sin reconstruir', 'Verificar'));
+  rechaza('línea del paso canónico alterada', w => w.replace('--check SHA256SUMS)', '--check --quiet SHA256SUMS)'));
+  rechaza('orden alterado', w => w.replace(
+    'mkdir -p "$RUNNER_TEMP/built"\n          tar -xf live-build/image.oci.tar -C "$RUNNER_TEMP/built"',
+    'tar -xf live-build/image.oci.tar -C "$RUNNER_TEMP/built"\n          mkdir -p "$RUNNER_TEMP/built"'));
+  rechaza('script externo no aprobado', w => w.replace('S=services/openclass-live/scripts/publicacion-ci.mjs\n          (cd live-build',
+    'S=/tmp/falso.mjs\n          (cd live-build'));
+  rechaza('script externo no aprobado en otro paso', w => w.replace('S=services/openclass-live/scripts/publicacion-ci.mjs\n          command -v skopeo',
+    'S=otro/publicacion-ci.mjs\n          command -v skopeo'));
+  rechaza('clave run duplicada', w => w.replace('        shell: bash\n        run: |\n          set -euo pipefail\n          S=services/openclass-live/scripts/publicacion-ci.mjs\n          (cd live-build',
+    '        shell: bash\n        run: echo noop\n        run: |\n          set -euo pipefail\n          S=services/openclass-live/scripts/publicacion-ci.mjs\n          (cd live-build'));
+  rechaza('YAML no analizable falla cerrado', w => w + '\n\tbasura: [\n');
+});
+
+test('2d. lector YAML estricto: estructura, bloques literales y construcciones prohibidas', () => {
+  const d = parseWorkflowYaml('a:\n  - x: 1\n    y: "z"  # c\n  - k: |\n      l1\n      l2\nb: [p, q]\n');
+  assert.deepEqual(d, { a: [{ x: '1', y: 'z' }, { k: 'l1\nl2\n' }], b: ['p', 'q'] });
+  for (const mal of ['a: 1\na: 2\n', 'a: &x 1\n', 'a: *x\n', 'a: !t 1\n', '\ta: 1\n', 'a: >\n  x\n', 'a: {b: 1}\n'])
+    assert.throws(() => parseWorkflowYaml(mal), undefined, JSON.stringify(mal));
+  assert.equal(parseWorkflowYaml(workflow).jobs.publish.needs.join(), 'build,approval');
 });
 
 test('3. identidad: tag, ref, SHA, HEAD y rama de release deben coincidir exactamente', () => {
