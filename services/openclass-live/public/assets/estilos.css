@@ -11,6 +11,8 @@ body { margin: 0; background: var(--fondo); color: var(--texto); font: 16px/1.5 
 main { max-width: 720px; margin: 0 auto; padding: 16px; }
 main.ancho { max-width: 1180px; }
 header.barra { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 16px; background: var(--acento); color: #fff; }
+header.barra .barra-marca { display: flex; align-items: center; gap: 10px; }
+header.barra .marca-producto { width: 32px; height: 32px; flex: none; }
 header.barra h1 { font-size: 1.05rem; margin: 0; font-weight: 650; letter-spacing: .01em; }
 header.barra .sub { opacity: .85; font-size: .9rem; }
 h2 { font-size: 1.15rem; margin: 0 0 12px; }

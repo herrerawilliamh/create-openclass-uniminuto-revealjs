@@ -19,3 +19,10 @@ Rules:
 - After relevant changes, run `graphify update .` and verify the outcome before the next gate.
 - ONE MUTATION -> ONE VERIFICATION -> NEXT GATE.
 - Preserve all existing instructions and institutional constraints. Publishing is limited to this project's public GitHub repo, GitHub Pages and npm package with the neutral theme; never publish `recursos-institucionales/`. No sibling-repository (Slidev, openclass-prueba-reveal) changes.
+
+## Identidad visual: kit `brand/`
+
+- Antes de cambiar la interfaz, los logos, los favicons o los estilos, lee `brand/BRAND.md`. Esa guía manda sobre cualquier otra regla visual de este repo.
+- Este producto es **OpenClass Live** (monograma **O**). Usa los archivos de `brand/products/` y `brand/logo/` tal cual, sin redibujarlos.
+- `brand/` es una copia del kit de marca WillEdTech: no la edites aquí. Los cambios se hacen en el kit y luego se vuelven a copiar.
+- La marca solo aplica al servicio `services/openclass-live/`. El tema neutro de la plantilla y `recursos-institucionales/` no cambian.
