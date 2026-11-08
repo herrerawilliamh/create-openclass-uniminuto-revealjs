@@ -23,6 +23,11 @@ export function validarLock(lock) {
   assert.match(lock.configDigest, digestPattern);
   assert.match(String(lock.ciRun), /^[1-9][0-9]*$/);
   assert.ok(['linux/amd64', 'linux/arm64'].includes(lock.platform));
+  // Evidencia del build único: tar OCI aprobado, payload aprobado y workflow emisor.
+  assert.equal(lock.evidence?.workflow, '.github/workflows/openclass-live.yml');
+  assert.match(String(lock.evidence.runAttempt), /^[1-9][0-9]*$/);
+  assert.match(lock.evidence.ociArchiveSha256, /^[a-f0-9]{64}$/);
+  assert.match(lock.evidence.payloadSha256, /^[a-f0-9]{64}$/);
   return `${imageRepository}@${lock.manifestDigest}`;
 }
 

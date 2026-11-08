@@ -1,14 +1,18 @@
 name: OpenClass Live
 
+# Contrato: services/openclass-live/docs/PUBLICACION-CI-0.3.0.md y AUTOSYNC-PROVENANCE.md.
+# Cadena: checks (sin credenciales) -> build único -> aprobación humana -> publish (única escritura).
+# Auditoría estática: node services/openclass-live/scripts/publicacion-ci.mjs workflow
+
 on:
   pull_request:
     branches: [main, release/openclass-live]
   workflow_dispatch:
     inputs:
       release_tag:
-        description: 'Etiqueta aprobada e inmutable (openclass-live-v0.2.0)'
+        description: 'Etiqueta aprobada e inmutable (openclass-live-v0.3.0); ejecutar el workflow DESDE esa tag'
         required: true
-        default: openclass-live-v0.2.0
+        default: openclass-live-v0.3.0
         type: string
 
 permissions:
@@ -21,33 +25,31 @@ concurrency:
 jobs:
   checks:
     name: Live release checks
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
+    permissions:
+      contents: read
+    outputs:
+      sha: ${{ steps.identity.outputs.sha }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
-          ref: ${{ github.event.pull_request.head.sha || inputs.release_tag }}
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
           fetch-depth: 0
           persist-credentials: false
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: '22.23.1'
       - name: Registrar SHA probado
         id: identity
         run: echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
-      - name: Identidad de promoción manual
+      - name: Identidad de promoción manual (tag = checkout = HEAD = rama de release)
         if: github.event_name == 'workflow_dispatch'
         env:
           RELEASE_TAG: ${{ inputs.release_tag }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          VERSION=$(node -p "require('./services/openclass-live/package.json').version")
-          test "$RELEASE_TAG" = "openclass-live-v$VERSION"
-          test "$GITHUB_REF" = "refs/tags/$RELEASE_TAG"
-          test "$GITHUB_SHA" = "$(git rev-parse HEAD)"
-          test "$(git rev-parse HEAD)" = "$(git rev-parse "refs/tags/$RELEASE_TAG^{commit}")"
-          test "$(git rev-parse HEAD)" = "$(git rev-parse origin/release/openclass-live)"
+        run: node services/openclass-live/scripts/publicacion-ci.mjs identidad
+      - name: Contrato del workflow
+        run: node services/openclass-live/scripts/publicacion-ci.mjs workflow
       - name: Payload aprobado, lockfile y Compose
         run: node services/openclass-live/scripts/verificar-gitops.mjs
       - run: npm ci --ignore-scripts --no-audit --no-fund
@@ -64,41 +66,182 @@ jobs:
           pdftotext -v
       - name: Navegador, privacidad y protocolo
         run: npm --prefix services/openclass-live run test:navegador
-      - name: Validar contexto de construcción y exportar evidencia
+      - name: Validar Compose GitOps (sin construir)
         env:
           APP_URL: https://live.example.invalid
           APP_HOST: live.example.invalid
           SESSION_SECRET: synthetic-ci-only-secret-with-more-than-32-characters
           ADMIN_PASSWORD_HASH: synthetic-ci-compose-validation-only
+          LIVE_REVISION: ${{ steps.identity.outputs.sha }}
+        run: docker compose -f services/openclass-live/docker-compose.gitops.yml config --quiet
+
+  build:
+    name: Live build único (OCI)
+    if: github.event_name == 'workflow_dispatch'
+    needs: checks
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    outputs:
+      manifest_digest: ${{ steps.lock.outputs.manifest_digest }}
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: '22.23.1'
+      - name: El commit construido es el commit probado
+        env:
+          TESTED_SHA: ${{ needs.checks.outputs.sha }}
+        run: test "$(git rev-parse HEAD)" = "$TESTED_SHA" && test "$GITHUB_SHA" = "$TESTED_SHA"
+      - uses: docker/setup-buildx-action@e468171a9de216ec08956ac3ada2f0791b6bd435 # v3.11.1
+        with:
+          driver-opts: image=moby/buildkit@sha256:ddd1ca44b21eda906e81ab14a3d467fa6c39cd73b9a39df1196210edcb8db59e # v0.23.2
+      - name: Construir una sola vez desde el commit (git archive; base Node fijada por digest)
         shell: bash
         run: |
           set -euo pipefail
-          export LIVE_REVISION=$(git rev-parse HEAD)
           VERSION=$(node -p "require('./services/openclass-live/package.json').version")
-          node services/openclass-live/scripts/verificar-gitops.mjs
-          docker compose -f services/openclass-live/docker-compose.gitops.yml config --quiet
-          docker compose -f services/openclass-live/docker-compose.gitops.yml build openclass-live
-          IMAGE="openclass-live:$VERSION-$LIVE_REVISION"
-          test "$(docker image inspect "$IMAGE" --format '{{index .Config.Labels "org.opencontainers.image.revision"}}')" = "$LIVE_REVISION"
-          mkdir live-evidence
-          docker image inspect "$IMAGE" --format '{{.Id}}' > live-evidence/image-id.txt
-          printf '%s\n' "$LIVE_REVISION" > live-evidence/source-commit.txt
-          cp services/openclass-live/releases/"$VERSION".json live-evidence/payload.json
-          docker image save "$IMAGE" | gzip > live-evidence/openclass-live-image.tar.gz
-          (cd live-evidence && sha256sum * > SHA256SUMS)
-      - uses: actions/upload-artifact@v4
+          mkdir -p "$RUNNER_TEMP/ctx"
+          git archive "$GITHUB_SHA" services/openclass-live | tar -x -C "$RUNNER_TEMP/ctx"
+          SOURCE_DATE_EPOCH=$(git log -1 --format=%ct "$GITHUB_SHA") docker buildx build \
+            --platform linux/amd64 --provenance=false --sbom=false \
+            --build-arg SOURCE_DATE_EPOCH="$(git log -1 --format=%ct "$GITHUB_SHA")" \
+            --label "org.opencontainers.image.version=$VERSION" \
+            --label "org.opencontainers.image.revision=$GITHUB_SHA" \
+            --label "org.opencontainers.image.source=https://github.com/$GITHUB_REPOSITORY" \
+            --output "type=oci,dest=$RUNNER_TEMP/image.oci.tar,rewrite-timestamp=true" \
+            "$RUNNER_TEMP/ctx/services/openclass-live"
+      - name: Lock, verificación OCI offline y humo del mismo artefacto
+        id: lock
+        shell: bash
+        env:
+          SYNTHETIC_SECRET: synthetic-ci-only-secret-with-more-than-32-characters
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/layout" live-build
+          tar -xf "$RUNNER_TEMP/image.oci.tar" -C "$RUNNER_TEMP/layout"
+          node services/openclass-live/scripts/publicacion-ci.mjs lock \
+            --layout "$RUNNER_TEMP/layout" --archive "$RUNNER_TEMP/image.oci.tar" --out live-build/release-lock.json
+          node services/openclass-live/scripts/publicacion-ci.mjs layout \
+            --layout "$RUNNER_TEMP/layout" --lock live-build/release-lock.json
+          echo "manifest_digest=$(node -p "require('./live-build/release-lock.json').manifestDigest")" >> "$GITHUB_OUTPUT"
+          # Humo sobre los bytes construidos (no sobre una reconstrucción).
+          SMOKE_HASH=$(printf '%s' 'synthetic-ci-smoke-only' | node services/openclass-live/scripts/hash-password.mjs)
+          ID=$(docker load -i "$RUNNER_TEMP/image.oci.tar" | sed -n 's/^Loaded image ID: //p')
+          test -n "$ID"
+          docker run -d --name live-smoke --read-only --tmpfs /tmp --cap-drop ALL \
+            -e APP_URL=https://live.example.invalid -e SESSION_SECRET="$SYNTHETIC_SECRET" \
+            -e ADMIN_PASSWORD_HASH="$SMOKE_HASH" "$ID"
+          for i in $(seq 1 20); do
+            docker exec live-smoke node -e "fetch('http://127.0.0.1:3000/healthz').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))" && break
+            test "$i" -lt 20; sleep 2
+          done
+          docker rm -f live-smoke
+          cp "$RUNNER_TEMP/image.oci.tar" live-build/image.oci.tar
+          cp "services/openclass-live/releases/$(node -p "require('./services/openclass-live/package.json').version").json" live-build/payload.json
+          printf '%s\n' "$GITHUB_SHA" > live-build/source-commit.txt
+          (cd live-build && sha256sum image.oci.tar release-lock.json payload.json source-commit.txt > SHA256SUMS)
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
-          name: openclass-live-${{ steps.identity.outputs.sha }}
-          path: live-evidence/
-          retention-days: 30
+          name: openclass-live-build-${{ github.sha }}
+          path: live-build/
+          retention-days: 14
           if-no-files-found: error
 
-  approved:
-    name: Live manual release approval
+  approval:
+    name: Live aprobación humana
     if: github.event_name == 'workflow_dispatch'
-    needs: checks
-    runs-on: ubuntu-latest
+    needs: build
+    runs-on: ubuntu-24.04
     environment: openclass-live-release
+    permissions: {}
     steps:
-      - name: Promoción disponible para el propietario
-        run: echo 'Pruebas aprobadas. El propietario debe verificar SHA y aprobar la promoción en Dockhand. No se despliega ni publica automáticamente.'
+      - name: Esperar aprobación del revisor requerido
+        run: echo "Aprobado el digest ${{ needs.build.outputs.manifest_digest }} del commit ${{ github.sha }}. No se reconstruye."
+
+  publish:
+    name: Live publicar en GHCR y atestiguar
+    if: github.event_name == 'workflow_dispatch' && startsWith(github.ref, 'refs/tags/openclass-live-v')
+    needs: [build, approval]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+      attestations: write
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: '22.23.1'
+      - name: Identidad vigente al publicar
+        env:
+          RELEASE_TAG: ${{ inputs.release_tag }}
+        run: node services/openclass-live/scripts/publicacion-ci.mjs identidad
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: openclass-live-build-${{ github.sha }}
+          path: live-build
+      - name: Bytes aprobados (hash del tar, lock y layout) sin reconstruir
+        shell: bash
+        run: |
+          set -euo pipefail
+          S=services/openclass-live/scripts/publicacion-ci.mjs
+          (cd live-build && sha256sum --check SHA256SUMS)
+          test "$(cat live-build/source-commit.txt)" = "$GITHUB_SHA"
+          test "$(node -p "require('./live-build/release-lock.json').manifestDigest")" = "${{ needs.build.outputs.manifest_digest }}"
+          node $S bytes --lock live-build/release-lock.json --archive live-build/image.oci.tar
+          mkdir -p "$RUNNER_TEMP/built"
+          tar -xf live-build/image.oci.tar -C "$RUNNER_TEMP/built"
+          node $S layout --layout "$RUNNER_TEMP/built" --lock live-build/release-lock.json
+      - name: Publicar los mismos bytes en GHCR (digest conservado)
+        id: push
+        shell: bash
+        env:
+          REGISTRY_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          S=services/openclass-live/scripts/publicacion-ci.mjs
+          command -v skopeo
+          IMAGE=$(node -p "require('./live-build/release-lock.json').imageRepository")
+          DIGEST=$(node -p "require('./live-build/release-lock.json').manifestDigest")
+          printf '%s' "$REGISTRY_TOKEN" | skopeo login ghcr.io --username "$GITHUB_ACTOR" --password-stdin
+          # La tag es un alias informativo; la autoridad es siempre el digest.
+          skopeo copy --preserve-digests "oci:$RUNNER_TEMP/built" "docker://$IMAGE:sha-$GITHUB_SHA"
+          mkdir -p "$RUNNER_TEMP/published"
+          skopeo copy "docker://$IMAGE@$DIGEST" "oci:$RUNNER_TEMP/published"
+          node $S layout --layout "$RUNNER_TEMP/published" --lock live-build/release-lock.json
+          node $S mismos --a "$RUNNER_TEMP/built" --b "$RUNNER_TEMP/published"
+          echo "image=$IMAGE" >> "$GITHUB_OUTPUT"
+          echo "digest=$DIGEST" >> "$GITHUB_OUTPUT"
+      - name: Attestation de procedencia del digest publicado
+        uses: actions/attest-build-provenance@e8998f949152b193b063cb0ec769d69d929409be # v2.4.0
+        with:
+          subject-name: ${{ steps.push.outputs.image }}
+          subject-digest: ${{ steps.push.outputs.digest }}
+          push-to-registry: true
+      - name: Compose candidato por digest y sumas
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir live-release
+          cp live-build/release-lock.json live-build/payload.json live-build/source-commit.txt live-release/
+          node services/openclass-live/scripts/publicacion-ci.mjs compose \
+            --lock live-build/release-lock.json --out live-release/docker-compose.candidate.yml
+          (cd live-release && sha256sum * > SHA256SUMS)
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: openclass-live-release-${{ github.sha }}
+          path: live-release/
+          retention-days: 30
+          if-no-files-found: error

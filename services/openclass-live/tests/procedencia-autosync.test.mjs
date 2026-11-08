@@ -25,7 +25,9 @@ function fixture(sha = 'a'.repeat(40), revision = sha) {
     layers: [put({ syntheticLayer: sha })] });
   const lock = { schema: 1, version: VERSION, tag: `openclass-live-v${VERSION}`,
     sourceCommit: sha, source: `https://github.com/${repository}`, imageRepository,
-    manifestDigest: manifest.digest, configDigest: config.digest, ciRun: '123', platform: 'linux/amd64' };
+    manifestDigest: manifest.digest, configDigest: config.digest, ciRun: '123', platform: 'linux/amd64',
+    evidence: { workflow: '.github/workflows/openclass-live.yml', runAttempt: '1',
+      ociArchiveSha256: 'c'.repeat(64), payloadSha256: 'd'.repeat(64) } };
   const calls = [];
   const run = args => {
     calls.push(args);
