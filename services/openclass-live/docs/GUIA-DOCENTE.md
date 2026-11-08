@@ -1,74 +1,129 @@
 # OpenClass Live — guía para la clase
 
-Sus diapositivas siguen en su computador. Los estudiantes responden desde el teléfono con un QR o un código; no ven ni descargan la presentación.
+OpenClass Live permite que los estudiantes respondan votaciones y envíen preguntas desde su teléfono con un QR, un enlace o un código de seis caracteres. No ven ni descargan sus diapositivas, y no necesitan cuenta.
 
-En resumen: **todo se hace desde el botón «En vivo» del pie de la presentación**. Muestra solo lo que corresponde a cada momento: conectar → **Iniciar votación · 30 s** → **Mostrar resultados** → **Discutir y repetir** o **Revelar explicación**. No hay que configurar cada pregunta.
+> Las capturas de esta guía son reales: salen de la aplicación funcionando en un equipo de prueba, con datos sintéticos (por eso la dirección es `127.0.0.1`). En clase verá la dirección de su servicio, por ejemplo `openclass-live.apps.willedtech.io`. No contienen contraseñas, claves de presentador ni datos de estudiantes.
 
-> Las capturas son reales, tomadas del servicio funcionando en un equipo de prueba (por eso la dirección es `127.0.0.1`). En clase verá `openclass-live.apps.willedtech.io`.
+## Qué hace cada persona
 
-## Antes de la primera clase (una sola vez)
+| Tarea | Quién |
+|---|---|
+| Entrar al panel, crear la sala, compartir el QR, votar, moderar preguntas, terminar la clase | **Usted, el docente** |
+| Preparar o modificar un curso Reveal.js (escribir las preguntas en el Markdown, activar OpenClass Live en el curso, publicar o iniciar la presentación) | **Un responsable técnico o de soporte** |
 
-En su curso, abra `src/plugins/fase2.mjs` y cambie `activa: false` por `activa: true` dentro de `LIVE`:
+OpenClass Live **no edita diapositivas**. Desde el panel no se crean, cambian ni publican cursos Reveal.js; si necesita una pregunta nueva dentro de la presentación, pídasela a quien prepara el curso. Lo que sí puede hacer usted en la clase, sin ayuda técnica, es crear **preguntas improvisadas** desde el panel.
 
-```js
-export const LIVE = {
-  activa: true,
-  servidor: 'https://openclass-live.apps.willedtech.io',
-};
-```
+## Elija su recorrido
 
-Aparece **● En vivo** en el pie azul de la presentación, junto a los demás botones (en la portada, como icono de ondas junto a «siguiente»; atajo: tecla **L**). Mientras no se conecte, la presentación no envía nada a ningún servidor.
+- **Recorrido A — tiene un curso Reveal.js ya preparado** (alguien configuró el curso y le entregó la contraseña del panel): la presentación se conecta a la sala y las votaciones se inician desde el botón «En vivo» del pie de la presentación.
+- **Recorrido B — no tiene un curso Reveal.js preparado**: toda la clase se conduce desde el panel, con preguntas improvisadas.
 
-## 1. Iniciar OpenClass en su computador
+---
 
-En la carpeta del curso: `npm run dev` y abra la semana como siempre (`http://localhost:8613/...` o el puerto configurado en su curso). No use túneles ni publique la presentación.
+## Recorrido A · Docente con curso Reveal.js preparado
 
-## 2. Abrir la sala en el panel docente
+### A1. Acceder al panel
 
-Abra `https://openclass-live.apps.willedtech.io/docente/` (mejor en otro monitor, una tableta o el teléfono), escriba la contraseña, ponga un título opcional y pulse **Crear sala**. La sala dura 3 horas y luego se borra sola.
+Abra `https://openclass-live.apps.willedtech.io/docente/` (mejor en otro monitor, una tableta o el teléfono; nunca en la ventana que comparte). Escriba la contraseña y pulse **Entrar**. Si no tiene contraseña, pídala a quien administra el servicio. Si la contraseña es incorrecta, el aviso «Contraseña incorrecta.» aparece junto al campo y el cursor vuelve a él.
 
-![Acceso al panel](capturas/01-panel-acceso.png)
+![Inicio de sesión](capturas/vnext-01-inicio-sesion.png)
 
-El panel muestra primero lo importante: la sala (código, QR, participantes), la pregunta en curso y sus controles, y las preguntas de los estudiantes. Lo opcional queda plegado al final (**Crear pregunta improvisada**, **Preguntas de esta sesión**, **Configuración de la sesión**).
+Verá **Sus clases**, con las salas abiertas y el formulario para abrir una nueva.
 
-![Sala creada: código, QR y clave de presentador](capturas/02-panel-sala.png)
+![Lista de salas](capturas/vnext-02-lista-salas.png)
 
-Pulse **Copiar clave de presentador**. Esa clave solo sirve para esta sala; no la comparta con estudiantes.
+### A2. Crear la sala
 
-## 3. Conectar la presentación (una vez por clase)
+Escriba un título opcional (lo ven los estudiantes), deje marcada **Revisar las preguntas antes de publicarlas** si quiere aprobarlas usted, y pulse **Crear sala**. La sala dura 3 horas y luego se borra sola. Una clase = una sala = un QR.
 
-1. En Zoom, comparta **solo la ventana de la presentación** (no la pantalla completa: así el panel docente nunca se ve).
-2. Pulse **● En vivo** (o **L**), pegue la clave y pulse **Conectar participación**. La primera vez verá una guía de tres pasos; **Entendido** la oculta (vuelve con **¿Cómo funciona?**).
+### A3. Compartir el QR o el código
 
-![Menú «En vivo» antes de conectar](capturas/16-presentacion-conectar.png)
+En **Compartir con la clase** están el código, el enlace (**Copiar enlace**) y el QR. Proyecte o comparta el QR; los estudiantes entran una vez y permanecen conectados. Quien llega tarde usa el mismo QR o código.
 
-El botón muestra el estado: punto gris (sin conectar), verde con los participantes conectados, rojo con la cuenta regresiva durante una votación y ámbar al terminar o si se está reconectando. Al pasar el mouse o enfocarlo con el teclado aparece una ayuda breve; en pantallas táctiles el propio menú trae las explicaciones.
+![Sala creada: código, enlace y QR](capturas/vnext-03-sala-creada-qr.png)
 
-## 4. Una clase = una sala = un QR
+Cuando la presentación está conectada, el QR de la misma sala aparece también dentro de la portada, de la segunda diapositiva y de las diapositivas con pregunta (nunca antes de conectar):
 
-Desde que conecta, y nunca antes (no hay QR de ejemplo), el QR real y el código de **la misma sala** aparecen solos:
+![QR en la portada](capturas/12-presentacion-portada.png)
 
-- **Portada:** junto a la franja amarilla, con «Participa durante la sesión».
+![QR compacto en una pregunta](capturas/14-presentacion-encuesta-qr.png)
 
-  ![QR en la portada](capturas/12-presentacion-portada.png)
-
-- **Segunda diapositiva (temática):** bloque de participación con el QR, la dirección y el código.
-
-  ![Bloque de participación en la temática](capturas/13-presentacion-tematica.png)
-
-- **Cada diapositiva con pregunta:** un QR compacto en una esquina libre (nunca sobre el enunciado, las opciones, el código ni los diagramas; si no hay espacio, solo el código). Durante la votación muestra además el tiempo restante y las respuestas recibidas.
-
-  ![QR compacto en una pregunta](capturas/14-presentacion-encuesta-qr.png)
-
-**Pulsar cualquiera de estos QR abre el mismo menú «En vivo».** Desde allí, **Ampliar QR** (o la tecla **Q**) lo muestra grande; **Ocultar QR aquí** (o la **×** de la tarjeta) lo quita solo de esa diapositiva.
+Pulsar cualquiera de esos QR abre el menú «En vivo»; allí **Ampliar QR** (tecla **Q**) lo muestra grande. Nada de esto aparece en el PDF.
 
 ![QR ampliado sobre la presentación](capturas/03-presentacion-qr.png)
 
-Los estudiantes entran una vez y permanecen conectados toda la sesión. Cambiar de diapositiva no crea otra sala ni desconecta a nadie. Quien llega tarde usa el mismo QR o código: si hay una pregunta abierta la recibe al instante. Nada de esto aparece en el PDF.
+### A4. Conectar la presentación con su clave
 
-## 5. Escribir las preguntas (en el Markdown, una sola vez)
+Este paso se hace una vez por clase.
 
-En el Markdown de la semana:
+1. En el panel, pulse **Copiar clave de presentador**. Vale solo para esta sala; no la comparta con estudiantes.
+2. En Zoom, comparta **solo la ventana de la presentación**, no la pantalla completa.
+3. En la presentación pulse **● En vivo** (o la tecla **L**), pegue la clave y pulse **Conectar participación**. La primera vez verá una guía de tres pasos; **Entendido** la oculta (vuelve con **¿Cómo funciona?**).
+4. Compruebe el punto verde del botón «En vivo».
+
+![Menú «En vivo» antes de conectar](capturas/16-presentacion-conectar.png)
+
+El panel **no detecta** si la presentación quedó conectada: se comprueba en la presentación. Mientras no se conecte, la presentación no envía nada a ningún servidor y funciona igual. Si el curso aún no tiene OpenClass Live activado, lo debe activar el responsable técnico (véase «Qué hace cada persona»).
+
+### A5. Iniciar la votación
+
+En la diapositiva con la pregunta: **● En vivo → Iniciar votación · 30 s**. Los estudiantes la ven al instante, con la cuenta regresiva.
+
+![Estudiante: votación abierta](capturas/vnext-s1-estudiante-votacion-abierta.png)
+
+![Estudiante: respuesta registrada](capturas/vnext-s2-estudiante-respuesta-registrada.png)
+
+Durante la votación:
+
+- La diapositiva queda visible; ninguna capa la tapa.
+- **Cerrar ahora** termina antes; **+30 segundos** da más tiempo. Al llegar a cero, **el servidor cierra la votación**, aunque su computador se desconecte.
+- En el panel, la tarjeta de la encuesta muestra el tiempo, las respuestas recibidas y las **tendencias en vivo** (solo para usted, sin marcar la correcta).
+
+![Votación abierta en el panel](capturas/vnext-04-votacion-abierta.png)
+
+![Votación con tendencias privadas](capturas/vnext-05-votacion-con-tendencias.png)
+
+- **Proyectar tendencias** (en «En vivo») las muestra a todos; está desactivado por omisión y nunca incluye la respuesta correcta.
+
+![Tendencias proyectadas a petición](capturas/18-presentacion-tendencias.png)
+
+Cerrar **no publica resultados ni revela la respuesta**.
+
+![Votación cerrada: los resultados siguen siendo solo suyos](capturas/vnext-06-votacion-cerrada.png)
+
+![Votación finalizada en la presentación](capturas/19-presentacion-finalizada.png)
+
+### A6. Cerrar, publicar resultados, discutir y repetir
+
+Secuencia recomendada: **pregunta → respuesta individual → discusión en parejas → segunda respuesta → explicación**.
+
+1. **Mostrar resultados** (en «En vivo»; el botón equivalente del panel se llama **Publicar en teléfonos**): las barras aparecen en los teléfonos, todavía **sin** la respuesta correcta. El panel solo las publica en los teléfonos; para proyectarlas use «Mostrar resultados» en la presentación.
+2. **Discutir y repetir**: tras conversar en parejas, abre la segunda ronda con el mismo tiempo.
+3. Cierre y publique la segunda ronda de la misma manera.
+
+![Resultados publicados: la solución sigue privada](capturas/vnext-07-resultados-publicados.png)
+
+![Segunda ronda](capturas/vnext-08-segunda-ronda.png)
+
+![Resultados en la presentación](capturas/06-presentacion-resultados.png)
+
+### A7. Revelar la explicación
+
+Cuando termine la discusión pulse **Revelar explicación**: marca la respuesta correcta, muestra la explicación y compara la primera con la segunda ronda. Se pulsa donde está la solución: en la presentación («En vivo» o Build Tech) para las preguntas escritas en el Markdown. **El panel no conoce la solución de una pregunta de la presentación y lo indica**. El porcentaje de acierto aparece solo después de revelar.
+
+![Solución revelada en el panel](capturas/vnext-09-solucion-revelada.png)
+
+![Estudiante tras revelar](capturas/vnext-s3-estudiante-solucion-revelada.png)
+
+**Retirar de las pantallas** deja la pregunta sin votación activa en las pantallas conectadas. **No pide confirmación y el panel no ofrece reabrirla**: úselo cuando termine con esa pregunta. La comparación de rondas queda en **Preguntas de esta sesión**. Después avance a la siguiente diapositiva: la sala, el QR, los participantes y el tiempo de votación se conservan.
+
+### A8. Finalizar la sesión
+
+Véase «Salir, revocar claves y finalizar» más abajo.
+
+### Cómo se escriben las preguntas de la presentación (para quien prepara el curso)
+
+Esto lo hace el responsable técnico, una sola vez, en el Markdown de la semana:
 
 ```html
 <div class="oc-live-encuesta" data-tipo="unica" data-correctas="B">
@@ -84,74 +139,72 @@ En el Markdown de la semana:
 
 - `data-tipo="multiple"` permite varias respuestas; `data-correctas="A,C"` marca varias.
 - La explicación no se ve en la diapositiva ni en el PDF (con OpenClass Live encendido o apagado): aparece solo cuando usted la revela.
-- Al iniciar la votación salen de su computador **solo** el enunciado, el código y las opciones; la respuesta correcta y la explicación se quedan en él hasta que pulse **Revelar explicación**. El resto de la presentación, las notas y las imágenes nunca salen.
-- No hay que indicar el tiempo: todas las preguntas usan el tiempo de la sesión (30 s por omisión).
+- Al iniciar la votación salen del computador **solo** el enunciado, el código y las opciones; la correcta y la explicación se quedan allí hasta **Revelar explicación**. El resto de la presentación, las notas y las imágenes nunca salen.
+- Activar OpenClass Live en un curso (`activa: true` dentro de `LIVE` en `src/plugins/fase2.mjs`) también corresponde al responsable técnico.
 
-Para una pregunta que surja en clase: en el panel, **Crear pregunta improvisada** (plegado por omisión). La correcta y la explicación que marque ahí se guardan solo en esa pestaña del navegador (sobreviven a recargarla mientras siga en la misma sala; se pierden si la cierra, vuelve a «Otras salas», cierra sesión o la sesión vence antes de revelar; si deja a medio escribir una pregunta improvisada, el panel pide confirmación antes de descartarla) y se revelan desde el mismo panel.
+---
 
-## 6. Votar
+## Recorrido B · Docente sin curso Reveal.js preparado
 
-En la diapositiva de la pregunta, **● En vivo → Iniciar votación · 30 s**. Los estudiantes la ven al instante, con la cuenta regresiva:
+No necesita presentación conectada: toda la clase se conduce desde el panel.
 
-![Vista del estudiante](capturas/04-estudiante-encuesta.png)
+### B1. Acceder al panel
+Igual que A1: **Entrar** con la contraseña que le dio quien administra el servicio.
 
-Durante la votación:
+### B2. Crear la sala
+Igual que A2: título opcional y **Crear sala**.
 
-- La diapositiva queda visible; ninguna capa la tapa. El botón del pie y la tarjeta QR muestran el tiempo y las respuestas.
-- **Cerrar ahora** termina antes; **+30 segundos** da más tiempo.
-- En el panel docente ve las **tendencias en vivo** (barras por opción, cantidad, porcentaje, total y tiempo), solo para usted y sin marcar la correcta.
+### B3. Compartir el enlace
+Pulse **Copiar enlace** y péguelo en el chat de la clase o en su plataforma, o proyecte el QR del panel. El código también sirve (`…/join/CÓDIGO`).
 
-  ![Tendencias privadas en el panel](capturas/17-panel-tendencias.png)
+![Sala creada: enlace y QR](capturas/vnext-03-sala-creada-qr.png)
 
-- **Proyectar tendencias** las muestra a todos en la presentación (desactivado por omisión; nunca incluye la respuesta correcta). Se apaga sola al terminar la votación.
+Ignore el bloque **Conectar la presentación**: requiere un curso preparado.
 
-  ![Tendencias proyectadas a petición](capturas/18-presentacion-tendencias.png)
+### B4. Crear preguntas improvisadas
+Abra **Crear pregunta improvisada** (plegado): escriba el enunciado, un fragmento de código opcional, el tipo, las opciones y, si quiere, marque la correcta y escriba la explicación. Pulse **Abrir votación ahora** (o **Guardar para después**). La correcta y la explicación se guardan solo en esa pestaña del navegador (sobreviven a recargarla mientras siga en la misma sala; se pierden si la cierra, vuelve a «Otras salas», cierra sesión o la sesión vence antes de revelar). Si deja a medio escribir una pregunta improvisada, el panel pide confirmación antes de descartarla.
 
-Al llegar a cero, **el servidor cierra la votación**, aunque su computador se haya desconectado. Cerrar no publica resultados ni revela la respuesta: el menú pasa a **Votación finalizada** con una sola acción, **Mostrar resultados**.
+### B5. Realizar votaciones y moderar preguntas
+- Votación: **Cerrar ahora** / **+30 segundos**, **Publicar en teléfonos**, **Discutir y repetir** y **Revelar explicación** (aquí sí funciona desde el panel, porque la solución se guardó en esta pestaña); **Retirar de las pantallas** al terminar.
+- Preguntas de los estudiantes: las pendientes aparecen veladas (por si comparte la ventana). Use **Leer**, **Aprobar** (los estudiantes la ven), **Marcar respondida**, **Ocultar** o **Bloquear autor**. **Proyectar en la presentación** solo tiene efecto si hay una presentación conectada. «Recibir preguntas» y «Revisar antes de publicar» están en **Configuración de la sesión**.
 
-![Votación finalizada](capturas/19-presentacion-finalizada.png)
+![Pregunta pendiente velada](capturas/vnext-10-pregunta-pendiente-velada.png)
 
-![Respuesta registrada](capturas/05-estudiante-registrada.png)
+![Pregunta aprobada](capturas/vnext-11-pregunta-moderada.png)
 
-## 7. Resultados, segunda ronda y explicación
+![Estudiante: pestaña Preguntas](capturas/vnext-s4-estudiante-preguntas.png)
 
-Secuencia recomendada: **pregunta → respuesta individual → discusión en parejas → segunda respuesta → explicación**.
+El velo es solo visual: ayuda si comparte la ventana por error, pero **no sustituye** no compartir el panel (su texto sigue disponible para lectores de pantalla).
 
-1. **Mostrar resultados**: barras en la pantalla y en los teléfonos, todavía sin la correcta.
-2. **Discutir y repetir**: tras conversar en parejas, abre la segunda ronda con el mismo tiempo de la sesión.
-3. **Revelar explicación**: marca la correcta, muestra la explicación y la comparación con la primera ronda. Se pulsa donde está la solución: en la presentación («En vivo» o Build Tech) para las preguntas de las diapositivas; en el panel para las improvisadas. El panel no conoce la solución de una pregunta de la presentación y lo indica. El porcentaje de acierto aparece solo después de revelar.
+### B6. Terminar la clase
+**Finalizar sesión** (véase la sección siguiente).
 
-![Resultados en la presentación](capturas/06-presentacion-resultados.png)
+---
 
-![Comparación de rondas en el panel](capturas/08-panel-comparacion.png)
+## Salir, revocar claves y finalizar
 
-Los estudiantes ven si acertaron y la explicación:
+La sección **Terminar la clase** del panel resume las salidas:
 
-![Estudiante tras revelar](capturas/07-estudiante-revelada.png)
+![Terminar la clase](capturas/vnext-12-terminar-la-clase.png)
 
-Luego avance a la siguiente diapositiva: la sala, el QR, los participantes y el tiempo de votación se conservan. **Quitar de la pantalla** oculta los resultados sin cambiar nada más.
+| Acción (botón) | La sala | Soluciones guardadas en esta pestaña | Presentación conectada | Estudiantes |
+|---|---|---|---|---|
+| **← Otras salas** | Sigue abierta | Se borran | No cambia | No cambia |
+| **Cerrar sesión** | Sigue abierta | Se borran | No cambia | No cambia |
+| **Revocar claves de presentador** (pide confirmación) | Sigue abierta; su sesión continúa | No se tocan | Se desconecta; necesita una clave nueva | No cambia |
+| **Finalizar sesión** (pide confirmación) | **Se elimina** con sus encuestas, respuestas y preguntas | Se borran | Se desconecta | Ven «La sesión terminó» |
 
-## 8. Tiempo de votación (una preferencia para toda la sesión)
+- «Otras salas» y «Cerrar sesión» **no cierran la sala**: los estudiantes siguen conectados; vuelva desde **Sus clases → Abrir panel** (si cerró sesión, entre otra vez con la contraseña).
+- Las soluciones de preguntas improvisadas se **pierden** al salir de la sala o cerrar sesión: si aún no reveló, tendrá que explicar de viva voz.
+- Solo **Finalizar sesión** elimina los datos de la sala. Si no la finaliza, se borra sola a las 3 horas.
 
-**● En vivo → Configuración de la sesión** (o la misma sección del panel): 15, 30, 60 o 90 segundos; **Sin límite** está en «Opción avanzada». El cambio se aplica a las **próximas** votaciones; una votación en curso conserva su tiempo. La preferencia dura lo que dure la sala.
+![Panel tras finalizar](capturas/vnext-13-sesion-finalizada.png)
 
-## 9. Responder preguntas de los estudiantes
+![Estudiante: la sesión terminó](capturas/vnext-14-estudiante-sesion-terminada.png)
 
-Los estudiantes escriben en la pestaña **Preguntas**. Con la revisión activada, nadie más las ve hasta que usted las apruebe, y nunca aparecen en la presentación por sí solas.
+## Tiempo de votación (una preferencia para toda la sesión)
 
-![Pregunta enviada por un estudiante](capturas/09-estudiante-pregunta.png)
-
-En el panel, las pendientes aparecen veladas (por si comparte esa ventana): **Leer**, **Aprobar**, **Proyectar en la presentación**, **Marcar respondida**, **Ocultar** o **Bloquear autor**. «Recibir preguntas» y «Revisar antes de publicar» están en **Configuración de la sesión**.
-
-![Moderación en el panel](capturas/10-panel-preguntas.png)
-
-La pregunta proyectada aparece como una banda sobre la diapositiva; el texto se muestra tal cual, sin interpretar HTML:
-
-![Pregunta proyectada](capturas/11-presentacion-pregunta.png)
-
-## 10. Cerrar la sesión
-
-Al terminar: **Configuración de la sesión → Finalizar sesión** en el panel (pide confirmación). Se borran del servidor encuestas, respuestas y preguntas; los estudiantes ven «La sesión terminó». En la presentación, **Configuración de la sesión → Desconectar esta presentación**.
+En el panel, **Configuración de la sesión**: 15, 30, 60 o 90 segundos; **Sin límite** está en «Opción avanzada». El cambio se aplica a las **próximas** votaciones; una votación en curso conserva su tiempo. La preferencia dura lo que dure la sala.
 
 ## Build Tech: dirigir la clase desde el segundo monitor
 
@@ -179,14 +232,14 @@ Privacidad: Build Tech se comunica con la presentación solo dentro del navegado
 
 El botón de impresora **Exportar a PDF** del pie azul abre una pestaña con todas las diapositivas de la semana y el diálogo de impresión: elija **Guardar como PDF** (horizontal, «Gráficos de fondo» activado). El PDF lleva una página 16:9 por diapositiva, sin notas, soluciones, QR, controles ni capas de En vivo; cada video integrado aparece como su título y su enlace.
 
-## 11. Teclado y accesibilidad
+## Teclado y accesibilidad
 
 - **L** abre o cierra «En vivo»; el foco va a la acción principal del momento. **Esc** lo cierra y devuelve el foco al botón.
 - **Q** amplía o reduce el QR.
 - **T** abre Build Tech; dentro de Build Tech: ← → navegan, **N** solo notas, **+ / −** letra, **L** lleva a En vivo.
 - Tabulador recorre las acciones; Espacio e Intro las activan sin cambiar de diapositiva.
 
-## 12. Si se pierde la conexión
+## Si se pierde la conexión
 
 - **Un estudiante** (pantalla bloqueada, cambió de red): vuelve solo o recargando el mismo enlace; conserva su respuesta.
 - **Su presentación**: se reconecta sola («Reconectando…» en el botón). Si recarga la página, recupera la sala y continúa donde quedó; una votación que venció mientras tanto aparece como **Votación finalizada**. Si dice que la clave no es válida o venció, copie una nueva desde el panel.

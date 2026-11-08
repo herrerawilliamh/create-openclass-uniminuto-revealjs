@@ -398,7 +398,9 @@ test('cierre de sesión docente: revoca la cookie para HTTP y Socket.IO; CSRF ob
   assert.equal(sinCsrf.estado, 403);
   const ok = await srv.peticion('/api/docente/logout', { metodo: 'POST', cuerpo: {}, cabeceras: { cookie, 'x-oc-csrf': csrf } });
   assert.equal(ok.estado, 200);
-  assert.equal((await pedir(doc, 'sala:seguir', { salaId: sala.id })).error, 'no_autenticado');
+  // H02: el servidor corta el socket del panel al cerrar sesión (ya no queda abierto para recibir estado).
+  await esperar(200);
+  assert.equal(doc.connected, false);
   assert.equal(await rechazo(srv.conectar('/docente', { cabeceras: { cookie } })), 'no_autenticado');
   assert.equal((await srv.peticion('/api/docente/sesion', { cabeceras: { cookie } })).json.autenticado, false);
 });
@@ -453,4 +455,16 @@ test('privacidad: registros sin alias, textos, respuestas ni IP; rutas sin conte
   }
   const salud = await srv.peticion('/healthz');
   assert.deepEqual(salud.json, { estado: 'ok' }, 'healthz no expone datos de salas');
+});
+
+test('OC-A02 (Socket.IO): encuesta:crear con abrir y otra votación abierta responde otra_abierta sin encuesta residual', async (t) => {
+  const { srv, doc, sala } = await preparar(t);
+  const primera = (await pedir(doc, 'encuesta:crear', { salaId: sala.id, encuesta: ENCUESTA, abrir: true })).encuesta;
+  const total = () => srv.app.almacen.historial(sala.id).length;
+  const antes = total();
+  const r = await pedir(doc, 'encuesta:crear', { salaId: sala.id, encuesta: { ...ENCUESTA, enunciado: 'Segunda' }, abrir: true });
+  assert.equal(r.ok, false);
+  assert.equal(r.error, 'otra_abierta');
+  assert.equal(total(), antes);
+  assert.equal(srv.app.almacen.estadoDocente(sala.id).activa.id, primera.id);
 });

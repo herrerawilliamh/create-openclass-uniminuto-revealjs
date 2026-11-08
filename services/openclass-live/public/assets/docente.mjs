@@ -7,7 +7,7 @@
  * improvisada, historial, configuración de la sesión). Las tendencias se actualizan en el sitio con
  * cada respuesta (sin rehacer la tarjeta ni perder el foco) y nunca marcan la correcta con la votación abierta.
  */
-import { el, letra, textoConCodigo, barras, refrescarBarras, comparar, ESTADOS, crearCuenta, formatoTiempo, textoDuracion } from './comun.mjs';
+import { el, letra, textoConCodigo, barras, refrescarBarras, comparar, ESTADOS, crearCuenta, formatoTiempo, textoDuracion, mensajeHttp, esTransitorio, sincronizarLista } from './comun.mjs';
 
 const $ = (id) => document.getElementById(id);
 let csrf = '';
@@ -54,23 +54,37 @@ guardarSoluciones(); // reescribe sin entradas inválidas o de un formato anteri
 function mostrar(vista) {
   for (const id of ['vista-login', 'vista-salas', 'vista-sala']) $(id).classList.toggle('oculto', id !== vista);
   $('btn-salir').classList.toggle('oculto', vista === 'vista-login');
+  // La cinta solo muestra el código y las secciones dentro de una sala.
+  $('nav-secciones').classList.toggle('oculto', vista !== 'vista-sala');
+  $('cinta-codigo-caja').classList.toggle('oculto', vista !== 'vista-sala');
 }
 function aviso(id, texto, tipo = '') { const n = $(id); n.textContent = texto ?? ''; n.className = `aviso ${tipo}${texto ? '' : ' oculto'}`; }
+// Un acuse que no llega (sin socket, desconexión o 10 s sin respuesta) es `transitorio`: no prueba que la
+// sala o la sesión hayan desaparecido, así que quien llama no debe borrar nada privado por ese motivo.
 const emitir = (evento, datos = {}) => new Promise((resolve) => {
+  if (!socket) return resolve({ ok: false, error: 'sin_conexion', mensaje: 'Sin conexión con el servidor', transitorio: true });
   socket.timeout(10_000).emit(evento, datos, (err, r) => {
+    if (err) return resolve({ ok: false, error: 'timeout', mensaje: 'Sin respuesta del servidor', transitorio: true });
     if (r?.error === 'no_autenticado') terminarSesion(); // vencida o revocada: el servidor cierra después del acuse
-    resolve(err ? { ok: false, mensaje: 'Sin respuesta del servidor' } : r);
+    resolve(r);
   });
 });
 
 // ---------------- Sesión HTTP ----------------
+/** Nunca rechaza: un fallo de red o un tiempo agotado vuelve como { estado: 0, falla: 'red' | 'timeout' }. */
 async function api(ruta, cuerpo) {
-  const r = await fetch(ruta, {
-    method: cuerpo === undefined ? 'GET' : 'POST', credentials: 'same-origin',
-    headers: cuerpo === undefined ? {} : { 'Content-Type': 'application/json', 'X-OC-CSRF': csrf },
-    body: cuerpo === undefined ? undefined : JSON.stringify(cuerpo),
-  });
-  return { estado: r.status, datos: await r.json().catch(() => ({})) };
+  const control = new AbortController();
+  const limite = setTimeout(() => control.abort(), 10_000);
+  try {
+    const r = await fetch(ruta, {
+      method: cuerpo === undefined ? 'GET' : 'POST', credentials: 'same-origin', signal: control.signal,
+      headers: cuerpo === undefined ? {} : { 'Content-Type': 'application/json', 'X-OC-CSRF': csrf },
+      body: cuerpo === undefined ? undefined : JSON.stringify(cuerpo),
+    });
+    return { estado: r.status, datos: await r.json().catch(() => ({})) };
+  } catch (error) {
+    return { estado: 0, datos: {}, falla: error?.name === 'AbortError' ? 'timeout' : 'red' };
+  } finally { clearTimeout(limite); }
 }
 
 /**
@@ -81,28 +95,65 @@ function terminarSesion() {
   socket?.disconnect();
   socket = null; csrf = '';
   dejarSala();
+  aviso('error-login', '');
+  $('btn-reintentar').classList.add('oculto');
   mostrar('vista-login');
 }
 
+/**
+ * Comprobar la sesión al abrir. Solo una respuesta que confirma que NO hay sesión (200 sin autenticar,
+ * 401, 403) limpia lo privado de la pestaña. Si el servidor no responde (red, tiempo, 429, 5xx) no se sabe
+ * nada: se conservan soluciones y borradores y se ofrece reintentar.
+ */
 async function iniciar() {
-  const { datos } = await api('/api/docente/sesion');
-  if (datos.autenticado) { csrf = datos.csrf; conectar(); } else terminarSesion();
+  $('btn-reintentar').disabled = true;
+  const r = await api('/api/docente/sesion');
+  $('btn-reintentar').disabled = false;
+  if (r.estado === 200 && r.datos.autenticado) { csrf = r.datos.csrf; aviso('error-login', ''); $('btn-reintentar').classList.add('oculto'); conectar(); return; }
+  if (esTransitorio(r)) {
+    mostrar('vista-login');
+    $('btn-reintentar').classList.remove('oculto');
+    aviso('error-login', `${mensajeHttp(r)} No se verificó su sesión; lo que tenía en esta pestaña no se ha borrado.`, 'alerta');
+    return;
+  }
+  terminarSesion();
 }
+$('btn-reintentar').addEventListener('click', () => { aviso('error-login', ''); iniciar(); });
 
+let entrando = false;
 $('form-login').addEventListener('submit', async (ev) => {
   ev.preventDefault();
-  $('btn-login').disabled = true;
-  const { estado: s, datos } = await api('/api/docente/login', { password: $('password').value });
-  $('btn-login').disabled = false;
-  $('password').value = '';
-  if (s === 200) { csrf = datos.csrf; aviso('error-login', ''); conectar(); return; }
-  aviso('error-login', s === 429 ? 'Demasiados intentos. Espere unos minutos.' : 'Contraseña incorrecta.', 'error');
+  if (entrando) return;
+  entrando = true;
+  const boton = $('btn-login');
+  boton.disabled = true; boton.textContent = 'Entrando…'; boton.setAttribute('aria-busy', 'true');
+  aviso('error-login', '');
+  let r;
+  try { r = await api('/api/docente/login', { password: $('password').value }); } finally {
+    entrando = false;
+    boton.disabled = false; boton.textContent = 'Entrar'; boton.removeAttribute('aria-busy');
+  }
+  if (r.estado === 200 && r.datos.csrf) { $('password').value = ''; csrf = r.datos.csrf; $('btn-reintentar').classList.add('oculto'); conectar(); return; }
+  // Una contraseña rechazada se borra; ante un fallo del servidor o de la red se conserva para reintentar.
+  if (!esTransitorio(r)) $('password').value = '';
+  aviso('error-login', mensajeHttp(r, 'login'), r.estado === 401 ? 'error' : 'alerta');
+  $('password').focus();
 });
 
+/**
+ * Salir: el estado local se limpia siempre, también si la petición falla. Solo se afirma que la sesión
+ * del servidor se cerró cuando respondió 200 (revoca la sesión y borra la cookie).
+ */
 $('btn-salir').addEventListener('click', async () => {
   if (!descartarBorrador()) return;
-  await api('/api/docente/logout', {});
+  const boton = $('btn-salir');
+  boton.disabled = true;
+  const r = await api('/api/docente/logout', {});
   terminarSesion();
+  boton.disabled = false;
+  if (r.estado !== 200) {
+    aviso('error-login', `${mensajeHttp(r)} Se cerró el panel y se borró lo privado de este navegador, pero NO se pudo confirmar que el servidor haya cerrado la sesión. Si el equipo es compartido, cierre el navegador o espere a que la sesión venza.`, 'alerta');
+  }
 });
 
 // ---------------- Socket ----------------
@@ -113,13 +164,19 @@ function conectar() {
   socket.on('disconnect', () => { $('conexion').textContent = 'Reconectando…'; $('conexion').classList.add('offline'); });
   socket.on('connect_error', (e) => {
     if (e.message === 'no_autenticado') terminarSesion();
+    else if (!$('vista-login').classList.contains('oculto')) aviso('error-login', 'Sesión iniciada, pero no se pudo abrir la conexión en vivo. Se reintentará sola.', 'alerta');
   });
   socket.on('sesion', ({ salas }) => {
+    salasConocidas = salas;
     soloSalas(salas); // salas finalizadas o vencidas mientras la pestaña estaba cerrada o sin conexión
     const deRuta = /#sala=([A-Za-z0-9_-]+)/.exec(location.hash)?.[1];
+    const esperada = deRuta || salaId;
     if (deRuta && salas.some((s) => s.id === deRuta)) seguir(deRuta);
     else if (salaId && salas.some((s) => s.id === salaId)) seguir(salaId);
-    else { dejarSala(); pintarSalas(salas); }
+    else {
+      dejarSala(); pintarSalas(salas);
+      if (esperada) aviso('aviso-salas', AVISO_SALA_AUSENTE, 'alerta');
+    }
   });
   socket.on('estado', (e) => { if (e.sala.id === salaId) pintar(e); });
   socket.io.on('reconnect_attempt', () => { $('conexion').textContent = 'Sin conexión: reintentando…'; $('conexion').classList.add('offline'); });
@@ -131,16 +188,24 @@ function conectar() {
   });
 }
 
+let salasConocidas = [];
+const AVISO_SALA_AUSENTE = 'La sala ya no está disponible: el docente la finalizó o venció, y sus datos se eliminaron del servidor.';
+
 async function listar() {
+  const lista = $('lista-salas');
+  if (!lista.childElementCount) lista.append(el('li', { clase: 'suave', texto: 'Cargando salas…' }));
   const r = await emitir('sala:listar');
-  if (r.ok) { soloSalas(r.salas); pintarSalas(r.salas); }
+  if (r.ok) { salasConocidas = r.salas; soloSalas(r.salas); pintarSalas(r.salas); return; }
+  // Sin respuesta: se muestra la última lista conocida y no se toca nada privado.
+  if (!salaId) pintarSalas(salasConocidas);
+  aviso('aviso-salas', `${r.mensaje}. La lista puede estar desactualizada.`, 'alerta');
 }
 
 function pintarSalas(salas) {
   mostrar('vista-salas');
   const lista = $('lista-salas');
   lista.replaceChildren();
-  if (!salas.length) lista.append(el('li', { clase: 'suave', texto: 'No hay salas abiertas.' }));
+  if (!salas.length) lista.append(el('li', { clase: 'suave', texto: 'No hay salas abiertas. Cree una para empezar la clase.' }));
   for (const s of salas) {
     lista.append(el('li', { clase: 'pregunta' },
       el('div', { clase: 'codigo-sala', texto: s.codigo }),
@@ -159,9 +224,35 @@ $('form-sala').addEventListener('submit', async (ev) => {
   seguir(r.sala.id);
 });
 
-async function seguir(id) {
+/**
+ * Entrar o reanudar una sala. Una falla pasajera (sin respuesta, desconexión) NO borra soluciones ni
+ * borrador: se avisa y se reintenta. Solo una respuesta del servidor que dice que la sala ya no existe o
+ * venció (o que no hay permiso) lleva a dejar la sala y limpiar.
+ */
+let reintentoSeguir = null;
+async function seguir(id, intento = 0) {
+  clearTimeout(reintentoSeguir);
   const r = await emitir('sala:seguir', { salaId: id });
-  if (!r.ok) { dejarSala(); return listar(); }
+  if (!r.ok) {
+    if (r.transitorio) {
+      if (salaId === id) avisoSala('Sin respuesta al reanudar la sala. Reintentando; su borrador y las soluciones siguen guardados.', 'error');
+      else {
+        pintarSalas(salasConocidas);
+        aviso('aviso-salas', 'No hubo respuesta al abrir la sala. Sus soluciones y borradores siguen guardados; pulse «Abrir panel» para reintentar.', 'alerta');
+      }
+      if (intento < 3 && socket) reintentoSeguir = setTimeout(() => seguir(id, intento + 1), 2000 * (intento + 1));
+      return;
+    }
+    if (r.error === 'no_autenticado') return; // terminarSesion() ya limpió y mostró el acceso
+    const ausente = ['sala_inexistente', 'sala_vencida'].includes(r.error);
+    dejarSala();
+    await listar();
+    aviso('aviso-salas', ausente ? AVISO_SALA_AUSENTE : r.mensaje, ausente ? 'alerta' : 'error');
+    return;
+  }
+  clearTimeout(reintentoSeguir);
+  if ($('aviso-sala').textContent.startsWith('Sin respuesta al reanudar')) avisoSala('');
+  if (id !== salaId) aviso('aviso-enlace', '');
   // Otra sala: nada del formulario ni de las soluciones de la anterior. La misma (recarga o
   // reconexión) conserva su solución y el borrador.
   if (id !== salaId) reiniciarComposer();
@@ -180,6 +271,8 @@ function pintar(e) {
   estado = e;
   cuenta.sincronizar(e.servidor);
   $('codigo-sala').textContent = e.sala.codigo;
+  $('cinta-codigo').textContent = e.sala.codigo;
+  $('cinta-codigo').setAttribute('aria-label', [...e.sala.codigo].join(' '));
   $('titulo-panel').textContent = e.sala.titulo || 'Sala sin título';
   $('m-conectados').textContent = String(e.sala.conectados);
   $('m-unidos').textContent = String(e.sala.participantes);
@@ -225,7 +318,7 @@ document.addEventListener('change', async (ev) => {
   if (ev.target.name !== 'duracion') return;
   const segundos = Number(ev.target.value);
   const r = await emitir('sala:ajustar', { salaId, duracionVotacion: segundos });
-  if (!r.ok) { avisoSala(r.mensaje, 'error'); pintarDuracion(estado.sala.duracionVotacion); return; }
+  if (!r.ok) { avisoSala(`${r.mensaje}. El ajuste no se aplicó; se muestra el valor vigente.`, 'error'); if (estado) pintarDuracion(estado.sala.duracionVotacion); return; }
   avisoSala(`Las próximas votaciones durarán ${textoDuracion(segundos)}.${estado?.activa?.estado === 'abierta' ? ' La votación en curso conserva su tiempo.' : ''}`);
 });
 
@@ -238,11 +331,21 @@ function pintarActiva(enc, sala) {
   const firma = JSON.stringify(enc ? [enc.id, enc.estado, enc.ronda, enc.resultadosPublicados, enc.correctaRevelada, ronda?.cierra, sala.duracionVotacion] : [null, sala.duracionVotacion]);
   if (firma === firmaActiva) return refrescarActiva(enc, sala);
   firmaActiva = firma;
-  const foco = panel.contains(document.activeElement) ? document.activeElement.id : null;
+  // Mapa de foco: solo si el foco estaba DENTRO de la tarjeta. Si su control sigue existiendo se queda en él;
+  // si la acción desapareció (cerrar, publicar, repetir, revelar, retirar) pasa a la principal del paso nuevo.
+  const dentro = panel.contains(document.activeElement);
+  const foco = dentro ? document.activeElement.id : '';
+  const enSumario = dentro && document.activeElement.tagName === 'SUMMARY';
+  const restaurarFoco = (destino) => {
+    if (!dentro) return;
+    const objetivo = (foco && $(foco)) || (enSumario && panel.querySelector('summary')) || $(destino) || $('titulo-activa');
+    objetivo?.focus();
+  };
   panel.replaceChildren();
   if (!enc) {
-    panel.append(el('h2', { texto: 'Sin votación en curso' }),
+    panel.append(el('h2', { id: 'titulo-activa', tabindex: '-1', texto: 'Sin votación en curso' }),
       el('p', { clase: 'suave', texto: `En la presentación, vaya a la diapositiva de la pregunta y pulse «En vivo» → «Iniciar votación · ${textoDuracion(sala.duracionVotacion)}». Aquí verá el tiempo y las tendencias en privado.` }));
+    restaurarFoco('titulo-activa');
     return;
   }
   const abierta = enc.estado === 'abierta';
@@ -253,7 +356,7 @@ function pintarActiva(enc, sala) {
   const correctasVisibles = abierta ? [] : enc.correctas ?? local?.correctas ?? [];
   const explicacion = enc.explicacion || local?.explicacion;
   panel.append(...[
-    el('div', { clase: 'fila entre' }, el('h2', { texto: titulo }),
+    el('div', { clase: 'fila entre' }, el('h2', { id: 'titulo-activa', tabindex: '-1', texto: titulo }),
       el('div', { clase: 'fila' }, enc.ronda ? el('span', { clase: 'chip', texto: `Ronda ${enc.ronda}` }) : null,
         enc.resultadosPublicados ? el('span', { clase: 'chip', texto: 'Resultados visibles para estudiantes' }) : null,
         enc.correctaRevelada ? el('span', { clase: 'chip abierta', texto: 'Respuesta revelada' }) : null)),
@@ -279,17 +382,45 @@ function pintarActiva(enc, sala) {
     botones.append(el('button', { type: 'button', id: 'btn-cerrar', texto: 'Cerrar ahora', onclick: accion('encuesta:cerrar', enc.id, { silencio: ['no_abierta'] }) }));
     if (ronda?.cierra) botones.append(el('button', { type: 'button', clase: 'secundario', id: 'btn-extender', texto: '+30 segundos', onclick: accion('encuesta:extender', enc.id) }));
   } else if (!enc.resultadosPublicados && !enc.correctaRevelada) {
-    botones.append(el('button', { type: 'button', id: 'btn-publicar', texto: 'Mostrar resultados', onclick: accion('encuesta:publicar', enc.id, { exito: 'Resultados visibles en los teléfonos. En la presentación: «En vivo» → «Mostrar resultados».' }) }));
+    botones.append(el('button', { type: 'button', id: 'btn-publicar', texto: 'Publicar en teléfonos', onclick: accion('encuesta:publicar', enc.id, { exito: 'Resultados visibles en los teléfonos. Para proyectarlos, en la presentación: «En vivo» → «Mostrar resultados».' }) }));
   } else {
     if (enc.ronda === 1 && !enc.correctaRevelada) botones.append(el('button', { type: 'button', id: 'btn-ronda2', texto: 'Discutir y repetir', onclick: accion('encuesta:segundaRonda', enc.id) }));
     if (puedeRevelar) botones.append(el('button', { type: 'button', clase: enc.ronda === 1 ? 'secundario' : '', id: 'btn-revelar', texto: 'Revelar explicación', onclick: () => revelar(enc.id, local) }));
   }
   botones.append(el('button', { type: 'button', clase: 'secundario', id: 'btn-retirar', texto: 'Retirar de las pantallas', onclick: accion('encuesta:retirar') }));
   panel.append(botones);
+  // Alcance real de cada paso: qué cambia en teléfonos y qué NO cambia solo en la presentación.
+  const alcance = abierta ? 'Cerrar no publica resultados ni revela la respuesta.'
+    : enc.correctaRevelada ? 'Los teléfonos ven la respuesta correcta y la explicación; no se puede deshacer.'
+    : enc.resultadosPublicados ? 'Los teléfonos ven las barras, todavía sin la correcta. La presentación no cambia sola.'
+    : 'Los teléfonos saben que terminó, pero no ven resultados hasta que usted los publique.';
+  panel.append(el('p', { clase: 'suave nota-alcance', texto: alcance }));
   if (!abierta && !enc.correctaRevelada && !local) {
     panel.append(el('p', { clase: 'suave', id: 'revelar-en-presentacion', texto: 'La solución de esta pregunta no está en este navegador. Si la pregunta viene de la presentación, revélela allí: «En vivo» → «Revelar explicación» (o desde Build Tech).' }));
   }
-  if (foco) $(foco)?.focus();
+  panel.append(reglaQuienVeQue(enc, abierta, local));
+  // Principal del paso: cerrar → mostrar resultados → discutir y repetir → revelar → retirar.
+  restaurarFoco(abierta ? 'btn-cerrar' : !enc.resultadosPublicados && !enc.correctaRevelada ? 'btn-publicar'
+    : enc.ronda === 1 && !enc.correctaRevelada ? 'btn-ronda2' : puedeRevelar ? 'btn-revelar' : 'btn-retirar');
+}
+
+/** «Quién ve qué ahora»: solo afirma lo que este panel sabe; la presentación no es detectable desde aquí. */
+function reglaQuienVeQue(enc, abierta, local) {
+  const telefonos = abierta ? 'Ven la pregunta y el tiempo. No ven barras.'
+    : enc.correctaRevelada ? 'Ven la respuesta correcta y la explicación.'
+    : enc.resultadosPublicados ? 'Ven las barras, todavía sin la correcta.'
+    : 'Saben que terminó. No ven resultados.';
+  const solucion = enc.correctaRevelada ? 'Ya fue revelada a la clase.'
+    : local ? 'Sellada en esta pestaña. No ha salido de aquí.'
+    : 'No está en este navegador.';
+  const fila = (signo, titulo, texto) => el('div', {}, el('dt', {}, el('span', { clase: `signo ${signo}`, 'aria-hidden': 'true' }), titulo), el('dd', { texto }));
+  return el('div', { clase: 'regla-caja' },
+    el('h3', { id: 't-regla', texto: 'Quién ve qué ahora' }),
+    el('dl', { clase: 'regla', 'aria-labelledby': 't-regla' },
+      fila('s-privado', 'Este panel', abierta ? 'Usted ve las tendencias en vivo, sin marcar la correcta.' : 'Usted ve la distribución de respuestas.'),
+      fila('s-telefonos', 'Teléfonos', telefonos),
+      fila('s-nosabe', 'Presentación', 'Este panel no lo detecta. Compruébelo en «En vivo».'),
+      fila('s-sello', 'Solución', solucion)));
 }
 
 /** La solución sale de esta pestaña solo aquí, con la votación ya cerrada; el servidor la valida y la revela de una vez. */
@@ -327,28 +458,46 @@ function tictac() {
 
 function pintarHistorial(lista, activaId) {
   const ul = $('historial');
-  ul.replaceChildren();
   $('cuenta-historial').textContent = lista.length ? `· ${lista.length}` : '';
   // Una pregunta guardada para después queda a la vista: hay algo que abrir.
   if (lista.some((e) => e.estado === 'lista')) $('bloque-historial').open = true;
-  if (!lista.length) ul.append(el('li', { clase: 'suave', texto: 'Todavía no hay preguntas en esta sesión.' }));
-  for (const e of lista) {
-    const resumen = e.rondas.map((r) => `R${r.numero}: ${r.respondientes} resp.${r.porcentajeCorrecto !== undefined ? `, ${r.porcentajeCorrecto}% acierto` : ''}`).join(' · ');
-    ul.append(el('li', { clase: 'pregunta' },
+  const duracion = estado?.sala.duracionVotacion ?? 30;
+  const resumenDe = (e) => e.rondas.map((r) => `R${r.numero}: ${r.respondientes} resp.${r.porcentajeCorrecto !== undefined ? `, ${r.porcentajeCorrecto}% acierto` : ''}`).join(' · ');
+  sincronizarLista(ul, lista, {
+    clave: (e) => e.id,
+    firma: (e) => JSON.stringify([e.estado, e.enunciado, resumenDe(e), e.opciones.length, e.tipo, e.id === activaId, duracion]),
+    vacio: () => el('li', { clase: 'suave', texto: 'Todavía no hay preguntas en esta sesión.' }),
+    crear: (e) => {
+    const resumen = resumenDe(e);
+    return (el('li', { clase: 'pregunta' },
       el('span', { clase: `chip ${e.estado}`, texto: ESTADOS[e.estado] }),
       el('div', {}, el('div', { clase: 'texto-plano', texto: e.enunciado.length > 140 ? `${e.enunciado.slice(0, 140)}…` : e.enunciado }),
         el('div', { clase: 'suave', texto: resumen || `${e.opciones.length} opciones · ${e.tipo === 'multiple' ? 'múltiple' : 'única'}` })),
       el('div', { clase: 'acciones' },
-        e.estado === 'lista' ? el('button', { type: 'button', clase: 'mini', texto: `Abrir votación · ${textoDuracion(estado?.sala.duracionVotacion ?? 30)}`, onclick: accion('encuesta:abrir', e.id) }) : null,
+        e.estado === 'lista' ? el('button', { type: 'button', clase: 'mini', 'data-slot': 'abrir', texto: `Abrir votación · ${textoDuracion(duracion)}`, onclick: accion('encuesta:abrir', e.id) }) : null,
         e.id === activaId ? el('span', { clase: 'suave', texto: 'Activa' }) : null)));
-  }
+    },
+  });
 }
 
+/**
+ * Preguntas de los estudiantes: cada una conserva su nodo mientras no cambie su estado; los apoyos se
+ * actualizan en el sitio y el orden por apoyos no se aplica mientras se interactúa con la lista.
+ * Mapa de foco por `data-slot`: proyectar ↔ quitar y ocultar ↔ restaurar conservan el foco; si la acción
+ * desaparece (p. ej. «Aprobar») pasa al siguiente control de la misma pregunta.
+ */
 function pintarPreguntas(preguntas) {
-  const ul = $('lista-preguntas');
-  ul.replaceChildren();
-  if (!preguntas.length) ul.append(el('li', { clase: 'suave', texto: 'Sin preguntas por ahora.' }));
-  for (const q of preguntas) {
+  const pendientes = preguntas.filter((q) => q.estado === 'pendiente').length;
+  const contador = $('cuenta-pendientes');
+  contador.textContent = String(pendientes);
+  contador.classList.toggle('oculto', !pendientes);
+  contador.setAttribute('aria-label', `${pendientes} pendientes`);
+  sincronizarLista($('lista-preguntas'), preguntas, {
+    clave: (q) => q.id,
+    firma: (q) => JSON.stringify([q.estado, q.proyectada, q.alias, q.texto, q.estado === 'pendiente' && !desveladas.has(q.id)]),
+    vacio: () => el('li', { clase: 'suave', texto: 'Sin preguntas por ahora.' }),
+    actualizar: (nodo, q) => { const b = nodo.querySelector('.votos b'); if (b && b.textContent !== `▲ ${q.votos}`) b.textContent = `▲ ${q.votos}`; },
+    crear: (q) => {
     const moderar = (accionModeracion, confirmar) => async () => {
       if (confirmar && !confirm(confirmar)) return;
       const r = await emitir('pregunta:moderar', { salaId, preguntaId: q.id, accion: accionModeracion });
@@ -356,23 +505,28 @@ function pintarPreguntas(preguntas) {
     };
     const velada = q.estado === 'pendiente' && !desveladas.has(q.id);
     const texto = el('div', { clase: `texto-plano${velada ? ' velo' : ''}`, texto: q.texto });
-    ul.append(el('li', { clase: `pregunta ${q.estado}` },
+    return (el('li', { clase: `pregunta ${q.estado}` },
       el('div', { clase: 'votos' }, el('b', { texto: `▲ ${q.votos}` })),
       el('div', {}, texto, el('div', { clase: 'suave', texto: [q.alias ? `Alias: ${q.alias}` : 'Anónima', q.estado, q.proyectada ? 'proyectada' : ''].filter(Boolean).join(' · ') })),
       el('div', { clase: 'acciones' },
-        velada ? el('button', { type: 'button', clase: 'mini secundario', texto: 'Leer', onclick: () => { desveladas.add(q.id); pintarPreguntas(estado.preguntas); } }) : null,
-        q.estado === 'pendiente' ? el('button', { type: 'button', clase: 'mini', texto: 'Aprobar', onclick: moderar('aprobar') }) : null,
-        q.estado !== 'oculta' ? el('button', { type: 'button', clase: 'mini', texto: q.proyectada ? 'Quitar de la presentación' : 'Proyectar en la presentación', onclick: moderar(q.proyectada ? 'quitarProyeccion' : 'proyectar') }) : null,
-        q.estado !== 'respondida' && q.estado !== 'oculta' ? el('button', { type: 'button', clase: 'mini secundario', texto: 'Marcar respondida', onclick: moderar('respondida') }) : null,
-        q.estado !== 'oculta' ? el('button', { type: 'button', clase: 'mini secundario', texto: 'Ocultar', onclick: moderar('ocultar') }) : el('button', { type: 'button', clase: 'mini secundario', texto: 'Restaurar', onclick: moderar('aprobar') }),
-        el('button', { type: 'button', clase: 'mini peligro', texto: 'Bloquear autor', onclick: moderar('bloquearAutor', '¿Bloquear al autor? Sus preguntas se ocultan y no podrá seguir participando desde ese dispositivo.') }))));
-  }
+        velada ? el('button', { type: 'button', clase: 'mini secundario', 'data-slot': 'leer', texto: 'Leer', onclick: () => { desveladas.add(q.id); pintarPreguntas(estado.preguntas); } }) : null,
+        q.estado === 'pendiente' ? el('button', { type: 'button', clase: 'mini', 'data-slot': 'aprobar', texto: 'Aprobar', onclick: moderar('aprobar') }) : null,
+        q.estado !== 'oculta' ? el('button', { type: 'button', clase: 'mini', 'data-slot': 'proyeccion', texto: q.proyectada ? 'Quitar de la presentación' : 'Proyectar en la presentación', onclick: moderar(q.proyectada ? 'quitarProyeccion' : 'proyectar') }) : null,
+        q.estado !== 'respondida' && q.estado !== 'oculta' ? el('button', { type: 'button', clase: 'mini secundario', 'data-slot': 'respondida', texto: 'Marcar respondida', onclick: moderar('respondida') }) : null,
+        q.estado !== 'oculta' ? el('button', { type: 'button', clase: 'mini secundario', 'data-slot': 'ocultar', texto: 'Ocultar', onclick: moderar('ocultar') }) : el('button', { type: 'button', clase: 'mini secundario', 'data-slot': 'ocultar', texto: 'Restaurar', onclick: moderar('aprobar') }),
+        el('button', { type: 'button', clase: 'mini peligro', 'data-slot': 'bloquear', texto: 'Bloquear autor', onclick: moderar('bloquearAutor', '¿Bloquear al autor? Sus preguntas se ocultan y no podrá seguir participando desde ese dispositivo.') }))));
+    },
+  });
 }
 
-for (const [id, campo] of [['q-abiertas', 'abiertas'], ['q-premod', 'preModeracion']]) {
+// El interruptor muestra siempre el valor CONFIRMADO por el servidor: si lo rechaza o no responde,
+// vuelve a ese valor (estado.sala) en lugar de quedar marcado con algo que no se aplicó.
+for (const [id, campo, clave] of [['q-abiertas', 'abiertas', 'preguntasAbiertas'], ['q-premod', 'preModeracion', 'preModeracion']]) {
   $(id).addEventListener('change', async (ev) => {
     const r = await emitir('preguntas:ajustar', { salaId, [campo]: ev.target.checked });
-    if (!r.ok) avisoSala(r.mensaje, 'error');
+    if (r.ok) return;
+    if (estado) ev.target.checked = estado.sala[clave];
+    avisoSala(`${r.mensaje}. El ajuste no se aplicó; se muestra el valor vigente.`, 'error');
   });
 }
 
@@ -381,11 +535,26 @@ function filaOpcion(valor = '') {
   const fila = el('div', { clase: 'fila' },
     el('input', { type: 'text', maxlength: 200, placeholder: 'Texto de la opción', 'aria-label': 'Opción', value: valor }),
     el('label', { clase: 'fila suave' }, el('input', { type: 'checkbox', 'aria-label': 'Correcta' }), 'Correcta'),
-    el('button', { type: 'button', clase: 'mini secundario', 'aria-label': 'Quitar opción', texto: '×', onclick: () => { if ($('opciones').children.length > 2) fila.remove(); renombrar(); } }));
+    el('button', { type: 'button', clase: 'mini secundario', 'aria-label': 'Quitar opción', texto: '×', onclick: () => {
+      const filas = [...$('opciones').children];
+      if (filas.length <= 2) return;
+      const i = filas.indexOf(fila);
+      fila.remove(); renombrar();
+      // El botón enfocado desaparece: el foco pasa a la opción que ocupa su lugar (o a la anterior).
+      const quedan = [...$('opciones').children];
+      quedan[Math.min(i, quedan.length - 1)].querySelector('input[type=text]').focus();
+    } }));
   return fila;
 }
+/** Etiquetas accesibles distintas por fila: «Opción A», «Respuesta correcta de A», «Quitar opción A». */
 function renombrar() {
-  [...$('opciones').children].forEach((f, i) => { f.querySelector('input[type=text]').placeholder = `Opción ${letra(i)}`; });
+  [...$('opciones').children].forEach((f, i) => {
+    const l = letra(i);
+    const texto = f.querySelector('input[type=text]');
+    texto.placeholder = `Opción ${l}`; texto.setAttribute('aria-label', `Opción ${l}`);
+    f.querySelector('input[type=checkbox]').setAttribute('aria-label', `Respuesta correcta de ${l}`);
+    f.querySelector('button').setAttribute('aria-label', `Quitar opción ${l}`);
+  });
 }
 function reiniciarComposer() {
   $('form-encuesta').reset();
@@ -405,7 +574,9 @@ const descartarBorrador = () => !hayBorrador()
  * formulario improvisado no pasan a la lista de salas ni a otra sala.
  */
 function dejarSala() {
+  clearTimeout(reintentoSeguir);
   salaId = ''; firmaActiva = ''; estado = null;
+  aviso('aviso-enlace', '');
   olvidarSoluciones();
   reiniciarComposer();
   $('panel-activa').replaceChildren();
@@ -440,7 +611,24 @@ $('btn-guardar').addEventListener('click', () => guardarEncuesta(false));
 
 // ---------------- Acciones de sala ----------------
 $('btn-volver').addEventListener('click', () => { if (descartarBorrador()) { dejarSala(); listar(); } });
-$('btn-copiar').addEventListener('click', () => navigator.clipboard?.writeText($('enlace').textContent));
+/** Confirma la copia solo si el portapapeles la aceptó; si no, deja el enlace seleccionado para copiarlo a mano. */
+let relojEnlace = null;
+$('btn-copiar').addEventListener('click', async () => {
+  clearTimeout(relojEnlace);
+  const enlace = $('enlace');
+  try {
+    if (!navigator.clipboard?.writeText) throw new Error('sin_portapapeles');
+    await navigator.clipboard.writeText(enlace.textContent);
+    aviso('aviso-enlace', 'Enlace copiado.', 'ok');
+    relojEnlace = setTimeout(() => aviso('aviso-enlace', ''), 4000);
+  } catch {
+    const rango = document.createRange();
+    rango.selectNodeContents(enlace);
+    const seleccion = getSelection();
+    seleccion.removeAllRanges(); seleccion.addRange(rango);
+    aviso('aviso-enlace', 'No se pudo copiar automáticamente. El enlace quedó seleccionado: cópielo con Ctrl+C (⌘+C en Mac).', 'alerta');
+  }
+});
 $('btn-clave').addEventListener('click', async () => {
   const r = await emitir('sala:clave', { salaId });
   if (!r.ok) return aviso('aviso-clave', r.mensaje, 'error');

@@ -116,3 +116,4 @@ fieldset.segmentos-grupo legend { font-weight: 600; padding: 0; margin-bottom: 6
 details.avanzado { margin: 8px 0; }
 details.avanzado > summary { cursor: pointer; color: var(--suave); font-size: .92rem; }
 details.avanzado label { font-weight: 500; }
+[role=tabpanel]:focus-visible, [role=tab]:focus-visible { outline: 3px solid #8aa2dd; outline-offset: 2px; }
