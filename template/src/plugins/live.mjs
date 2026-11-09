@@ -1,5 +1,5 @@
 /**
- * OpenClass Live: adaptador local de Reveal.js (participación en vivo sin publicar las diapositivas).
+ * Interact: adaptador local de Reveal.js (participación en vivo sin publicar las diapositivas).
  *
  * La presentación sigue en el computador del docente; los estudiantes NO la cargan. El adaptador:
  * - no hace ninguna petición al servidor hasta que el docente pulsa «Conectar» con su clave de presentador;
@@ -216,8 +216,8 @@ export function OpenClassLive({ servidor }) {
 
   const emitir = (evento, datos) => new Promise((resolve) => {
     // Nada sale hacia un servicio cuya versión no se confirmó en `sesion` (p. ej., un backend v0.1).
-    if (!compatible) return resolve({ ok: false, mensaje: textoMensaje.texto || 'Conecte primero la sala con OpenClass Live.' });
-    if (!socket?.connected) return resolve({ ok: false, mensaje: 'Sin conexión con OpenClass Live. Revise internet; la presentación reintenta sola.' });
+    if (!compatible) return resolve({ ok: false, mensaje: textoMensaje.texto || 'Conecte primero la sala con Interact.' });
+    if (!socket?.connected) return resolve({ ok: false, mensaje: 'Sin conexión con Interact. Revise internet; la presentación reintenta sola.' });
     socket.timeout(10_000).emit(evento, datos, (err, r) => resolve(err ? { ok: false, mensaje: 'El servidor no respondió. Intente de nuevo.' } : r));
   });
 
@@ -227,7 +227,7 @@ export function OpenClassLive({ servidor }) {
       const s = document.createElement('script');
       s.src = `${base}/socket.io/socket.io.min.js`;
       s.onload = resolve;
-      s.onerror = () => reject(new Error('No se pudo contactar el servicio OpenClass Live. Revise la conexión a internet.'));
+      s.onerror = () => reject(new Error('No se pudo contactar el servicio Interact. Revise la conexión a internet.'));
       document.head.append(s);
     });
   }
@@ -264,7 +264,7 @@ export function OpenClassLive({ servidor }) {
       if (e.message === 'protocolo') return incompatible('presentacion'); // el servicio es más nuevo y nos rechazó
       if (socket.active) { mensaje('Reconectando… La sala y las votaciones siguen en el servidor.', 'alerta'); return pintarControl(); }
       olvidarSala();
-      mensaje(e.message === 'clave' ? 'La clave no es válida o venció. En el panel docente pulse «Copiar clave de presentador» y péguela de nuevo.' : 'No se pudo conectar con OpenClass Live. Revise la conexión e intente de nuevo.', 'error');
+      mensaje(e.message === 'clave' ? 'La clave no es válida o venció. En el panel docente pulse «Copiar clave de presentador» y péguela de nuevo.' : 'No se pudo conectar con Interact. Revise la conexión e intente de nuevo.', 'error');
     });
     socket.on('disconnect', (motivo) => {
       compatible = false;
@@ -373,7 +373,7 @@ export function OpenClassLive({ servidor }) {
     const m = momento();
     const r = ultimaRonda(m.activa);
     let estadoControl = 'apagado'; let etiqueta = 'En vivo'; let dato = ''; let ayuda = 'Participación en vivo: conectar la sala (tecla L)';
-    if (conectando && !sala) { estadoControl = 'alerta'; dato = 'conectando…'; ayuda = 'Conectando con OpenClass Live'; }
+    if (conectando && !sala) { estadoControl = 'alerta'; dato = 'conectando…'; ayuda = 'Conectando con Interact'; }
     else if (sala && socket && !socket.connected) { estadoControl = 'alerta'; dato = 'reconectando…'; ayuda = 'Sin conexión momentánea; la sala sigue abierta'; }
     else if (sala && m.tipo === 'votando') {
       estadoControl = 'votando'; etiqueta = 'Votación';
@@ -775,7 +775,7 @@ export function OpenClassLive({ servidor }) {
   /** Ejecuta una acción pedida por Build Tech con los mismos caminos que el menú «En vivo». */
   async function ordenBuildTech(accion, valor) {
     if (accion === 'menu') { alternarMenu(true); return { ok: true }; }
-    if (!sala || !socket?.connected) return { ok: false, mensaje: 'La presentación no está conectada a OpenClass Live. Conéctela con el menú «En vivo» (tecla L).' };
+    if (!sala || !socket?.connected) return { ok: false, mensaje: 'La presentación no está conectada a Interact. Conéctela con el menú «En vivo» (tecla L).' };
     if (accion === 'moderar') {
       const r = await emitir('pregunta:moderar', { salaId: sala.id, preguntaId: valor?.preguntaId, accion: valor?.accion });
       return r.ok ? { ok: true } : { ok: false, mensaje: r.mensaje };
@@ -811,8 +811,8 @@ export function OpenClassLive({ servidor }) {
       document.addEventListener('pointerdown', (ev) => {
         if (!menu.hidden && !menu.contains(ev.target) && !control.contains(ev.target) && !ev.target.closest?.('.oc-live-participa')) alternarMenu(false);
       });
-      reveal.addKeyBinding({ keyCode: 76, key: 'L', description: 'OpenClass Live: menú En vivo' }, () => alternarMenu());
-      reveal.addKeyBinding({ keyCode: 81, key: 'Q', description: 'OpenClass Live: ampliar o reducir el QR' }, alternarQr);
+      reveal.addKeyBinding({ keyCode: 76, key: 'L', description: 'Interact: menú En vivo' }, () => alternarMenu());
+      reveal.addKeyBinding({ keyCode: 81, key: 'Q', description: 'Interact: ampliar o reducir el QR' }, alternarQr);
       // Cambiar de diapositiva solo cambia lo que se ve: la conexión y la sala siguen intactas.
       reveal.on('slidechanged', pintar);
       reveal.on('resize', () => { if (bloque?.classList.contains('oc-live-p-encuesta')) ubicarCompacto(reveal.getCurrentSlide()); });

@@ -1,4 +1,4 @@
-/* WillEdTech Interact (servicio openclass-live): WillEdTech Brand v3, tokens en marca/willedtech.css. Sin recursos institucionales. Móvil primero. */
+/* Interact by WillEdTech (servicio openclass-live): WillEdTech Brand v3, tokens en marca/willedtech.css. Sin recursos institucionales. Móvil primero. */
 :root {
   --fondo: rgb(var(--wt-canvas)); --panel: rgb(var(--wt-surface)); --texto: rgb(var(--wt-ink)); --suave: rgb(var(--wt-ink-soft)); --borde: rgb(var(--wt-line-strong));
   --acento: rgb(var(--wt-primary-hover)); --acento-claro: rgb(var(--wt-primary-soft)); --ok: rgb(var(--wt-success-700)); --ok-claro: rgb(var(--wt-success-soft)); --alerta: rgb(var(--wt-warning-ink));

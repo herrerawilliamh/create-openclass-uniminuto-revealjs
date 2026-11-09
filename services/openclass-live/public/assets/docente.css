@@ -1,4 +1,4 @@
-/* WillEdTech Interact · panel docente (Teacher Experience VNext, I4).
+/* Interact by WillEdTech · panel docente (Teacher Experience VNext, I4).
    Se carga después de estilos.css y solo en /docente/. Colores: tokens --wt-* de marca/willedtech.css (WillEdTech Brand v3).
    El amarillo solo como relleno con tinta encima; el texto naranja usa secondary-ink. */
 body.docente {

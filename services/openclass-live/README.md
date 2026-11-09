@@ -1,4 +1,6 @@
-# OpenClass Live
+# Interact by WillEdTech
+
+**Interact** es una plataforma propia de WillEdTech, independiente de UNIMINUTO: producto de participación en tiempo real que se integra con OpenClass (sistema de presentaciones y cursos) y con otras soluciones educativas. Los identificadores técnicos `openclass-live` (servicio, imagen, rutas, versión 0.3.0) se conservan temporalmente hasta una migración independiente.
 
 Preparación GitOps local y promoción manual: [docs/GITOPS.md](docs/GITOPS.md).
 La definición GitOps conserva la identidad del stack y añade versión + SHA; no activa sincronización.

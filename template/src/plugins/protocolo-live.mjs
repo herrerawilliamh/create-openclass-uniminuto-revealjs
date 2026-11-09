@@ -1,5 +1,5 @@
 /**
- * OpenClass Live: versión del protocolo que habla este adaptador (sin dependencias: lo usan live.mjs y
+ * Interact: versión del protocolo que habla este adaptador (sin dependencias: lo usan live.mjs y
  * las pruebas). Debe coincidir con services/openclass-live/src/protocolo.mjs.
  */
 export const PROTOCOLO_LIVE = Object.freeze({ version: 2, capacidades: Object.freeze(['soluciones-privadas', 'temporizador-sala']) });
@@ -14,5 +14,5 @@ export function componenteDesactualizado(protocolo) {
   return typeof protocolo?.version === 'number' && protocolo.version > version ? 'presentacion' : 'servicio';
 }
 
-export const textoIncompatible = (componente) => `La presentación y OpenClass Live utilizan versiones diferentes. Actualice ${
-  componente === 'presentacion' ? 'la presentación (adaptador «En vivo» del curso)' : 'el servicio OpenClass Live'}.`;
+export const textoIncompatible = (componente) => `La presentación y Interact utilizan versiones diferentes. Actualice ${
+  componente === 'presentacion' ? 'la presentación (adaptador «En vivo» del curso)' : 'el servicio Interact'}.`;

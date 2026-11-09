@@ -1,6 +1,6 @@
-# OpenClass Live — guía para la clase
+# Interact by WillEdTech — guía para la clase
 
-OpenClass Live permite que los estudiantes respondan votaciones y envíen preguntas desde su teléfono con un QR, un enlace o un código de seis caracteres. No ven ni descargan sus diapositivas, y no necesitan cuenta.
+Interact permite que los estudiantes respondan votaciones y envíen preguntas desde su teléfono con un QR, un enlace o un código de seis caracteres. No ven ni descargan sus diapositivas, y no necesitan cuenta.
 
 > Las capturas de esta guía son reales: salen de la aplicación funcionando en un equipo de prueba, con datos sintéticos (por eso la dirección es `127.0.0.1`). En clase verá la dirección de su servicio, por ejemplo `openclass-live.apps.willedtech.io`. No contienen contraseñas, claves de presentador ni datos de estudiantes.
 
@@ -9,9 +9,9 @@ OpenClass Live permite que los estudiantes respondan votaciones y envíen pregun
 | Tarea | Quién |
 |---|---|
 | Entrar al panel, crear la sala, compartir el QR, votar, moderar preguntas, terminar la clase | **Usted, el docente** |
-| Preparar o modificar un curso Reveal.js (escribir las preguntas en el Markdown, activar OpenClass Live en el curso, publicar o iniciar la presentación) | **Un responsable técnico o de soporte** |
+| Preparar o modificar un curso Reveal.js (escribir las preguntas en el Markdown, activar Interact en el curso, publicar o iniciar la presentación) | **Un responsable técnico o de soporte** |
 
-OpenClass Live **no edita diapositivas**. Desde el panel no se crean, cambian ni publican cursos Reveal.js; si necesita una pregunta nueva dentro de la presentación, pídasela a quien prepara el curso. Lo que sí puede hacer usted en la clase, sin ayuda técnica, es crear **preguntas improvisadas** desde el panel.
+Interact **no edita diapositivas**. Desde el panel no se crean, cambian ni publican cursos Reveal.js; si necesita una pregunta nueva dentro de la presentación, pídasela a quien prepara el curso. Lo que sí puede hacer usted en la clase, sin ayuda técnica, es crear **preguntas improvisadas** desde el panel.
 
 ## Elija su recorrido
 
@@ -63,7 +63,7 @@ Este paso se hace una vez por clase.
 
 ![Menú «En vivo» antes de conectar](capturas/16-presentacion-conectar.png)
 
-El panel **no detecta** si la presentación quedó conectada: se comprueba en la presentación. Mientras no se conecte, la presentación no envía nada a ningún servidor y funciona igual. Si el curso aún no tiene OpenClass Live activado, lo debe activar el responsable técnico (véase «Qué hace cada persona»).
+El panel **no detecta** si la presentación quedó conectada: se comprueba en la presentación. Mientras no se conecte, la presentación no envía nada a ningún servidor y funciona igual. Si el curso aún no tiene Interact activado, lo debe activar el responsable técnico (véase «Qué hace cada persona»).
 
 ### A5. Iniciar la votación
 
@@ -138,9 +138,9 @@ Esto lo hace el responsable técnico, una sola vez, en el Markdown de la semana:
 ```
 
 - `data-tipo="multiple"` permite varias respuestas; `data-correctas="A,C"` marca varias.
-- La explicación no se ve en la diapositiva ni en el PDF (con OpenClass Live encendido o apagado): aparece solo cuando usted la revela.
+- La explicación no se ve en la diapositiva ni en el PDF (con Interact encendido o apagado): aparece solo cuando usted la revela.
 - Al iniciar la votación salen del computador **solo** el enunciado, el código y las opciones; la correcta y la explicación se quedan allí hasta **Revelar explicación**. El resto de la presentación, las notas y las imágenes nunca salen.
-- Activar OpenClass Live en un curso (`activa: true` dentro de `LIVE` en `src/plugins/fase2.mjs`) también corresponde al responsable técnico.
+- Activar Interact en un curso (`activa: true` dentro de `LIVE` en `src/plugins/fase2.mjs`) también corresponde al responsable técnico.
 
 ---
 
@@ -245,6 +245,6 @@ El botón de impresora **Exportar a PDF** del pie azul abre una pestaña con tod
 - **Su presentación**: se reconecta sola («Reconectando…» en el botón). Si recarga la página, recupera la sala y continúa donde quedó; una votación que venció mientras tanto aparece como **Votación finalizada**. Si dice que la clave no es válida o venció, copie una nueva desde el panel.
 - **El panel**: recargue la página; vuelve a la sala abierta.
 - **Si el servidor se reinició**, las salas abiertas se pierden (se guardan solo en memoria): cree una sala nueva y conecte de nuevo.
-- La presentación funciona siempre aunque OpenClass Live no esté disponible.
+- La presentación funciona siempre aunque Interact no esté disponible.
 
 Nota: la participación es anónima. El sistema evita votos duplicados por accidente, pero no puede garantizar un voto por persona si alguien usa varios dispositivos.

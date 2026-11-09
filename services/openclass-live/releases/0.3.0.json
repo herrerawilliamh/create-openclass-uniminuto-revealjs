@@ -2,7 +2,7 @@
   "version": "0.3.0",
   "protocol": 2,
   "archive": "openclass-live-0.3.0.tar.gz",
-  "archiveSha256": "ca0e3bf4bc31133d1b87181788b8da51741e9298ffe0a252486d8659771cd85a",
+  "archiveSha256": "cb170b51e6e2fe9b12e12759ef968ef6d68c91919d2bfe18f8d6ae7814e914f1",
   "sourceBase": "5c35888d1c8bc25231d773de5cfc23d3467802f4",
   "files": [
     {
@@ -32,8 +32,8 @@
     },
     {
       "path": "package.json",
-      "sha256": "cfacaaeee3c62687420c148ccc9d264d8ce197c9f507a9f6425468679f626f67",
-      "gitSha256": "cfacaaeee3c62687420c148ccc9d264d8ce197c9f507a9f6425468679f626f67"
+      "sha256": "22a995ec2f98a03f7e37dc797b1e2d941672438568792387d6d2323019551b14",
+      "gitSha256": "22a995ec2f98a03f7e37dc797b1e2d941672438568792387d6d2323019551b14"
     },
     {
       "path": "public/assets/comun.mjs",
@@ -42,8 +42,8 @@
     },
     {
       "path": "public/assets/docente.css",
-      "sha256": "0f4f396c870477ab65dbc00ae2b43fa1ddd91984e163102e344c67f368eaee97",
-      "gitSha256": "0f4f396c870477ab65dbc00ae2b43fa1ddd91984e163102e344c67f368eaee97"
+      "sha256": "c3792989e5405ad2e46eb2aa7844ff8a662e3544227f4c5ed8c820010b50bef0",
+      "gitSha256": "c3792989e5405ad2e46eb2aa7844ff8a662e3544227f4c5ed8c820010b50bef0"
     },
     {
       "path": "public/assets/docente.mjs",
@@ -57,8 +57,8 @@
     },
     {
       "path": "public/assets/estilos.css",
-      "sha256": "023575b720ac2822c48b348a52530d896399c14cd36fa8db2eceb8352378dae4",
-      "gitSha256": "023575b720ac2822c48b348a52530d896399c14cd36fa8db2eceb8352378dae4"
+      "sha256": "2ecf923a3dad84a083ed1dde552b396761886513153207c0c958c35f5d6e86c0",
+      "gitSha256": "2ecf923a3dad84a083ed1dde552b396761886513153207c0c958c35f5d6e86c0"
     },
     {
       "path": "public/assets/estudiante.mjs",
@@ -127,8 +127,8 @@
     },
     {
       "path": "public/assets/marca/ORIGEN.json",
-      "sha256": "86d31be9cc42da38abfc5611e36de4f06ec96bfade8163251300ac62ad57da92",
-      "gitSha256": "c7ebb6ede4286ebbb8e805119348d4f7aff6a64704fd0b11f7b9fa698864c7fa"
+      "sha256": "fecbeeac0643f26bfdf444fefdfd7624c8611d1f3e8c98814cfe95664b95c17a",
+      "gitSha256": "fecbeeac0643f26bfdf444fefdfd7624c8611d1f3e8c98814cfe95664b95c17a"
     },
     {
       "path": "public/assets/marca/willedtech.css",
@@ -137,8 +137,8 @@
     },
     {
       "path": "public/docente/index.html",
-      "sha256": "504f29462c72a43acab2785703aeff1de2721c058177b46e0fc1c5caf67d5d98",
-      "gitSha256": "504f29462c72a43acab2785703aeff1de2721c058177b46e0fc1c5caf67d5d98"
+      "sha256": "fb4fe8d07a737a0d4b583b147ba406dec0c86a01d3d40296e687a1d0718b4485",
+      "gitSha256": "fb4fe8d07a737a0d4b583b147ba406dec0c86a01d3d40296e687a1d0718b4485"
     },
     {
       "path": "public/favicon.svg",
@@ -147,8 +147,8 @@
     },
     {
       "path": "public/index.html",
-      "sha256": "bbec2bb7c692d9221206302dabe2250cd6cd3a7cf847fa1b7c477227e2f448ee",
-      "gitSha256": "bbec2bb7c692d9221206302dabe2250cd6cd3a7cf847fa1b7c477227e2f448ee"
+      "sha256": "f275473ce6c24d5d9554520b9ac3ad88f797678d0606c9e4b61b143fe116be90",
+      "gitSha256": "f275473ce6c24d5d9554520b9ac3ad88f797678d0606c9e4b61b143fe116be90"
     },
     {
       "path": "scripts/hash-password.mjs",

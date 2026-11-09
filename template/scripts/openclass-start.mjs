@@ -30,7 +30,7 @@ export async function start(root, args = [], { load = url => import(url), log = 
   const server = args.includes('--preview') ? await vite.preview(options) : await vite.createServer(options);
   if (!args.includes('--preview')) await server.listen();
   server.printUrls();
-  log('Origen del presentador (autorizado por OpenClass Live): ' + ORIGEN_PRESENTADOR + route);
+  log('Origen del presentador (autorizado por Interact): ' + ORIGEN_PRESENTADOR + route);
   log('OPENCLASS_STABLE_READY; caché temporal: ' + cacheDir);
   return server;
 }

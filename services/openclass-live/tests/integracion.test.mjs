@@ -1,5 +1,5 @@
 /**
- * OpenClass Live: integración con servidor real y clientes Socket.IO (WebSocket y polling).
+ * Interact: integración con servidor real y clientes Socket.IO (WebSocket y polling).
  * Cubre: sesión, multicliente simultáneo, segunda ronda, preguntas y moderación, reconexión,
  * vencimiento, sala cerrada, operaciones no autorizadas, orígenes, límites y privacidad de registros.
  */
@@ -388,8 +388,8 @@ test('protocolo: el servicio v0.2 rechaza en el handshake a un adaptador v0.1 y 
   assert.equal(componenteDesactualizado(undefined), 'servicio');
   assert.equal(componenteDesactualizado({ version: 2, capacidades: ['temporizador-sala'] }), 'servicio');
   assert.equal(componenteDesactualizado({ version: 3, capacidades: [...PROTOCOLO.capacidades, 'otra'] }), 'presentacion');
-  assert.equal(textoIncompatible('servicio'), 'La presentación y OpenClass Live utilizan versiones diferentes. Actualice el servicio OpenClass Live.');
-  assert.match(textoIncompatible('presentacion'), /^La presentación y OpenClass Live utilizan versiones diferentes\. Actualice la presentación/);
+  assert.equal(textoIncompatible('servicio'), 'La presentación y Interact utilizan versiones diferentes. Actualice el servicio Interact.');
+  assert.match(textoIncompatible('presentacion'), /^La presentación y Interact utilizan versiones diferentes\. Actualice la presentación/);
 });
 
 test('cierre de sesión docente: revoca la cookie para HTTP y Socket.IO; CSRF obligatorio', async (t) => {
