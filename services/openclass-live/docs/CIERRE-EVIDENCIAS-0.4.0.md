@@ -12,10 +12,12 @@ Manifiesto: `releases/0.4.0.json` (54 archivos, artefacto reproducible). `releas
 | `tests/e2e/cuentas-navegador.test.mjs` (Chrome) | 2/2 — invitación→verificación→acceso→«Mis sesiones»→administración, 375 px sin desborde, foco y teclado, vínculo local |
 | `tests/e2e/live-navegador.test.mjs` (Chrome, curso real + plugin con vínculo) | 1/1 (ejecutado a solas) |
 | `tests/e2e/build-tech-navegador.test.mjs` (Chrome) | 1/1 (ejecutado a solas) |
-| Resto de `test:navegador` (estudiante, panel, foco, marca accesible, protocolo…) | todas OK en la ejecución completa |
+| Resto de `test:navegador` (estudiante, panel, foco, soluciones, recuperación, marca accesible, protocolo, PDF, cuentas) | 26/26 en la ejecución final |
 | Raíz: `npm test`, `test:docente`, `test:build-tech` | 46/46, 4/4, 7/7 |
 
 Observaciones honestas:
+- Una regresión real de esta versión la detectó `panel-soluciones-navegador` (tras cerrar sesión, el formulario no recordaba que había acceso heredado y exigía el correo); corregida y la suite vuelve a pasar.
+- Una ejecución de `panel-foco-navegador` falló con `EBUSY` al abrir el perfil temporal de Chrome (Windows); pasó al repetirla.
 - Al lanzar `live-navegador` y `build-tech-navegador` **juntos** fallaron (Build Tech: «Page is already being printed»;
   Live: `null.click`). Ambas pasan al ejecutarse a solas con el mismo código. No se investigó la causa; se atribuye a
   contención de recursos/Chrome entre ejecuciones consecutivas largas, no a esta versión, pero **no se comprobó contra 0.3.0**.
