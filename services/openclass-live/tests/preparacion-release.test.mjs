@@ -61,3 +61,47 @@ test('verificador de promoción completa HTTP, WS y protocolo 2 con el servicio 
     assert.equal(app.almacen.listarSalas().length, 0);
   } finally { await app.cerrar(); }
 });
+
+test('empaquetador oficial: dos empaquetados independientes dan el mismo SHA-256 y coinciden con el manifiesto', async () => {
+  const { createHash } = await import('node:crypto');
+  const { huellaGit } = await import('../scripts/huella.mjs');
+  const { mkdirSync, readdirSync, statSync } = await import('node:fs');
+  const sha = (b) => createHash('sha256').update(b).digest('hex');
+  const empaquetar = () => {
+    const dir = mkdtempSync(path.join(tmpdir(), 'oclive-repro-'));
+    for (const f of ['package.json','package-lock.json','Dockerfile','.dockerignore','.env.example','docker-compose.yml','src','public','scripts']) {
+      cpSync(new URL(f, raiz), path.join(dir, f), { recursive: true });
+    }
+    assert.equal(spawnSync(process.execPath, ['scripts/empaquetar-despliegue.mjs'], { cwd: dir, encoding: 'utf8' }).status, 0);
+    return dir;
+  };
+  const a = empaquetar(), b = empaquetar();
+  try {
+    const nombre = 'despliegue/openclass-live-0.3.0.tar.gz';
+    const ba = readFileSync(path.join(a, nombre)), bb = readFileSync(path.join(b, nombre));
+    assert.equal(sha(ba), sha(bb), 'mismo árbol, mismo SHA-256');
+    assert.equal(ba[9], 3, 'gzip: sistema operativo normalizado (Unix)');
+    assert.equal(ba.readUInt32LE(4), 0, 'gzip: sin fecha');
+    const manifiesto = JSON.parse(readFileSync(new URL('releases/0.3.0.json', raiz), 'utf8'));
+    assert.equal(sha(ba), manifiesto.archiveSha256, 'el artefacto regenerado coincide con releases/0.3.0.json');
+    const out = path.join(a, 'extraido');
+    mkdirSync(out);
+    assert.equal(spawnSync('tar', ['-xzf', nombre, '-C', 'extraido'], { cwd: a }).status, 0);
+    const raizExtraida = path.join(out, 'openclass-live-0.3.0');
+    const encontrados = [];
+    (function walk(d) {
+      for (const n of readdirSync(d)) {
+        const p = path.join(d, n);
+        if (statSync(p).isDirectory()) walk(p); else encontrados.push(path.relative(raizExtraida, p).split(path.sep).join('/'));
+      }
+    })(raizExtraida);
+    assert.deepEqual(encontrados.sort(), manifiesto.files.map((f) => f.path).sort(), 'lista exacta de archivos');
+    for (const f of manifiesto.files) {
+      const bytes = readFileSync(path.join(raizExtraida, f.path));
+      assert.equal(sha(bytes), f.sha256, `sha256 interno: ${f.path}`);
+      assert.equal(huellaGit(f.path, bytes), f.gitSha256, `gitSha256 interno: ${f.path}`);
+    }
+    const lista = spawnSync('tar', ['-tzvf', nombre], { cwd: a, encoding: 'utf8' }).stdout;
+    assert.match(lista, /root\/root/, 'propietarios normalizados');
+  } finally { rmSync(a, { recursive: true, force: true }); rmSync(b, { recursive: true, force: true }); }
+});

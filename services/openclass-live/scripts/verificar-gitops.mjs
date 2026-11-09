@@ -1,9 +1,10 @@
 /** Gate local/CI sin red ni Docker daemon. No genera ni modifica el artefacto aprobado. */
 import assert from 'node:assert/strict';
 import { readFileSync, readdirSync, lstatSync, existsSync } from 'node:fs';
-import { createHash } from 'node:crypto';
+import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
+import { esBinario, huellaGit, sha256 } from './huella.mjs';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
 const read = (f) => readFileSync(path.join(root, f), 'utf8').replace(/\r\n/g, '\n');
@@ -16,13 +17,25 @@ assert.equal(lock.packages[''].version, pkg.version);
 assert.deepEqual(lock.packages[''].dependencies, pkg.dependencies);
 assert.match(read('src/protocolo.mjs'), /version:\s*2\b/);
 assert.equal(release.protocol, 2);
-const sha256 = (b) => createHash('sha256').update(b).digest('hex');
+/** Versión de Git (HEAD) de un binario; null fuera de un repositorio o si no está versionado. */
+function blobGit(rel) {
+  try {
+    return execFileSync('git', ['show', `HEAD:./${rel}`], { cwd: root, maxBuffer: 64 * 1024 * 1024, stdio: ['ignore', 'pipe', 'ignore'] });
+  } catch { return null; }
+}
 const actual = [];
 function walk(rel) {
   const p = path.join(root, rel), stat = lstatSync(p);
   assert.ok(!stat.isSymbolicLink(), `Enlace no permitido: ${rel}`);
   if (stat.isDirectory()) for (const name of readdirSync(p)) walk(`${rel}/${name}`);
-  else actual.push({ path: rel, gitSha256: sha256(read(rel)) });
+  else {
+    const bytes = readFileSync(p); // Buffer: nunca decodificar binarios como UTF-8
+    if (esBinario(rel)) {
+      const git = blobGit(rel);
+      if (git) assert.equal(sha256(git), sha256(bytes), `El binario difiere de la versión Git (HEAD): ${rel}`);
+    }
+    actual.push({ path: rel, gitSha256: huellaGit(rel, bytes) });
+  }
 }
 for (const rel of ['docker-compose.yml', 'Dockerfile', '.dockerignore', '.env.example',
   'package.json', 'package-lock.json', 'src', 'public', 'scripts/hash-password.mjs']) walk(rel);
