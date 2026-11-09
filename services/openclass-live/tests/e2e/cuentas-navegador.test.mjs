@@ -100,6 +100,7 @@ test('flujo completo en navegador: invitación, verificación, acceso, historial
   await pagina.evaluar(`document.querySelector('#tabla-historial tbody button').click()`);
   await pagina.esperarA(visible('detalle-historial'));
   assert.equal(await pagina.evaluar('document.activeElement.id'), 'detalle-historial');
+  assert.doesNotMatch(await pagina.evaluar(`document.getElementById('cuerpo-detalle').textContent`), /null|undefined/, 'el detalle no muestra valores vacíos como texto');
   await capturar(pagina, '04-detalle-sesion');
 
   // --- Móvil: sin desbordes horizontales ---

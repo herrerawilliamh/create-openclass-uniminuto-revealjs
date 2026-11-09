@@ -2,7 +2,7 @@
   "version": "0.4.0",
   "protocol": 2,
   "archive": "openclass-live-0.4.0.tar.gz",
-  "archiveSha256": "257c4ac9f2f97dfdfe36181d6766030e8ab42af85c6cb3a88633d78ac4734098",
+  "archiveSha256": "74402d6a567a0c4cf8ae0a8748899cb93903ffb376791fd339b7ed5ba4a2fc4c",
   "sourceBase": "79e06b5b497b19b7a097040066d1e85d63c0ef77",
   "files": [
     {
@@ -42,8 +42,8 @@
     },
     {
       "path": "public/assets/cuenta-panel.mjs",
-      "sha256": "224e6312b128dcd9cdb4963110f843cdcb0ea7d479ef44fdceb5c6776ccd98f3",
-      "gitSha256": "224e6312b128dcd9cdb4963110f843cdcb0ea7d479ef44fdceb5c6776ccd98f3"
+      "sha256": "d2610b72d4234644c10436a1c29034483bf6ff3056f5c5344865a16e19d26c0c",
+      "gitSha256": "d2610b72d4234644c10436a1c29034483bf6ff3056f5c5344865a16e19d26c0c"
     },
     {
       "path": "public/assets/cuenta.css",

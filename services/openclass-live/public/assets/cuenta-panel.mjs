@@ -92,7 +92,7 @@ export function crearPanelCuenta({ api, mostrar }) {
     if (r.estado !== 200) { aviso('aviso-historial', r.estado === 404 ? 'Esa sesión ya no está disponible.' : mensajeHttp(r), 'alerta'); return; }
     const d = r.datos;
     const caja = $('cuerpo-detalle');
-    caja.replaceChildren(
+    caja.replaceChildren(...[
       el('p', { clase: 'suave', texto: `${ESTADOS[d.estado] ?? d.estado} · creada ${fecha(d.creada)} · ${d.cerrada ? `cerrada ${fecha(d.cerrada)}` : 'sin cierre registrado'}` }),
       el('p', { texto: `${d.participantes} participantes · ${d.preguntas} preguntas de estudiantes${admin() ? ` · docente: ${d.propietarioEmail}` : ''}` }),
       d.estado === 'interrumpida' ? el('p', { clase: 'aviso alerta', texto: 'El servicio se reinició mientras esta sala estaba abierta. La sala no se puede recuperar; se conservan los datos del último punto de control.' }) : null,
@@ -102,7 +102,7 @@ export function crearPanelCuenta({ api, mostrar }) {
         ...a.rondas.map((ronda) => el('table', {},
           el('caption', { clase: 'suave', texto: `Ronda ${ronda.numero} · ${ronda.respondientes} respuestas${a.publicados ? ' · resultados publicados' : ''}` }),
           el('thead', {}, el('tr', {}, el('th', { scope: 'col', texto: 'Opción' }), el('th', { scope: 'col', texto: 'Respuestas' }), el('th', { scope: 'col', texto: '%' }))),
-          el('tbody', {}, ...a.opciones.map((o, i) => el('tr', {}, el('td', { texto: o }), el('td', { texto: String(ronda.conteos[i] ?? 0) }), el('td', { texto: `${ronda.porcentajes[i] ?? 0}` })))))))));
+          el('tbody', {}, ...a.opciones.map((o, i) => el('tr', {}, el('td', { texto: o }), el('td', { texto: String(ronda.conteos[i] ?? 0) }), el('td', { texto: `${ronda.porcentajes[i] ?? 0}` }))))))))].filter(Boolean));
     $('t-detalle').textContent = d.titulo || 'Sesión sin título';
     $('detalle-historial').classList.remove('oculto');
     $('detalle-historial').focus();
