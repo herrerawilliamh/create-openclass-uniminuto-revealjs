@@ -135,7 +135,7 @@ export function crearManejadorHttp({ config, estaticos, firmador, sesiones, limi
 
         if (ruta === '/api/docente/sesion') {
           const s = sesionDesdeCookie(req.headers.cookie, { firmador, sesiones });
-          return enviar(res, 200, s ? { autenticado: true, csrf: firmador.csrf(s.sid), usuario: { id: s.usuario.id, nombre: s.usuario.nombre, email: s.usuario.email, rol: s.usuario.rol } }
+          return enviar(res, 200, s ? { autenticado: true, heredado: Boolean(config.hashDocente), csrf: firmador.csrf(s.sid), usuario: { id: s.usuario.id, nombre: s.usuario.nombre, email: s.usuario.email, rol: s.usuario.rol } }
             : { autenticado: false, heredado: Boolean(config.hashDocente) });
         }
 

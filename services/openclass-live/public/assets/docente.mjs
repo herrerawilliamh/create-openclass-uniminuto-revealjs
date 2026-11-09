@@ -115,7 +115,7 @@ async function iniciar() {
   $('btn-reintentar').disabled = true;
   const r = await api('/api/docente/sesion');
   $('btn-reintentar').disabled = false;
-  if (r.estado === 200 && !r.datos.autenticado) configurarLogin(Boolean(r.datos.heredado));
+  if (r.estado === 200) configurarLogin(Boolean(r.datos.heredado)); // también con sesión abierta: tras cerrarla el formulario debe saber si hay acceso heredado
   if (r.estado === 200 && r.datos.autenticado) { csrf = r.datos.csrf; if (r.datos.usuario) panelCuenta.configurar(r.datos.usuario); aviso('error-login', ''); $('btn-reintentar').classList.add('oculto'); conectar(); return; }
   if (esTransitorio(r)) {
     mostrar('vista-login');
