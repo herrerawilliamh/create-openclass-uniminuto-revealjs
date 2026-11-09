@@ -1,17 +1,17 @@
 # Graph Report - create-openclass-uniminuto-revealjs  (2026-11-08)
 
 ## Corpus Check
-- 151 files · ~166,332 words
+- 151 files · ~166,249 words
 - Verdict: corpus is large enough that graph structure adds value.
-- Unclassified: 25 file(s) not represented in the graph (top: (none) 10, .css 10, .example 1)
+- Unclassified: 26 file(s) not represented in the graph (top: .css 11, (none) 10, .example 1)
 
 ## Summary
-- 1788 nodes · 3162 edges · 109 communities (102 shown, 7 thin omitted)
+- 1787 nodes · 3161 edges · 109 communities (102 shown, 7 thin omitted)
 - Extraction: 96% EXTRACTED · 4% INFERRED · 0% AMBIGUOUS · INFERRED: 113 edges (avg confidence: 0.9)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `99762446`
+- Built from commit: `2f2bd3b1`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -23,11 +23,11 @@
 - semana.mjs
 - portada-pedagogica.test.mjs
 - scripts
-- ayuda.mjs
+- validar.mjs
 - vite.config.mjs
 - Guía del docente — Crear OpenClass UNIMINUTO Reveal.js
 - TEMÁTICA DE PRUEBA
-- validar.mjs
+- crearAlmacen
 - Internet de las cosas
 - pages.yml
 - Laboratorio interactivo de OpenClass
@@ -44,7 +44,7 @@
 - Plantilla semanal para crear una OpenClass con IA
 - OpenClass master: minimal AI context
 - vista.mjs
-- http.mjs
+- ayuda.mjs
 - OpenClass Live — guía para la clase
 - Presentacion.jsx
 - Microactividad interactiva (5–10 minutos)
@@ -64,16 +64,16 @@
 - scripts
 - environment
 - multimedia.mjs
-- ref_node_test
+- ref_node_fs
 - build-tech-navegador.test.mjs
 - main.jsx
 - openclass-live
 - index.mjs
 - workflow-yaml.mjs
 - chrome.mjs
-- ref_node_assert
+- semana.test.mjs
 - Adaptación a WillEdTech Brand v3 (OpenClass Live 0.3.0)
-- ref_node_url
+- chrome.mjs
 - docker-compose.yml
 - healthcheck
 - OpenClass Suite — Documento maestro de producto, requisitos y evolución
@@ -181,9 +181,9 @@ Nodes (40): ACCESO, actividadDigital(), alternativa(), bin, CANALES, COLA, conEn
 Cohesion: 0.05
 Nodes (38): author, bin, create-openclass-uniminuto-revealjs, bugs, url, description, engines, node (+30 more)
 
-### Community 7 - "ayuda.mjs"
-Cohesion: 0.07
-Nodes (43): Corrección de seguridad H02 — sockets del panel con sesión cerrada o vencida, H02 — corrección final: autorización por destinatario (hallazgo P1 de Codex), H02 — corrección P1 de Codex: vencimiento efectivo (cookie frente a SID), base, panelVigente(), presentadorCompatible(), PROTOCOLO, ErrorSala (+35 more)
+### Community 7 - "validar.mjs"
+Cohesion: 0.06
+Nodes (59): Corrección de seguridad H02 — sockets del panel con sesión cerrada o vencida, H02 — corrección final: autorización por destinatario (hallazgo P1 de Codex), H02 — corrección P1 de Codex: vencimiento efectivo (cookie frente a SID), base, COOKIE_DOCENTE, cookieDocente(), leerCookies(), panelVigente() (+51 more)
 
 ### Community 8 - "vite.config.mjs"
 Cohesion: 0.15
@@ -197,9 +197,9 @@ Nodes (22): 10. Actualizar el curso, 11. Problemas frecuentes, 12. Futuras funci
 Cohesion: 0.08
 Nodes (24): Actividad mediante iframe, Actividad práctica, Código desplazable (scroll), Código fuente, Código paginado, Diagrama Mermaid, Dos columnas, Dos títulos (+16 more)
 
-### Community 11 - "validar.mjs"
-Cohesion: 0.08
-Nodes (44): Aplicación (cuando se autorice), Defecto, Hotfix v0.1 — sin filtración del acierto antes de revelar, Parche, Verificación hecha (2026-10-26), crearAlmacen(), cerrarRonda(), eliminar() (+36 more)
+### Community 11 - "crearAlmacen"
+Cohesion: 0.13
+Nodes (21): Aplicación (cuando se autorice), Defecto, Hotfix v0.1 — sin filtración del acierto antes de revelar, Parche, Verificación hecha (2026-10-26), crearAlmacen(), cerrarRonda(), eliminar() (+13 more)
 
 ### Community 12 - "Internet de las cosas"
 Cohesion: 0.13
@@ -234,8 +234,8 @@ Cohesion: 0.14
 Nodes (5): add(), marca(), raiz, RECURSOS, svg()
 
 ### Community 22 - "portada-dom.test.mjs"
-Cohesion: 0.08
-Nodes (26): CASOS, CORTA, dentro(), evidencia(), fase(), fmt(), LARGA, LIENZO (+18 more)
+Cohesion: 0.15
+Nodes (18): CASOS, CORTA, dentro(), fase(), fmt(), LARGA, LIENZO, MEDIR() (+10 more)
 
 ### Community 23 - "montarBuildTech"
 Cohesion: 0.21
@@ -257,9 +257,9 @@ Nodes (8): Checks and graph maintenance, Distribution decision (2026-10-21, conf
 Cohesion: 0.22
 Nodes (22): configurar(), DURACIONES_CLASE, duracionValida(), fase(), formatoReloj(), iniciar(), leerTiempo(), MAX_CLASE (+14 more)
 
-### Community 28 - "http.mjs"
-Cohesion: 0.18
-Nodes (16): COOKIE_DOCENTE, cookieDocente(), leerCookies(), cargarEstaticos(), crearManejadorHttp(), servirArchivo(), CSP, enviar() (+8 more)
+### Community 28 - "ayuda.mjs"
+Cohesion: 0.11
+Nodes (27): esperar(), evento(), HASH, iniciar(), ORIGEN, PASSWORD, pedir(), peticion() (+19 more)
 
 ### Community 29 - "OpenClass Live — guía para la clase"
 Cohesion: 0.22
@@ -279,11 +279,11 @@ Nodes (20): arg(), auditarEstructura(), auditarWorkflow(), blobsDe(), bytesPubli
 
 ### Community 36 - "OpenClassBuildTech"
 Cohesion: 0.23
-Nodes (19): Build Tech and PDF export (template, branch feat/openclass-live-teacher-ux-v0.2, uncommitted), OpenClassBuildTech(), abrirBuildTech(), abrirSelector(), alMensaje(), alternarRelojPublico(), cerrarSelector(), ejecutar() (+11 more)
+Nodes (20): Build Tech and PDF export (template, branch feat/openclass-live-teacher-ux-v0.2, uncommitted), OpenClassBuildTech(), abrirBuildTech(), abrirSelector(), alMensaje(), alternarRelojPublico(), cerrarSelector(), ejecutar() (+12 more)
 
 ### Community 37 - "OpenClassLive"
 Cohesion: 0.09
-Nodes (60): OpenClass Live (in development, not in the npm package), extraerEncuesta(), firmaEncuesta(), normal(), separarSolucion(), textoDe(), DURACIONES, el() (+52 more)
+Nodes (59): OpenClass Live (in development, not in the npm package), firmaEncuesta(), normal(), separarSolucion(), textoDe(), DURACIONES, el(), elegirHueco() (+51 more)
 
 ### Community 38 - "portal-academico.test.mjs"
 Cohesion: 0.16
@@ -333,9 +333,9 @@ Nodes (13): ADMIN_PASSWORD_HASH, APP_URL, MAX_ROOM_PARTICIPANTS, MAX_ROOMS, NODE
 Cohesion: 0.23
 Nodes (15): avisar(), apiYoutube(), crearMultimedia(), describir(), ejecutar(), enlazar(), enlazarHtml5(), enlazarYoutube() (+7 more)
 
-### Community 50 - "ref_node_test"
-Cohesion: 0.12
-Nodes (13): enviar(), servir(), TIPOS, compilarCurso(), npm(), RAIZ, SERVICIO, conServidor() (+5 more)
+### Community 50 - "ref_node_fs"
+Cohesion: 0.08
+Nodes (19): capturas, miniaturas, raiz, enviar(), servir(), TIPOS, args, dist (+11 more)
 
 ### Community 51 - "build-tech-navegador.test.mjs"
 Cohesion: 0.13
@@ -359,19 +359,19 @@ Nodes (4): parseWorkflowYaml(), recorrer(), validarEscapes(), yaml()
 
 ### Community 56 - "chrome.mjs"
 Cohesion: 0.12
-Nodes (26): socket.io-client, crearApp(), crearLog(), PUBLICO, b64(), crearFirmador(), crearSesiones(), hashPassword() (+18 more)
+Nodes (28): socket.io-client, crearApp(), crearLog(), PUBLICO, b64(), crearFirmador(), crearSesiones(), hashPassword() (+20 more)
 
-### Community 57 - "ref_node_assert"
-Cohesion: 0.09
-Nodes (16): args, dist, r, raiz, raiz, bin, root, capitulo() (+8 more)
+### Community 57 - "semana.test.mjs"
+Cohesion: 0.19
+Nodes (9): capitulo(), leer(), root, texto(), bin, curso(), readCfg(), root (+1 more)
 
 ### Community 58 - "Adaptación a WillEdTech Brand v3 (OpenClass Live 0.3.0)"
-Cohesion: 0.40
-Nodes (4): Adaptación a WillEdTech Brand v3 (OpenClass Live 0.3.0), No cambia, Pendiente (no se improvisó), Qué cambia
+Cohesion: 0.50
+Nodes (3): Adaptación a WillEdTech Brand v3 (OpenClass Live 0.3.0), Pendiente (no se improvisó), Qué cambia
 
-### Community 59 - "ref_node_url"
-Cohesion: 0.13
-Nodes (15): capturas, miniaturas, raiz, abrirNavegador(), cerrar(), CANDIDATOS, Conexion, esperar() (+7 more)
+### Community 59 - "chrome.mjs"
+Cohesion: 0.18
+Nodes (10): abrirNavegador(), cerrar(), CANDIDATOS, Conexion, esperar(), rutaChrome(), CLASES, esperar() (+2 more)
 
 ### Community 60 - "docker-compose.yml"
 Cohesion: 0.33
@@ -398,8 +398,8 @@ Cohesion: 0.43
 Nodes (7): ACCIONES_NOTA, bloque(), EN_LINEA, marcadorDe(), notasSeguras(), recorrer(), segmentos()
 
 ### Community 66 - "empaquetar-despliegue.mjs"
-Cohesion: 0.14
-Nodes (12): ARCHIVOS, carpeta, lista, lock, r, raiz, salida, sinEnlaces() (+4 more)
+Cohesion: 0.08
+Nodes (19): ARCHIVOS, carpeta, lista, lock, r, raiz, salida, sinEnlaces() (+11 more)
 
 ### Community 67 - "autoPaginar.mjs"
 Cohesion: 0.57
@@ -426,8 +426,8 @@ Cohesion: 0.22
 Nodes (4): OpenClass Live — preparación para una futura Zoom App, Principios que deben mantenerse, Qué faltaría, Qué se puede reutilizar
 
 ### Community 73 - "ref_node_fs"
-Cohesion: 0.09
-Nodes (17): hash, plantilla, raiz, salida, HOST_ESCUCHA, ORIGEN_PRESENTADOR, PUERTO, start() (+9 more)
+Cohesion: 0.15
+Nodes (9): HOST_ESCUCHA, ORIGEN_PRESENTADOR, PUERTO, start(), newer(), valid(), versionNotice(), sandbox (+1 more)
 
 ### Community 74 - "live-navegador.test.mjs"
 Cohesion: 0.25
@@ -486,8 +486,8 @@ Cohesion: 0.29
 Nodes (7): ligeras, name, runs-on, strategy, node, fail-fast, matrix
 
 ### Community 88 - "ref_node_url"
-Cohesion: 0.20
-Nodes (7): archivo, carpeta, destino, files, manifiesto, pkg, raiz
+Cohesion: 0.09
+Nodes (16): destino, fijarDuracion(), largoVint(), raiz, hash, plantilla, raiz, salida (+8 more)
 
 ### Community 89 - "labels"
 Cohesion: 0.29
@@ -568,16 +568,16 @@ Nodes (6): Cadena en `.github/workflows/openclass-live.yml`, Identidad del candi
 _Questions this graph is uniquely positioned to answer:_
 
 - **Why does `main()` connect `publicacion-ci.mjs` to `Adaptación a WillEdTech Brand v3 (OpenClass Live 0.3.0)`, `procedencia-autosync.mjs`, `Manual del creador de OpenClass UNIMINUTO Reveal.js`, `Procedencia GitOps de Live: decisión y contrato de promoción`, `vite.config.mjs`, `Guía del docente — Crear OpenClass UNIMINUTO Reveal.js`, `Promoción manual de OpenClass Live 0.2.0`, `OpenClass master: minimal AI context`, `OpenClass Suite — Documento maestro de producto, requisitos y evolución`?**
-  _High betweenness centrality (0.075) - this node is a cross-community bridge._
+  _High betweenness centrality (0.068) - this node is a cross-community bridge._
 - **Are the 2 inferred relationships involving `montarBuildTech()` (e.g. with `sincronizarPrevias()` and `tictac()`) actually correct?**
   _`montarBuildTech()` has 2 INFERRED edges - model-reasoned connections that need verification._
 - **Should `generar-desde-config.mjs` be split into smaller, more focused modules?**
   _Cohesion score 0.10526315789473684 - nodes in this community are weakly interconnected._
-- **Why does `OpenClass Live — protocolo Socket.IO` connect `OpenClass Live — protocolo Socket.IO` to `openclass-live/README.md`?**
-  _High betweenness centrality (0.032) - this node is a cross-community bridge._
+- **Why does `codigoSala()` connect `validar.mjs` to `OpenClass Live — protocolo Socket.IO`?**
+  _High betweenness centrality (0.030) - this node is a cross-community bridge._
 - **Are the 2 inferred relationships involving `OpenClassLive()` (e.g. with `estadoBuildTech()` and `ordenBuildTech()`) actually correct?**
   _`OpenClassLive()` has 2 INFERRED edges - model-reasoned connections that need verification._
 - **Should `create-openclass-uniminuto-revealjs.mjs` be split into smaller, more focused modules?**
   _Cohesion score 0.1038961038961039 - nodes in this community are weakly interconnected._
-- **Why does `codigoSala()` connect `validar.mjs` to `OpenClass Live — protocolo Socket.IO`, `http.mjs`?**
-  _High betweenness centrality (0.029) - this node is a cross-community bridge._
+- **Why does `OpenClass Live — protocolo Socket.IO` connect `OpenClass Live — protocolo Socket.IO` to `openclass-live/README.md`?**
+  _High betweenness centrality (0.026) - this node is a cross-community bridge._

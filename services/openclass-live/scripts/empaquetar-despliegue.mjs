@@ -23,7 +23,7 @@ const nombre = `openclass-live-${version}`;
 const salida = path.join(raiz, 'despliegue');
 const carpeta = path.join(salida, nombre);
 const ARCHIVOS = ['docker-compose.yml', 'Dockerfile', '.dockerignore', '.env.example', 'package.json', 'package-lock.json', 'src', 'public', 'scripts/hash-password.mjs'];
-const PERMITIDAS = /\.(mjs|html|css|svg|json|yml|example)$|^(Dockerfile|\.dockerignore)$/;
+const PERMITIDAS = /\.(mjs|html|css|svg|json|yml|example|woff2)$|^(Dockerfile|\.dockerignore)$/;
 
 rmSync(carpeta, { recursive: true, force: true });
 mkdirSync(carpeta, { recursive: true });
