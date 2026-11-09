@@ -2,7 +2,7 @@
   "version": "0.3.0",
   "protocol": 2,
   "archive": "openclass-live-0.3.0.tar.gz",
-  "archiveSha256": "64ba49bd722bf0a2d3fccf6aa6ee325f1ef1f99dbf41bc81c298d9a318268e88",
+  "archiveSha256": "8e8294a41148bf7f93ee72590e3d09ac9db2e509a2a3a1eb8f7be72298155538",
   "sourceBase": "5c35888d1c8bc25231d773de5cfc23d3467802f4",
   "files": [
     {
@@ -67,33 +67,53 @@
     },
     {
       "path": "public/assets/marca/fuentes.css",
-      "sha256": "433e415eb315142e62bce4f290436d888d524e4590b4dd10f0df6adf2aaa9ede",
-      "gitSha256": "433e415eb315142e62bce4f290436d888d524e4590b4dd10f0df6adf2aaa9ede"
+      "sha256": "cb1267bb9d26abb56ea218ef97f7a8f1956a9ad38c3823b0dcc868db0b9d8624",
+      "gitSha256": "cb1267bb9d26abb56ea218ef97f7a8f1956a9ad38c3823b0dcc868db0b9d8624"
     },
     {
       "path": "public/assets/marca/fuentes/atkinson-hyperlegible-latin-400-normal.woff2",
       "sha256": "b09653e3ba9d95e26da5c408979f40451990a4573ce5f96abe6982e2fcb09e6c",
-      "gitSha256": "3c79d9a4ad96561f6e5938802c5d2b5251fa605f2605a06bf10d65708507235c"
+      "gitSha256": "b09653e3ba9d95e26da5c408979f40451990a4573ce5f96abe6982e2fcb09e6c"
     },
     {
       "path": "public/assets/marca/fuentes/atkinson-hyperlegible-latin-700-normal.woff2",
       "sha256": "d8e8b1e0e929651439e25e23ade4b9d6cac073f2444aadb8e8b85431726c2036",
-      "gitSha256": "68b9af4ce6eb25e41a5b19627a41850a244f8064a1b5c02b43496380891cbba0"
+      "gitSha256": "d8e8b1e0e929651439e25e23ade4b9d6cac073f2444aadb8e8b85431726c2036"
+    },
+    {
+      "path": "public/assets/marca/fuentes/AVISOS.txt",
+      "sha256": "132269044ca52bb9d4820bee192f38ddf87e9087209262af2044cb208c9b62b9",
+      "gitSha256": "132269044ca52bb9d4820bee192f38ddf87e9087209262af2044cb208c9b62b9"
     },
     {
       "path": "public/assets/marca/fuentes/merriweather-sans-latin-800-normal.woff2",
       "sha256": "f83f753cfa404ed60021812a1879ce11d45895de0dcdf002c1d730ee45c9d5a7",
-      "gitSha256": "ef090d9a490f37e6e7a6bc09bdfa032f266e01afdd37e7167c079d4c11d296c3"
+      "gitSha256": "f83f753cfa404ed60021812a1879ce11d45895de0dcdf002c1d730ee45c9d5a7"
+    },
+    {
+      "path": "public/assets/marca/fuentes/OFL-atkinson-hyperlegible.txt",
+      "sha256": "e137caeef2ff7c04fbf87078ad09cf3dcba8a3a58a4aa4e2f399d42c50bc4b18",
+      "gitSha256": "e137caeef2ff7c04fbf87078ad09cf3dcba8a3a58a4aa4e2f399d42c50bc4b18"
+    },
+    {
+      "path": "public/assets/marca/fuentes/OFL-merriweather-sans.txt",
+      "sha256": "ba6dc157b0e082b436c7d2e5cbb81ca6ec8dae77401193fcb6f2662c23955aa9",
+      "gitSha256": "ba6dc157b0e082b436c7d2e5cbb81ca6ec8dae77401193fcb6f2662c23955aa9"
+    },
+    {
+      "path": "public/assets/marca/fuentes/OFL-opendyslexic.txt",
+      "sha256": "797cb441b593b3326a69fcf83d84264301d89e8871a75b38bae1d101e922e10c",
+      "gitSha256": "797cb441b593b3326a69fcf83d84264301d89e8871a75b38bae1d101e922e10c"
     },
     {
       "path": "public/assets/marca/fuentes/opendyslexic-latin-400-normal.woff2",
       "sha256": "f007004af3cda5d8076e57c943f8cc8d00a0da25988b1ae1048683d60e7cac1a",
-      "gitSha256": "d33b496251a83e226ad7d459d2bd02221a0940f084d56a8031afd828bac3d150"
+      "gitSha256": "f007004af3cda5d8076e57c943f8cc8d00a0da25988b1ae1048683d60e7cac1a"
     },
     {
       "path": "public/assets/marca/fuentes/opendyslexic-latin-700-normal.woff2",
       "sha256": "dd9fa9c7991113b0dddefe9506a30ad26b48e302b7a8fb91719a4726e8fde85b",
-      "gitSha256": "05d2ebf772b7996f53b63faaca5cb03c4ca582e1ce6895669273a8d8484fbb33"
+      "gitSha256": "dd9fa9c7991113b0dddefe9506a30ad26b48e302b7a8fb91719a4726e8fde85b"
     },
     {
       "path": "public/assets/marca/interact-marca-negativo.svg",
@@ -107,13 +127,13 @@
     },
     {
       "path": "public/assets/marca/ORIGEN.json",
-      "sha256": "fef5b8b07558cb8c98d9ed77c55b48a0e1cfbf34c034afd6ede8e16fb9e978b3",
-      "gitSha256": "fef5b8b07558cb8c98d9ed77c55b48a0e1cfbf34c034afd6ede8e16fb9e978b3"
+      "sha256": "ebb5ddcbde5fe73e01fc3052d462c26ed718b4ef193350507a27f25067b06355",
+      "gitSha256": "ebb5ddcbde5fe73e01fc3052d462c26ed718b4ef193350507a27f25067b06355"
     },
     {
       "path": "public/assets/marca/willedtech.css",
-      "sha256": "f581598d48bfe6097fd9a2e9a38cf52ba0275a5611ad3a28670cbb4696a926ca",
-      "gitSha256": "f581598d48bfe6097fd9a2e9a38cf52ba0275a5611ad3a28670cbb4696a926ca"
+      "sha256": "f0b8fc7f9ca7d1bb4f792d72d51615f70185fe0285bb70a65c66a8e60ac9b625",
+      "gitSha256": "f0b8fc7f9ca7d1bb4f792d72d51615f70185fe0285bb70a65c66a8e60ac9b625"
     },
     {
       "path": "public/docente/index.html",
