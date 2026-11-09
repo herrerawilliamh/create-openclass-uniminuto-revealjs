@@ -6,9 +6,9 @@ on:
   workflow_dispatch:
     inputs:
       release_tag:
-        description: 'Etiqueta aprobada e inmutable (openclass-live-v0.2.0)'
+        description: 'Etiqueta aprobada e inmutable (openclass-live-v0.2.1)'
         required: true
-        default: openclass-live-v0.2.0
+        default: openclass-live-v0.2.1
         type: string
 
 permissions:

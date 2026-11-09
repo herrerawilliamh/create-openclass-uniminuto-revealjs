@@ -17,6 +17,17 @@ no se afirma identidad binaria entre un tarball nuevo de Linux y el tarball apro
 Para futuras versiones: aprobar un nuevo artefacto y manifiesto; nunca cambiar silenciosamente
 los hashes para hacer pasar CI. Los archivos GitOps no forman parte del tarball anterior.
 
+## Release 0.2.1 (marca WillEdTech Interact)
+
+Aprobada por el propietario el 2026-11-08. Solo cambia la presentación visible y la versión:
+título y encabezado "WillEdTech Interact" en las vistas de estudiante y docente,
+monograma I en la barra, favicon nuevo y la versión 0.2.1 en package/lock/Compose.
+No cambian el protocolo (sigue en 2), la lógica del servidor ni los textos compartidos con
+la extensión de Reveal.js. `releases/0.2.1.json` registra los 24 archivos del tarball
+`openclass-live-0.2.1.tar.gz` (SHA-256 en el manifiesto), generado en Linux con
+`scripts/empaquetar-despliegue.mjs`. `releases/0.2.0.json` se conserva como registro histórico.
+La promoción sigue el mismo procedimiento manual con la etiqueta `openclass-live-v0.2.1`.
+
 ## Fuente aprobada y CI
 
 El propietario revisará el diff antes de commit/push. Tras autorizar su publicación:

@@ -23,14 +23,12 @@ def path(g, corners=((0,810),(810,810))):
 S1, S2 = 235, 575            # anchos de fuste, como la W (≈225 y 180)
 B = 585                      # línea donde nace la base
 PRODUCTS = {
- 'lti-provider':    dict(name='LTI Provider',    letter='L', color='#5464BF', tag='Integración LTI 1.3',
-                         shape=MASS.difference(box(S1,0,900,B)),                         dot=(560,415)),
- 'openclass-live':  dict(name='OpenClass Live',  letter='O', color='#F27405', tag='Clases y charlas en vivo',
-                         shape=MASS.difference(Polygon([(S1,cut(S1)+120),(S2,cut(S2)+120),(S2,B),(S1,B)])), dot=(150,180)),
- 'jarvis-pediatria':dict(name='Jarvis Pediatría', letter='J', color='#079F6C', tag='Asistente clínico con IA',
-                         shape=MASS.difference(box(S1,0,S2,B)).difference(box(-10,0,S1,500)), dot=(405,395)),
- 'studio':          dict(name='Studio',           letter='S', color='#F2E205', tag='Generador de contenido',
-                         shape=MASS.difference(box(S1,470,900,550)).difference(box(-10,635,S2,715)), dot=(150,180), ring=True),
+ 'learning':       dict(name='Learning',        letter='L', color='#5464BF', tag='Aprendizaje en tu LMS · LTI 1.3',
+                        shape=MASS.difference(box(S1,0,900,B)),                                   dot=(560,415)),
+ 'platform-studio':dict(name='Platform Studio', letter='S', color='#F2E205', tag='Generador de contenido',
+                        shape=MASS.difference(box(S1,470,900,550)).difference(box(-10,635,S2,715)), dot=(150,180), ring=True),
+ 'interact':       dict(name='Interact',        letter='I', color='#F27405', tag='Interacción en vivo con tu audiencia',
+                        shape=MASS.difference(box(-10,545,288,700)).difference(box(523,545,900,700)), dot=(150,180)),
 }
 DOT_R = 88
 def mark_inner(slug, ink='currentColor'):

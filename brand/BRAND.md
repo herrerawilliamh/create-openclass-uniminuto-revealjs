@@ -27,16 +27,25 @@ La **W** es el distintivo de la marca y nunca se redibuja: se usa `logo/willedte
 - **Color:** el isotipo va en tinta (`#0C0E15`), blanco o violeta `#5464BF`. Nunca en amarillo ni naranja.
 - **No hacer:** deformar, rotar, añadir sombras o degradados, o cambiar el ángulo del corte.
 
-## 2. Sub-marcas de producto: monogramas
+## 2. Productos y sub-marcas
 
+### Nombres
+- La regla es **WillEdTech + un nombre funcional en inglés**, que diga qué hace la herramienta.
+- En texto, el nombre **siempre lleva "WillEdTech" delante**: *WillEdTech Learning*, nunca *Learning* a secas. Los nombres son palabras genéricas y solo se pueden posicionar y proteger junto a la marca.
+- En los lockups gráficos, la W o el texto "by WillEdTech" cumplen esa función.
+- Las rutas y repos técnicos (`lti-provider`, `services/openclass-live`) pueden conservar sus nombres históricos; lo que ve el usuario usa el nombre del producto.
+
+### Monogramas
 Cada producto se representa con **una letra construida como la W** y **un punto de color**.
 
 | Producto | Letra | Color del punto | Descriptor | Carpeta |
 |---|---|---|---|---|
-| LTI Provider | L | Violeta `#5464BF` | Integración LTI 1.3 | `products/lti-provider/` |
-| OpenClass Live | O | Naranja `#F27405` | Clases y charlas en vivo | `products/openclass-live/` |
-| Jarvis Pediatría | J | Verde `#079F6C` (success-500) | Asistente clínico con IA | `products/jarvis-pediatria/` |
-| Studio | S | Amarillo `#F2E205`, con aro de tinta | Generador de contenido | `products/studio/` |
+| WillEdTech Learning | L | Violeta `#5464BF` | Aprendizaje en tu LMS · LTI 1.3 | `products/learning/` |
+| WillEdTech Platform Studio | S | Amarillo `#F2E205`, con aro de tinta | Generador de contenido | `products/platform-studio/` |
+| WillEdTech Interact | I con remates | Naranja `#F27405` | Interacción en vivo con tu audiencia | `products/interact/` |
+
+- La **I** se dibuja con remates arriba y abajo, como una viga: el bloque de la W con dos muescas laterales a media altura, que dejan un fuste de 235 en el centro.
+- La versión de i minúscula, solo el asta, se descartó: rompe la silueta cuadrada de la familia.
 
 En cada carpeta hay estos archivos, todos con su variante `-negativo`:
 - `*-marca.svg`: solo el monograma.
@@ -51,8 +60,8 @@ Sigue estos pasos sin inventar formas nuevas:
 2. Elige la inicial del producto y vacía el bloque **solo con rectángulos verticales y horizontales**. Los fustes miden **235** de ancho y la base nace en **y = 585**. Si una contraforma debe tocar el corte, su borde superior va paralelo a él.
 3. **Nada de diagonales internas.** La diagonal de 22,8° pertenece solo a la W.
 4. Añade **un círculo de radio 88** en el color del producto, en el vacío más grande de la letra. Es el único elemento de color.
-5. El color del punto sale de la paleta (`tokens/tailwind.config.js`). Si sobre fondo claro queda por debajo de 3:1, ponle un aro de 16 en `currentColor`, como en Studio.
-6. Comprueba que se lee a 16 px y que no se confunde con otra letra de la familia.
+5. El color del punto sale de la paleta y no repite el de otro producto (`tokens/tailwind.config.js`). Si sobre fondo claro queda por debajo de 3:1, ponle un aro de 16 en `currentColor`, como en Studio.
+6. Comprueba que se lee a 16 px y que no se confunde con la L, la S ni la I.
 7. Registra el producto en la tabla de arriba y en `tokens/tokens.json`.
 
 ## 3. Color

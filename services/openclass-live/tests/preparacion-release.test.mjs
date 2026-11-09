@@ -20,7 +20,7 @@ test('paquete reproducible, aislado y con versiones coherentes; rechaza archivos
     writeFileSync(path.join(dir, '.env'), 'PRIVATE_SENTINEL=DO_NOT_PACKAGE');
     const run = () => spawnSync(process.execPath, ['scripts/empaquetar-despliegue.mjs'], { cwd: dir, encoding: 'utf8' });
     assert.equal(run().status, 0);
-    const archive = path.join(dir, 'despliegue/openclass-live-0.2.0.tar.gz');
+    const archive = path.join(dir, 'despliegue/openclass-live-0.2.1.tar.gz');
     const first = readFileSync(archive);
     utimesSync(path.join(dir, 'src/server.mjs'), new Date(), new Date());
     assert.equal(run().status, 0);
