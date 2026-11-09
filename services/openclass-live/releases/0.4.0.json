@@ -152,7 +152,7 @@
     },
     {
       "path": "public/assets/vincular.mjs",
-      "sha256": "0883dcec5beb00e0a07068c64f6ea2405729ea40e7c89108f5eac09c866eb099",
+      "sha256": "44df79b7ec6e0235940f61fb56e0dc69bab32641c4484d37cb2afbfa0fe9492e",
       "gitSha256": "44df79b7ec6e0235940f61fb56e0dc69bab32641c4484d37cb2afbfa0fe9492e"
     },
     {
@@ -177,7 +177,7 @@
     },
     {
       "path": "public/vincular/index.html",
-      "sha256": "4356827290aae012f3e0572e85678b7cfbfd55fda473c3e11b8d3da4882d66f1",
+      "sha256": "f9bf85eedbfe115be1a62ad3a815b4a81a7aa9c35213bcbd7ce86dc45901a865",
       "gitSha256": "f9bf85eedbfe115be1a62ad3a815b4a81a7aa9c35213bcbd7ce86dc45901a865"
     },
     {
@@ -197,7 +197,7 @@
     },
     {
       "path": "src/api-cuentas.mjs",
-      "sha256": "67fd0521a27b6ad7a54aef35c7513acdb6769852212ecfebe870b42d4865d592",
+      "sha256": "6cb5f3d8761cab257b753c92d1ef8ef58a83cc0aaf203c4fecfa7835d9beaf1f",
       "gitSha256": "6cb5f3d8761cab257b753c92d1ef8ef58a83cc0aaf203c4fecfa7835d9beaf1f"
     },
     {
@@ -242,7 +242,7 @@
     },
     {
       "path": "src/limites.mjs",
-      "sha256": "84382001ff96c190c057d92b257fcbcfeb1510af02bf480bdec63da6b6b61f54",
+      "sha256": "a0c6f732b15ff94057b46078545a85ebfdee6cac8d97b750e8c868fcab563dbd",
       "gitSha256": "a0c6f732b15ff94057b46078545a85ebfdee6cac8d97b750e8c868fcab563dbd"
     },
     {
