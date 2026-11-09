@@ -1,16 +1,16 @@
-/* OpenClass Live · panel docente (Teacher Experience VNext, I4).
-   Se carga después de estilos.css y solo en /docente/. Paleta WillEdTech: #5464BF, #B3B3B3, #F2E205, #F27405.
-   Variantes accesibles: #4352A8 (texto/acciones secundarias), #20263D (tinta), #8A4300 (naranja legible sobre blanco). */
+/* WillEdTech Interact · panel docente (Teacher Experience VNext, I4).
+   Se carga después de estilos.css y solo en /docente/. Colores: tokens --wt-* de marca/willedtech.css (WillEdTech Brand v3).
+   El amarillo solo como relleno con tinta encima; el texto naranja usa secondary-ink. */
 body.docente {
-  --tinta: #20263d; --grafito: #566078; --tiza: #b3b3b3; --raya: rgba(32, 38, 61, .18);
-  --anil: #5464bf; --anil-hondo: #4352a8; --anil-velo: #e9ecf8; --marcador: #f2e205; --campana: #f27405; --campana-texto: #8a4300;
-  --visto: #17633f; --visto-velo: #e9f6ee; --tachon: #b42318;
-  --fondo: #f3f4fa; --texto: var(--tinta); --suave: var(--grafito); --borde: var(--raya);
+  --tinta: rgb(var(--wt-ink)); --grafito: rgb(var(--wt-ink-soft)); --tiza: rgb(var(--wt-line-strong)); --raya: rgb(var(--wt-ink) / .18);
+  --anil: rgb(var(--wt-primary)); --anil-hondo: rgb(var(--wt-primary-hover)); --anil-velo: rgb(var(--wt-primary-soft)); --marcador: rgb(var(--wt-accent)); --campana: rgb(var(--wt-secondary)); --campana-texto: rgb(var(--wt-secondary-ink));
+  --visto: rgb(var(--wt-success-700)); --visto-velo: rgb(var(--wt-success-soft)); --tachon: rgb(var(--wt-error));
+  --fondo: rgb(var(--wt-canvas)); --texto: var(--tinta); --suave: var(--grafito); --borde: var(--raya);
   --acento: var(--anil-hondo); --acento-claro: var(--anil-velo); --barra: var(--anil);
   --e1: 4px; --e2: 8px; --e3: 12px; --e4: 16px; --e6: 24px; --e8: 32px; --toque: 44px;
   --t-nota: .875rem; --t-enunciado: 1.5625rem; --t-reloj: 3.0625rem;
 }
-body.docente { background: var(--fondo); color: var(--tinta); }
+body.docente { background: var(--fondo); color: var(--tinta); font-family: var(--wt-font-body); }
 body.docente h1, body.docente h2, body.docente h3 { text-wrap: balance; line-height: 1.25; }
 body.docente p { text-wrap: pretty; }
 body.docente a { color: var(--anil-hondo); }
@@ -18,7 +18,7 @@ body.docente .suave { font-size: var(--t-nota); color: var(--grafito); }
 body.docente :focus-visible { outline: 3px solid var(--tinta); outline-offset: 3px; box-shadow: 0 0 0 3px var(--marcador); border-radius: 6px; }
 body.docente input:focus-visible, body.docente textarea:focus-visible, body.docente select:focus-visible, body.docente button:focus-visible { outline: 3px solid var(--tinta); outline-offset: 3px; }
 
-.salto { position: absolute; left: var(--e4); top: -100px; z-index: 5; background: #fff; padding: var(--e3) var(--e4); border-radius: 6px; }
+.salto { position: absolute; left: var(--e4); top: -100px; z-index: 5; background: rgb(var(--wt-surface)); padding: var(--e3) var(--e4); border-radius: 6px; }
 .salto:focus { top: var(--e2); }
 .solo-lector { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 main:focus { outline: none; }
@@ -26,7 +26,9 @@ main:focus { outline: none; }
 /* Cinta: identidad, código y navegación de la sala */
 .cinta { position: sticky; top: 0; z-index: 4; padding: var(--e2) var(--e4); background: var(--anil); color: #fff; }
 .cinta-fila { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--e1) var(--e4); max-width: 1360px; margin: 0 auto; }
-.cinta h1 { margin: 0; font-size: 1.05rem; font-weight: 650; }
+.cinta h1 { margin: 0; font-size: 1.05rem; }
+.marca-cinta { display: flex; align-items: center; gap: var(--e3); }
+.marca-cinta img { width: 32px; height: 32px; flex: none; }
 .marca-rol { font-weight: 400; opacity: .9; }
 .cinta .sub { font-size: var(--t-nota); opacity: 1; }
 .cinta-codigo { display: flex; align-items: baseline; gap: var(--e2); margin: 0; font-size: var(--t-nota); }
@@ -142,7 +144,7 @@ details.avanzado > summary { min-height: var(--toque); display: flex; align-item
 .aviso { border-radius: 6px; border: 1px solid transparent; }
 .aviso.error { border-color: var(--tachon); }
 .aviso.ok { border-color: var(--visto); }
-.aviso.alerta { border-color: var(--campana-texto); color: var(--campana-texto); background: #fff1e0; }
+.aviso.alerta { border-color: var(--campana-texto); color: var(--campana-texto); background: rgb(var(--wt-warning-soft)); }
 
 /* Acceso docente */
 .acceso { max-width: 440px; margin: var(--e8) auto; padding: var(--e6); background: #fff; border: 1px solid var(--raya); border-radius: 16px; }

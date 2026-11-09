@@ -1,0 +1,20 @@
+# Adaptación a WillEdTech Brand v3 (OpenClass Live 0.3.0)
+
+Procedencia: recursos privados de marca WillEdTech (tokens CSS, dos logotipos Interact y el favicon), copiados
+por lectura de API sin clonar. No se publican identificadores internos del repositorio de origen (nombre, SHA,
+fechas) en este repositorio. `public/assets/marca/ORIGEN.json` clasifica cada recurso.
+
+**Estado de publicación: `BRAND_PUBLICATION_AUTHORIZED=NO`.** El propietario aún no ha autorizado de forma expresa
+la redistribución pública de estos recursos; la presencia en un repositorio privado no equivale a permiso. Mientras
+tanto este release no es publicable. Ver `docs/BRAND-PUBLICACION.md`.
+
+## Qué cambia
+- Nombre visible: **WillEdTech Interact** (regla de nombres de BRAND.md §2). El servicio, la ruta
+  `services/openclass-live`, la imagen Docker y el protocolo conservan su nombre técnico.
+- Tokens: `assets/marca/willedtech.css` (copia con una corrección de CSS, ver `ORIGEN.json`) alimenta `estilos.css` y `docente.css`; ya no hay HEX sueltos de marca.
+- Logo: monograma «I» de Interact (versión negativa sobre la barra violeta) y favicon `interact-app.svg`.
+- Títulos en la tipografía de títulos de la marca (peso 800, −0,02em) y texto en la de lectura.
+- Estados: avisos con borde/icono además del color; «sin conexión» con ⚠ y texto.
+
+## Pendiente (no se improvisó)
+- **Fuentes**: autoalojadas (Fontsource latin, OFL 1.1) en `public/assets/marca/fuentes/`; el empaquetador admite `.woff2`.
