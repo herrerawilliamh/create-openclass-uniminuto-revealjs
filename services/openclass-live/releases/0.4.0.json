@@ -2,7 +2,7 @@
   "version": "0.4.0",
   "protocol": 2,
   "archive": "openclass-live-0.4.0.tar.gz",
-  "archiveSha256": "cfb7214939172df45253c4e97ec0ce7c750748e940357e0daff7c3f1cc388181",
+  "archiveSha256": "491d4eeb2d34ea8c0151254613e846d50f695eb02cd7b5325d6af03bd49c90de",
   "sourceBase": "79e06b5b497b19b7a097040066d1e85d63c0ef77",
   "files": [
     {
@@ -152,8 +152,8 @@
     },
     {
       "path": "public/assets/vincular.mjs",
-      "sha256": "fa2b4960462b628d63d97f8c5ca40b0efcfb9a99eff7d478e6af13e87045f82e",
-      "gitSha256": "fa2b4960462b628d63d97f8c5ca40b0efcfb9a99eff7d478e6af13e87045f82e"
+      "sha256": "0883dcec5beb00e0a07068c64f6ea2405729ea40e7c89108f5eac09c866eb099",
+      "gitSha256": "44df79b7ec6e0235940f61fb56e0dc69bab32641c4484d37cb2afbfa0fe9492e"
     },
     {
       "path": "public/cuenta/index.html",
@@ -177,8 +177,8 @@
     },
     {
       "path": "public/vincular/index.html",
-      "sha256": "f0f6d9be6d3afa8328460289b6ee65a9d6176197eb3a1e55adde3b1060a3c05a",
-      "gitSha256": "f0f6d9be6d3afa8328460289b6ee65a9d6176197eb3a1e55adde3b1060a3c05a"
+      "sha256": "4356827290aae012f3e0572e85678b7cfbfd55fda473c3e11b8d3da4882d66f1",
+      "gitSha256": "f9bf85eedbfe115be1a62ad3a815b4a81a7aa9c35213bcbd7ce86dc45901a865"
     },
     {
       "path": "scripts/hash-password.mjs",
@@ -197,8 +197,8 @@
     },
     {
       "path": "src/api-cuentas.mjs",
-      "sha256": "d9ff2bbf2ecab87e41cc06789f00896a7a070c018e71fc8af64f8cbbd726903f",
-      "gitSha256": "d9ff2bbf2ecab87e41cc06789f00896a7a070c018e71fc8af64f8cbbd726903f"
+      "sha256": "67fd0521a27b6ad7a54aef35c7513acdb6769852212ecfebe870b42d4865d592",
+      "gitSha256": "6cb5f3d8761cab257b753c92d1ef8ef58a83cc0aaf203c4fecfa7835d9beaf1f"
     },
     {
       "path": "src/app.mjs",
@@ -242,8 +242,8 @@
     },
     {
       "path": "src/limites.mjs",
-      "sha256": "c8f015ce058738593e7a92ffc7014f8bd54f41ab5065ed5efa8ce7635f8c349e",
-      "gitSha256": "c8f015ce058738593e7a92ffc7014f8bd54f41ab5065ed5efa8ce7635f8c349e"
+      "sha256": "84382001ff96c190c057d92b257fcbcfeb1510af02bf480bdec63da6b6b61f54",
+      "gitSha256": "a0c6f732b15ff94057b46078545a85ebfdee6cac8d97b750e8c868fcab563dbd"
     },
     {
       "path": "src/migraciones/001-cuentas-historial.sql",
