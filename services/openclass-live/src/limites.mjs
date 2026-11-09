@@ -33,13 +33,14 @@ export function crearLimitador({ capacidad, porSegundo }) {
   };
 }
 
-/** IP del cliente: detrás de Traefik se usa X-Real-Ip (Traefik descarta las cabeceras del cliente). */
+/** IP del cliente: detrás de Traefik se usa el último tramo de X-Forwarded-For; con TRUST_PROXY=false se ignoran todas las cabeceras. */
 export function ipCliente(cabeceras, direccion, confiarProxy) {
   if (confiarProxy) {
-    const real = String(cabeceras['x-real-ip'] ?? '').trim();
-    if (real) return real;
+    // El último tramo de X-Forwarded-For lo añade el proxy de confianza; lo anterior y X-Real-Ip los puede falsificar el cliente.
     const reenviada = String(cabeceras['x-forwarded-for'] ?? '').split(',').pop().trim();
     if (reenviada) return reenviada;
+    const real = String(cabeceras['x-real-ip'] ?? '').trim();
+    if (real) return real;
   }
   return String(direccion ?? 'desconocida');
 }

@@ -170,6 +170,8 @@ test('vincular: sin sesión pide iniciar sesión; con sesión aprueba el código
   await pagina.ir(`${APP}/vincular/`);
   await pagina.esperarA(visible('v-codigo'));
   await pagina.evaluar(`document.getElementById('codigo').value = ${JSON.stringify(ini.codigo.replace('-', '').toLowerCase())}; document.getElementById('codigo').dispatchEvent(new Event('input')); document.getElementById('f-codigo').requestSubmit();`);
+  await pagina.esperarA(visible('v-confirmar'));
+  await pagina.evaluar(`document.getElementById('b-confirmar').click();`);
   await pagina.esperarA(visible('v-ok'));
   await capturar(pagina, '10-vincular-aprobado');
   const sondeo = await fetch(`${APP}/api/vinculo/sondear`, { method: 'POST', headers: { origin: LOCAL, 'content-type': 'application/json' }, body: JSON.stringify({ id: ini.id, secreto: ini.secreto }) }).then((r) => r.json());

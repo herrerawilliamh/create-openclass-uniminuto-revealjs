@@ -59,6 +59,8 @@ export function crearApiCuentas({ config, firmador, sesiones, cuentas, historial
     const o = origenLocal(req);
     return o ? { 'Access-Control-Allow-Origin': o, Vary: 'Origin' } : {};
   };
+  /** Red aproximada del solicitante (último tramo oculto): contexto orientativo, no identidad. */
+  const enmascarar = (ip) => String(ip ?? '').replace(/(\d+\.\d+)\.\d+\.\d+$/, '$1.x.x').replace(/(:[0-9a-f]*){2,}$/i, ':…');
   function purgarVinculos() { const t = Date.now(); for (const [id, v] of vinculos) if (v.vence <= t) vinculos.delete(id); }
   function bearer(req) {
     const m = /^Bearer (.{20,400})$/.exec(String(req.headers.authorization ?? ''));
@@ -135,7 +137,7 @@ export function crearApiCuentas({ config, firmador, sesiones, cuentas, historial
         const secreto = randomBytes(24).toString('base64url');
         let codigo = '';
         for (let i = 0; i < 8; i++) codigo += TEXTO_CODIGO[randomBytes(1)[0] % TEXTO_CODIGO.length];
-        vinculos.set(id, { ip: ipV, codigoHash: sha(codigo), secretoHash: sha(secreto), vence: Date.now() + VINCULO_MS, usuarioId: null, entregado: false });
+        vinculos.set(id, { ip: ipV, origen, creado: Date.now(), codigoHash: sha(codigo), secretoHash: sha(secreto), vence: Date.now() + VINCULO_MS, usuarioId: null, entregado: false });
         // El navegador del sistema abre /vincular/ SIN token en la URL: la persona escribe el código que ve en la presentación.
         out(200, { id, secreto, codigo: `${codigo.slice(0, 4)}-${codigo.slice(4)}`, url: `${config.appUrl}/vincular/`, venceEn: VINCULO_MS / 1000 });
         return true;
@@ -243,8 +245,13 @@ export function crearApiCuentas({ config, firmador, sesiones, cuentas, historial
       const h = sha(codigo);
       const v = [...vinculos.values()].find((x) => !x.usuarioId && iguales(x.codigoHash, h));
       if (!codigo || !v) return enviar(res, 404, { error: 'codigo_invalido' }), true;
+      // Doble paso: el código por sí solo no concede nada. Se muestra el contexto declarado por quien lo pidió
+      // (origen y hora; la red solo si el proxy es de confianza) y la persona debe confirmar. Nada de esto acredita identidad.
+      if (c.confirmar !== true) {
+        return enviar(res, 200, { pendiente: true, contexto: { origen: v.origen, hace: Math.max(0, Math.round((Date.now() - v.creado) / 1000)), red: enmascarar(v.ip), verificado: false } }), true;
+      }
       v.usuarioId = s.usuario.id;
-      cuentas.auditar(s.usuario.id, 'vinculo_local_aprobado');
+      cuentas.auditar(s.usuario.id, 'vinculo_local_aprobado', `origen=${v.origen}`);
       return enviar(res, 200, { ok: true }), true;
     }
     if (ruta === '/api/historial/eliminar') {

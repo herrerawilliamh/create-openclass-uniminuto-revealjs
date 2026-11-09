@@ -562,7 +562,7 @@ export function OpenClassLive({ servidor }) {
     const r = ultimaRonda(m.activa);
     // Con cada voto solo cambia el número de respuestas: se actualiza sin rehacer el menú (el foco no salta).
     const firma = JSON.stringify([m.tipo, m.deAqui, m.activa?.id, m.activa?.ronda, m.activa?.estado, m.activa?.resultadosPublicados, m.activa?.correctaRevelada,
-      r?.cierra, r?.cierre, m.previa?.id, sala?.codigo, estado?.sala?.conectados, duracion(), textoMensaje, guiaAbierta, vista, conectando,
+      r?.cierra, r?.cierre, m.previa?.id, sala?.codigo, estado?.sala?.conectados, duracion(), textoMensaje, guiaAbierta, vista, conectando, cuenta.estado, cuenta.codigo, cuenta.url, cuenta.usuario?.email ?? cuenta.usuario?.nombre,
       encuestaDeDiapositiva() ? ocultos.has(deck.getCurrentSlide()) : null, deck?.getIndices?.()]);
     if (firma === firmaMenu) {
       menu.querySelectorAll('[data-oc-respuestas]').forEach((n) => { n.textContent = String(r?.respondientes ?? 0); });

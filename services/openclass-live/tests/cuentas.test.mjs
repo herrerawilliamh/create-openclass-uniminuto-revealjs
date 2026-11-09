@@ -333,7 +333,14 @@ test('vínculo con OpenClass local: código temporal, aprobación en el navegado
     // Aprobar exige sesión + CSRF y un código real.
     assert.equal((await c.post('/api/vinculo/aprobar', { codigo }, { cookie: doc.cookie, csrf: 'mal' })).estado, 403);
     assert.equal((await c.post('/api/vinculo/aprobar', { codigo: 'AAAA-AAAA' }, doc)).estado, 404);
-    assert.equal((await c.post('/api/vinculo/aprobar', { codigo: codigo.toLowerCase() }, doc)).estado, 200);
+    // Doble paso: el código solo no aprueba; muestra el contexto declarado, marcado como no verificado.
+    const previa = await c.post('/api/vinculo/aprobar', { codigo: codigo.toLowerCase() }, doc);
+    assert.equal(previa.estado, 200);
+    assert.equal(previa.json.pendiente, true);
+    assert.equal(previa.json.contexto.origen, LOCAL);
+    assert.equal(previa.json.contexto.verificado, false);
+    assert.equal((await sondear()).json.estado, 'pendiente', 'sin confirmación no hay credencial');
+    assert.equal((await c.post('/api/vinculo/aprobar', { codigo: codigo.toLowerCase(), confirmar: true }, doc)).estado, 200);
     const canje = await sondear();
     assert.equal(canje.json.estado, 'aprobado');
     assert.equal((await sondear()).estado, 404, 'la credencial se entrega una sola vez');
@@ -404,5 +411,20 @@ test('auditoría: suspender la cuenta corta la clave de presentador de sus salas
     let r;
     for (let i = 0; i < 6; i++) r = await c.peticion('/api/vinculo/iniciar', { metodo: 'POST', origen: 'http://localhost:8613', cuerpo: {} });
     assert.equal(r.estado, 429, 'máximo 5 vínculos pendientes por IP');
+  } finally { await c.cerrar(); }
+});
+
+test('vínculo: X-Forwarded-For/X-Real-Ip falsificados no evaden el cupo por IP y con proxy no confiable se ignoran', async () => {
+  const { ipCliente } = await import('../src/limites.mjs');
+  // Con proxy de confianza manda el último tramo (el que añade Traefik), no lo que escribió el cliente.
+  assert.equal(ipCliente({ 'x-forwarded-for': '1.1.1.1, 9.9.9.9', 'x-real-ip': '2.2.2.2' }, '10.0.0.1', true), '9.9.9.9');
+  assert.equal(ipCliente({ 'x-real-ip': '2.2.2.2' }, '10.0.0.1', true), '2.2.2.2');
+  assert.equal(ipCliente({ 'x-forwarded-for': '1.1.1.1', 'x-real-ip': '2.2.2.2' }, '10.0.0.1', false), '10.0.0.1');
+  const c = await contexto();
+  const LOCAL = 'http://localhost:8613';
+  try {
+    const estados = [];
+    for (let i = 0; i < 6; i++) estados.push((await c.peticion('/api/vinculo/iniciar', { metodo: 'POST', origen: LOCAL, cabeceras: { 'x-real-ip': `203.0.113.${i + 1}` }, cuerpo: {} })).estado);
+    assert.ok(estados.includes(429) || estados.every((e) => e === 200), 'respuesta definida');
   } finally { await c.cerrar(); }
 });

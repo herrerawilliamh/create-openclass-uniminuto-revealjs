@@ -55,6 +55,20 @@ producción). Variables: `SMTP_HOST`, `SMTP_PORT` (587 STARTTLS / 465 TLS), `SMT
 **Estado actual: no hay proveedor SMTP configurado; no se ha enviado ningún correo real.** Con transporte no real,
 la API responde `correo: simulado|desactivado|fallido` y el administrador recibe `enlaceManual` para entregarlo por
 otro medio. La interfaz dice «correo SIMULADO / NO configurado»; nunca afirma un envío que no ocurrió.
+La verificación del correo **sigue siendo obligatoria**: con SMTP desactivado una cuenta nueva no puede iniciar sesión
+hasta que el administrador entregue el `enlaceManual` por un canal que él considere fiable. No existe ningún atajo
+(variable, bandera ni ruta) que marque una cuenta como verificada sin el token.
+
+## Vínculo con OpenClass local — modelo de confianza
+- El código (8 caracteres, 5 min) por sí solo no concede nada: al introducirlo, la página `/vincular/` muestra el
+  **contexto declarado** por quien lo pidió (origen, antigüedad y red aproximada con el último tramo oculto), rotulado
+  como no verificado, y exige confirmar «Sí, soy yo». Alguien que consiga que otra persona escriba su código no obtiene
+  la cuenta sin esa confirmación; el origen proviene de la cabecera `Origin` (un cliente no navegador puede falsearla).
+- Cupos: 200 vínculos pendientes en total y 5 por IP; el límite por IP se aplica a iniciar, sondear y aprobar.
+- IP del cliente: con `TRUST_PROXY=true` se usa el **último** tramo de `X-Forwarded-For` (lo añade Traefik); `X-Real-Ip`
+  solo si no hay XFF, porque Traefik no lo sobrescribe. Con `TRUST_PROXY=false` se ignoran todas. Si el servicio se
+  expone sin proxy, `TRUST_PROXY` debe ser `false` (el valor por omisión es `true`, pensado para Traefik).
+
 Probado contra un servidor SMTP local de prueba (`tests/correo.test.mjs`); falta una prueba contra el proveedor real.
 
 ## Persistencia
