@@ -43,7 +43,7 @@ function conSala(datos) {
   return { salaId: V.id(salaId, 'salaId'), resto };
 }
 
-export function crearSockets(servidorHttp, { config, almacen, firmador, sesiones, log, historial = null, ahora = Date.now, intervaloSesionesMs = 5_000 }) {
+export function crearSockets(servidorHttp, { config, almacen, firmador, sesiones, log, historial = null, cuentas = null, ahora = Date.now, intervaloSesionesMs = 5_000 }) {
   const io = new Server(servidorHttp, {
     serveClient: true,
     maxHttpBufferSize: 16 * 1024,
@@ -71,8 +71,13 @@ export function crearSockets(servidorHttp, { config, almacen, firmador, sesiones
   function destinatarioVigente(socket) {
     const { rol, salaId, version } = socket.data;
     if (rol === 'docente') return panelVigente(socket.data, sesiones);
-    if (rol === 'presentador') return almacen.existe(salaId) && almacen.versionPresentador(salaId) === version;
+    if (rol === 'presentador') return almacen.existe(salaId) && almacen.versionPresentador(salaId) === version && propietarioActivo(salaId);
     return false;
+  }
+  /** Una cuenta suspendida deja sin efecto sus salas: las claves de presentador de su sala dejan de valer. */
+  function propietarioActivo(salaId) {
+    const dueno = almacen.propietarioDe(salaId);
+    return !dueno || !cuentas || cuentas.usuario(dueno)?.estado === 'activo';
   }
   function cortarSocket(socket) {
     for (const sala of socket.rooms) if (sala !== socket.id) socket.leave(sala);
@@ -218,7 +223,7 @@ export function crearSockets(servidorHttp, { config, almacen, firmador, sesiones
   /** Corta los sockets del panel cuya sesión ya no es válida (revocada o vencida). Los presentadores no se tocan. */
   function cortarSesionesInvalidas() {
     for (const socket of docentes.sockets.values()) {
-      if (socket.data.rol === 'docente' && !panelVigente(socket.data, sesiones)) cortarSocket(socket);
+      if (!destinatarioVigente(socket)) cortarSocket(socket);
     }
   }
   sesiones.alRevocar((sid) => {
@@ -240,7 +245,7 @@ export function crearSockets(servidorHttp, { config, almacen, firmador, sesiones
         return next(Object.assign(new Error('protocolo'), { data: { protocolo: PROTOCOLO } }));
       }
       const d = firmador.verificar(auth.clave, 'presentador');
-      if (!d || !almacen.existe(d.s) || almacen.versionPresentador(d.s) !== d.v) return next(new Error('clave'));
+      if (!d || !almacen.existe(d.s) || almacen.versionPresentador(d.s) !== d.v || !propietarioActivo(d.s)) return next(new Error('clave'));
       socket.data = { rol: 'presentador', salaId: d.s, version: d.v };
       return next();
     }
@@ -272,7 +277,7 @@ export function crearSockets(servidorHttp, { config, almacen, firmador, sesiones
       } else {
         if (soloDocente) throw new ErrorSala('prohibido', 'Operación reservada al panel docente');
         if (salaId && salaId !== socket.data.salaId) throw new ErrorSala('prohibido', 'La clave no corresponde a esta sala');
-        if (!almacen.existe(socket.data.salaId) || almacen.versionPresentador(socket.data.salaId) !== socket.data.version) {
+        if (!almacen.existe(socket.data.salaId) || almacen.versionPresentador(socket.data.salaId) !== socket.data.version || !propietarioActivo(socket.data.salaId)) {
           expulsar();
           throw new ErrorSala('clave', 'La clave de presentador fue revocada o venció');
         }

@@ -68,7 +68,9 @@ export function respaldar(db, dirDestino, { conservar = 7, ahora = new Date() } 
   let destino = path.join(dirDestino, `interact-${sello}.sqlite`);
   for (let n = 1; statSyncSeguro(destino); n++) destino = path.join(dirDestino, `interact-${sello}-${n}.sqlite`);
   db.exec(`VACUUM INTO '${destino.replace(/'/g, "''")}'`);
-  const copias = readdirSync(dirDestino).filter((f) => /^interact-.*\.sqlite$/.test(f)).sort();
+  const copias = readdirSync(dirDestino).filter((f) => /^interact-.*\.sqlite$/.test(f))
+    // «…Z» ordena antes que «…Z-1»: el sufijo de colisión es la copia más nueva y no debe borrarse primero.
+    .sort((a, b) => (a.slice(0, -7) < b.slice(0, -7) ? -1 : 1));
   for (const vieja of copias.slice(0, Math.max(0, copias.length - conservar))) rmSync(path.join(dirDestino, vieja), { force: true });
   return destino;
 }

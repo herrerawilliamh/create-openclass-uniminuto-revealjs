@@ -367,3 +367,42 @@ test('sockets: revocar la sesión (suspender) corta al docente conectado', async
     await Promise.race([cortado, esperar(2000).then(() => { throw new Error('no se cortó'); })]);
   } finally { await c.cerrar(); }
 });
+
+test('auditoría: variantes del correo comparten límite, olvide no bloquea el login, JSON null da 400', async () => {
+  const c = await contexto();
+  try {
+    const admin = await c.entrar(ADMIN.email, ADMIN.password);
+    await c.crearDocente(admin, 'aud@uni.test', 'clave-auditoria-larga-1');
+    let ultimo;
+    for (let i = 0; i < 12; i++) ultimo = await c.post('/api/auth/login', { email: `${' '.repeat(i)}AUD@uni.test`, password: `mala-${i}-mala-mala-xx` });
+    assert.equal(ultimo.estado, 429, 'espacios y mayúsculas no multiplican los intentos');
+    const c2 = await contexto();
+    try {
+      const a2 = await c2.entrar(ADMIN.email, ADMIN.password);
+      await c2.crearDocente(a2, 'v@uni.test', 'clave-victima-larga-1');
+      for (let i = 0; i < 8; i++) await c2.post('/api/auth/olvide', { email: 'v@uni.test' });
+      assert.equal((await c2.post('/api/auth/login', { email: 'v@uni.test', password: 'clave-victima-larga-1' })).estado, 200, 'pedir recuperaciones no bloquea el login');
+    } finally { await c2.cerrar(); }
+    for (const cuerpo of ['null', '5', '[]']) assert.equal((await c.peticion('/api/auth/login', { metodo: 'POST', cuerpo })).estado, 400, cuerpo);
+  } finally { await c.cerrar(); }
+});
+
+test('auditoría: suspender la cuenta corta la clave de presentador de sus salas; el vínculo tiene cupo por IP', async () => {
+  const c = await contexto({ barridoMs: 50 });
+  try {
+    const admin = await c.entrar(ADMIN.email, ADMIN.password);
+    const doc = await c.crearDocente(admin, 'sus@uni.test');
+    const { s } = await c.docente(doc.cookie);
+    const sala = (await pedir(s, 'sala:crear', { titulo: 'X' })).sala;
+    const clave = (await pedir(s, 'sala:clave', { salaId: sala.id })).clave;
+    const pres = await c.presentador(clave);
+    const cortado = new Promise((r) => pres.s.on('disconnect', r));
+    const id = (await c.get('/api/admin/usuarios', admin)).json.usuarios.find((u) => u.email === 'sus@uni.test').id;
+    await c.post('/api/admin/usuarios/estado', { id, estado: 'suspendido' }, admin);
+    await Promise.race([cortado, esperar(2500).then(() => { throw new Error('el presentador siguió conectado'); })]);
+    await assert.rejects(c.presentador(clave), /clave/);
+    let r;
+    for (let i = 0; i < 6; i++) r = await c.peticion('/api/vinculo/iniciar', { metodo: 'POST', origen: 'http://localhost:8613', cuerpo: {} });
+    assert.equal(r.estado, 429, 'máximo 5 vínculos pendientes por IP');
+  } finally { await c.cerrar(); }
+});

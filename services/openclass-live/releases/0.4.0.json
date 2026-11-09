@@ -2,7 +2,7 @@
   "version": "0.4.0",
   "protocol": 2,
   "archive": "openclass-live-0.4.0.tar.gz",
-  "archiveSha256": "6a91225a785ca967343799b3ef35332e0e85b2957e2d173cba853c2fd37e07dd",
+  "archiveSha256": "cfb7214939172df45253c4e97ec0ce7c750748e940357e0daff7c3f1cc388181",
   "sourceBase": "79e06b5b497b19b7a097040066d1e85d63c0ef77",
   "files": [
     {
@@ -197,8 +197,8 @@
     },
     {
       "path": "src/api-cuentas.mjs",
-      "sha256": "acdb9dca368e992907562fcd94ac004d56fdf9e5ce17df5c526cb5d5e28cd27f",
-      "gitSha256": "acdb9dca368e992907562fcd94ac004d56fdf9e5ce17df5c526cb5d5e28cd27f"
+      "sha256": "d9ff2bbf2ecab87e41cc06789f00896a7a070c018e71fc8af64f8cbbd726903f",
+      "gitSha256": "d9ff2bbf2ecab87e41cc06789f00896a7a070c018e71fc8af64f8cbbd726903f"
     },
     {
       "path": "src/app.mjs",
@@ -227,8 +227,8 @@
     },
     {
       "path": "src/db.mjs",
-      "sha256": "dc4cc6aaae0f373f2813636040fe17d27d9bda7e530a33f15e2c28653f06de71",
-      "gitSha256": "dc4cc6aaae0f373f2813636040fe17d27d9bda7e530a33f15e2c28653f06de71"
+      "sha256": "a5916fd0cc20cc9317c10c5659d4ff91fce2123525134db660835fad425c66c2",
+      "gitSha256": "a5916fd0cc20cc9317c10c5659d4ff91fce2123525134db660835fad425c66c2"
     },
     {
       "path": "src/historial.mjs",
@@ -237,8 +237,8 @@
     },
     {
       "path": "src/http.mjs",
-      "sha256": "d86144916e1b512e6823e1ad23d5670084277ee05d8257b2360b0e7b44cae9c6",
-      "gitSha256": "d86144916e1b512e6823e1ad23d5670084277ee05d8257b2360b0e7b44cae9c6"
+      "sha256": "bed9e7937700faf168788e898bebab78d73310d7fe571eb6801eacf3e4922b23",
+      "gitSha256": "bed9e7937700faf168788e898bebab78d73310d7fe571eb6801eacf3e4922b23"
     },
     {
       "path": "src/limites.mjs",
@@ -267,8 +267,8 @@
     },
     {
       "path": "src/sockets.mjs",
-      "sha256": "6ceb69c7b02c98366c3a42b73ee686deff9312186a0c52e5fa0c0f1f8a39d75f",
-      "gitSha256": "6ceb69c7b02c98366c3a42b73ee686deff9312186a0c52e5fa0c0f1f8a39d75f"
+      "sha256": "39dccee41fa0852381756daead3a9dc01d1b9a11111803659e03844879ca8114",
+      "gitSha256": "39dccee41fa0852381756daead3a9dc01d1b9a11111803659e03844879ca8114"
     },
     {
       "path": "src/validar.mjs",

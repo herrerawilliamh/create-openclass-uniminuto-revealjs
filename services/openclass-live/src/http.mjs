@@ -80,7 +80,10 @@ async function leerJson(req, limite = 2048) {
     if (total > limite) throw Object.assign(new Error('grande'), { estado: 413 });
     partes.push(parte);
   }
-  try { return JSON.parse(Buffer.concat(partes).toString('utf8') || '{}'); } catch { throw Object.assign(new Error('json'), { estado: 400 }); }
+  let valor;
+  try { valor = JSON.parse(Buffer.concat(partes).toString('utf8') || '{}'); } catch { throw Object.assign(new Error('json'), { estado: 400 }); }
+  if (valor === null || typeof valor !== 'object' || Array.isArray(valor)) throw Object.assign(new Error('json'), { estado: 400 });
+  return valor;
 }
 
 /** Sesión docente desde la cookie firmada; null si no hay, es inválida, venció o se revocó. */

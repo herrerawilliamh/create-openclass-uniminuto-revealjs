@@ -18,6 +18,7 @@ const iguales = (a, b) => { const x = Buffer.from(a), y = Buffer.from(b); return
 export function crearApiCuentas({ config, firmador, sesiones, cuentas, historial, correo, almacen, log, limitadorCuenta, limitadorTokens, util }) {
   const { enviar, leerJson, mismoOrigen, sesionDesdeCookie, ipCliente } = util;
   const url = enlaces(config.appUrl);
+  const claveCuenta = (prefijo, email) => `${prefijo}:${createHash('sha256').update(String(email).trim().toLowerCase()).digest('base64url')}`;
   const vinculos = new Map(); // id → { codigoHash, secretoHash, vence, usuarioId|null, entregado }
 
   const ts = (ms) => new Date(ms).toISOString();
@@ -128,12 +129,13 @@ export function crearApiCuentas({ config, firmador, sesiones, cuentas, historial
       const cuerpo = await leerJson(req);
 
       if (ruta === '/api/vinculo/iniciar') {
-        if (vinculos.size >= 200) return out(429, { error: 'demasiados_intentos' }), true;
+        const ipV = ipCliente(req);
+        if (vinculos.size >= 200 || [...vinculos.values()].filter((v) => v.ip === ipV).length >= 5) return out(429, { error: 'demasiados_intentos' }), true; // cupo global y por IP
         const id = randomBytes(9).toString('base64url');
         const secreto = randomBytes(24).toString('base64url');
         let codigo = '';
         for (let i = 0; i < 8; i++) codigo += TEXTO_CODIGO[randomBytes(1)[0] % TEXTO_CODIGO.length];
-        vinculos.set(id, { codigoHash: sha(codigo), secretoHash: sha(secreto), vence: Date.now() + VINCULO_MS, usuarioId: null, entregado: false });
+        vinculos.set(id, { ip: ipV, codigoHash: sha(codigo), secretoHash: sha(secreto), vence: Date.now() + VINCULO_MS, usuarioId: null, entregado: false });
         // El navegador del sistema abre /vincular/ SIN token en la URL: la persona escribe el código que ve en la presentación.
         out(200, { id, secreto, codigo: `${codigo.slice(0, 4)}-${codigo.slice(4)}`, url: `${config.appUrl}/vincular/`, venceEn: VINCULO_MS / 1000 });
         return true;
@@ -180,7 +182,7 @@ export function crearApiCuentas({ config, firmador, sesiones, cuentas, historial
 
       if (ruta === '/api/auth/login') {
         const email = textoCorto(c.email);
-        const clave = `email:${createHash('sha256').update(email.toLowerCase()).digest('base64url')}`;
+        const clave = claveCuenta('login', email); // variantes con espacios o mayúsculas comparten cubeta; olvide/reenviar no la gastan
         if (!limitadorCuenta.permitir(clave)) { log('login_limitado'); return enviar(res, 429, { error: 'demasiados_intentos' }, undefined, { 'Retry-After': '60' }), true; }
         const r = cuentas.autenticar(email, c.password);
         if (r.error === 'credenciales' || r.error === 'suspendido') {
@@ -212,7 +214,7 @@ export function crearApiCuentas({ config, firmador, sesiones, cuentas, historial
       }
       if (ruta === '/api/auth/verificacion/reenviar' || ruta === '/api/auth/olvide') {
         const email = textoCorto(c.email);
-        const clave = `email:${createHash('sha256').update(email.toLowerCase()).digest('base64url')}`;
+        const clave = claveCuenta(ruta.endsWith('reenviar') ? 'reenviar' : 'olvide', email);
         if (limitadorCuenta.permitir(clave)) {
           const esVerif = ruta.endsWith('reenviar');
           const t = esVerif ? cuentas.reemitirVerificacion(email) : cuentas.solicitarRecuperacion(email);

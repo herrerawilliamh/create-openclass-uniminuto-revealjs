@@ -43,7 +43,8 @@ Recuperación: `/cuenta/#olvide` → enlace de un solo uso (`RESET_TTL_MINUTES`,
 exista o no la cuenta; el login devuelve el mismo 401 para cuenta inexistente, contraseña errónea o cuenta
 suspendida (con tiempo de cálculo comparable).
 
-Límites: login 5 intentos por cuenta (recarga 1/min) + 5/min por IP + 30 globales; endpoints de token por IP.
+Límites: login 5 intentos por cuenta (correo normalizado; recarga 1/min; olvide/reenviar tienen cubetas aparte, así no se puede bloquear a un tercero pidiendo recuperaciones); endpoints `/api/auth/*` por IP (ráfaga 60, 0,5/s); el login heredado conserva 5/min por IP + 30 globales. Quien conozca el correo de otra persona puede agotar su cubeta de login con intentos fallidos (bloqueo temporal de 1 min por ficha): riesgo aceptado y mitigado por el límite por IP.
+Suspender una cuenta revoca sus sesiones y deja sin efecto las claves de presentador de sus salas; restablecer la contraseña revoca sesiones pero no rota esas claves (vencen con la sala).
 
 ## Correo (SMTP) — configuración pendiente
 
