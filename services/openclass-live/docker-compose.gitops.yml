@@ -22,7 +22,7 @@ services:
       TZ: ${TZ:-America/Bogota}
       APP_URL: ${APP_URL:?APP_URL is required}
       SESSION_SECRET: ${SESSION_SECRET:?SESSION_SECRET is required}
-      # Opcional (acceso heredado de 0.3.0). Vacío = solo cuentas personales.
+      # Opcional (acceso heredado 0.3.0). Vacío = solo cuentas personales.
       ADMIN_PASSWORD_HASH: ${ADMIN_PASSWORD_HASH:-}
       DATA_DIR: /data
       MAIL_TRANSPORT: ${MAIL_TRANSPORT:-desactivado}
