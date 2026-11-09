@@ -22,7 +22,15 @@ services:
       TZ: ${TZ:-America/Bogota}
       APP_URL: ${APP_URL:?APP_URL is required}
       SESSION_SECRET: ${SESSION_SECRET:?SESSION_SECRET is required}
-      ADMIN_PASSWORD_HASH: ${ADMIN_PASSWORD_HASH:?ADMIN_PASSWORD_HASH is required}
+      # Opcional (acceso heredado 0.3.0). Vacío = solo cuentas personales.
+      ADMIN_PASSWORD_HASH: ${ADMIN_PASSWORD_HASH:-}
+      DATA_DIR: /data
+      MAIL_TRANSPORT: ${MAIL_TRANSPORT:-desactivado}
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      MAIL_FROM: ${MAIL_FROM:-}
       PRESENTER_ORIGINS: ${PRESENTER_ORIGINS:-http://localhost:8613,http://localhost:8600}
       TRUST_PROXY: ${TRUST_PROXY:-true}
       TEACHER_SESSION_HOURS: ${TEACHER_SESSION_HOURS:-8}
@@ -32,6 +40,8 @@ services:
     init: true
     user: "1000:1000"
     read_only: true
+    volumes:
+      - interact-data:/data
     tmpfs:
       - /tmp:size=16m,mode=1777
     cap_drop:
@@ -67,6 +77,9 @@ services:
       - "traefik.http.routers.openclass-live.tls.certresolver=myresolver"
       - "traefik.http.routers.openclass-live.service=openclass-live-svc"
       - "traefik.http.services.openclass-live-svc.loadbalancer.server.port=3000"
+
+volumes:
+  interact-data:
 
 networks:
   web:

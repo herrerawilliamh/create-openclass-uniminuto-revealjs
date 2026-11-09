@@ -18,6 +18,10 @@ COPY package.json ./
 COPY src ./src
 COPY public ./public
 COPY scripts/hash-password.mjs ./scripts/hash-password.mjs
+COPY scripts/init-superusuario.mjs ./scripts/init-superusuario.mjs
+COPY scripts/respaldar.mjs ./scripts/respaldar.mjs
+# Volumen persistente de la base SQLite, propiedad del usuario de ejecución.
+RUN mkdir /data && chown node:node /data
 USER node
 EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \

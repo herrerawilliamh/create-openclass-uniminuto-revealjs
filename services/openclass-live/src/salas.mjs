@@ -36,7 +36,7 @@ export const LIMITES_SALA = Object.freeze({
   restanteMaxMs: 10 * 60_000,
 });
 
-export function crearAlmacen({ ttlMin, maxParticipantes, maxSalas, ahora = () => Date.now() }) {
+export function crearAlmacen({ ttlMin, maxParticipantes, maxSalas, ahora = () => Date.now(), alCerrar = null }) {
   const salas = new Map();
   const porCodigo = new Map();
 
@@ -52,7 +52,7 @@ export function crearAlmacen({ ttlMin, maxParticipantes, maxSalas, ahora = () =>
   function sala(id) {
     const s = salas.get(id);
     if (!s) return falla('sala_inexistente', 'La sala no existe o ya finalizó');
-    if (s.vence <= ahora()) { eliminar(id); return falla('sala_vencida', 'La sala venció'); }
+    if (s.vence <= ahora()) { eliminar(id, 'vencida'); return falla('sala_vencida', 'La sala venció'); }
     vencerRondas(s);
     return s;
   }
@@ -77,14 +77,29 @@ export function crearAlmacen({ ttlMin, maxParticipantes, maxSalas, ahora = () =>
     cierra: s.duracionVotacion ? ahora() + s.duracionVotacion * 1000 : null,
   });
 
-  function eliminar(id) {
+  function eliminar(id, motivo = 'finalizada') {
     const s = salas.get(id);
     if (!s) return null;
+    // Instantánea AGREGADA para el historial, antes de vaciar la sala (nunca respuestas individuales).
+    if (alCerrar) { try { alCerrar(persistible(s), motivo); } catch { /* el historial nunca bloquea el cierre */ } }
     salas.delete(id);
     porCodigo.delete(s.codigo);
     // Vaciar explícitamente: no deben quedar referencias a respuestas ni preguntas.
     s.participantes.clear(); s.tokens.clear(); s.encuestas.clear(); s.preguntas.clear();
     return s;
+  }
+
+  /** Lo único que sale de la memoria hacia el historial: metadatos y recuentos. Sin alias, tokens, textos de preguntas ni soluciones. */
+  function persistible(s) {
+    return {
+      id: s.id, propietarioId: s.propietarioId, titulo: s.titulo, creada: s.creada,
+      participantes: s.participantes.size, preguntas: s.preguntas.size,
+      actividades: s.conservarResultados ? [...s.encuestas.values()].map((e, orden) => ({
+        id: e.id, orden, enunciado: e.def.enunciado, tipo: e.def.tipo, opciones: e.def.opciones,
+        rondas: e.rondas.map((r) => { const { numero, respondientes, conteos, porcentajes, cierre } = resumenRonda(e, r); return { numero, respondientes, conteos, porcentajes, cierre: cierre ?? null }; }),
+        resultadosPublicados: e.resultadosPublicados, correctaRevelada: e.correctaRevelada,
+      })) : [],
+    };
   }
 
   const encuesta = (s, eid) => s.encuestas.get(eid) ?? falla('encuesta_inexistente', 'La encuesta no existe');
@@ -176,10 +191,10 @@ export function crearAlmacen({ ttlMin, maxParticipantes, maxSalas, ahora = () =>
   const api = {
     get tamano() { return salas.size; },
 
-    crearSala({ titulo = '', preModeracion = true } = {}) {
+    crearSala({ titulo = '', preModeracion = true, propietarioId = null, conservarResultados = true } = {}) {
       if (salas.size >= maxSalas) falla('limite_salas', 'Se alcanzó el máximo de salas simultáneas');
       const s = {
-        id: nuevoId(16), codigo: generarCodigo(), titulo, creada: ahora(), vence: ahora() + ttlMin * 60_000,
+        id: nuevoId(16), codigo: generarCodigo(), titulo, propietarioId, conservarResultados, creada: ahora(), vence: ahora() + ttlMin * 60_000,
         versionPresentador: 1, duracionVotacion: DURACION_PREDETERMINADA,
         participantes: new Map(), tokens: new Map(),
         encuestas: new Map(), activa: null,
@@ -198,7 +213,11 @@ export function crearAlmacen({ ttlMin, maxParticipantes, maxSalas, ahora = () =>
         duracionVotacion: s.duracionVotacion };
     },
 
-    listarSalas: () => [...salas.keys()].filter((id) => salas.get(id).vence > ahora()).map((id) => api.resumenSala(id)),
+    /** Con `propietarioId` solo las salas de esa cuenta; sin él (superusuario) todas. */
+    listarSalas: (propietarioId = null) => [...salas.keys()].filter((id) => salas.get(id).vence > ahora() && (!propietarioId || salas.get(id).propietarioId === propietarioId)).map((id) => api.resumenSala(id)),
+    propietarioDe: (id) => salas.get(id)?.propietarioId ?? null,
+    idsActivos: () => [...salas.keys()].filter((id) => salas.get(id).vence > ahora()),
+    resumenPersistible: (id) => (salas.has(id) ? persistible(salas.get(id)) : null),
 
     idPorCodigo: (codigo) => porCodigo.get(codigo) ?? null,
 
@@ -470,7 +489,7 @@ export function crearAlmacen({ ttlMin, maxParticipantes, maxSalas, ahora = () =>
     /** Elimina salas vencidas; devuelve sus ids para avisar a los clientes conectados. */
     purgar() {
       const vencidas = [];
-      for (const [id, s] of salas) if (s.vence <= ahora()) { eliminar(id); vencidas.push(id); }
+      for (const [id, s] of salas) if (s.vence <= ahora()) { eliminar(id, 'vencida'); vencidas.push(id); }
       return vencidas;
     },
 

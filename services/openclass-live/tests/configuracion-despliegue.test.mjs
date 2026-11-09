@@ -6,7 +6,6 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
 import { leerConfig } from '../src/config.mjs';
-import { verificarPassword } from '../src/auth.mjs';
 
 const raiz = fileURLToPath(new URL('../', import.meta.url));
 
@@ -27,10 +26,10 @@ test('gen-env creates valid secrets privately and never overwrites existing conf
     }));
     const config = leerConfig(env);
     assert.equal(config.secreto.length, 64);
-    assert.ok(verificarPassword(password, config.hashDocente));
+    assert.equal(config.hashDocente, '', 'sin contraseña compartida por defecto');
+    assert.equal(config.dataDir, '/data');
     assert.ok(!result.stdout.includes(config.secreto) && !result.stderr.includes(config.secreto));
-    assert.ok(!result.stdout.includes(config.hashDocente) && !result.stderr.includes(config.hashDocente));
-    assert.ok(!result.stdout.includes(password) && !result.stderr.includes(password));
+        assert.ok(!result.stdout.includes(password) && !result.stderr.includes(password));
     if (process.platform !== 'win32') assert.equal(statSync(destino).mode & 0o777, 0o600);
     assert.notEqual(run().status, 0);
     assert.equal(readFileSync(destino, 'utf8'), contenido);

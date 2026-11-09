@@ -43,7 +43,7 @@ function conSala(datos) {
   return { salaId: V.id(salaId, 'salaId'), resto };
 }
 
-export function crearSockets(servidorHttp, { config, almacen, firmador, sesiones, log, ahora = Date.now, intervaloSesionesMs = 5_000 }) {
+export function crearSockets(servidorHttp, { config, almacen, firmador, sesiones, log, historial = null, ahora = Date.now, intervaloSesionesMs = 5_000 }) {
   const io = new Server(servidorHttp, {
     serveClient: true,
     maxHttpBufferSize: 16 * 1024,
@@ -249,7 +249,7 @@ export function crearSockets(servidorHttp, { config, almacen, firmador, sesiones
     const s = sesionDesdeCookie(headers.cookie, { firmador, sesiones });
     if (!s) return next(new Error('no_autenticado'));
     // H02: se conserva el exp VERIFICADO de la cookie (nunca un valor del cliente) para revalidarlo en cada envío.
-    socket.data = { rol: 'docente', sid: s.sid, exp: s.exp };
+    socket.data = { rol: 'docente', sid: s.sid, exp: s.exp, usuarioId: s.usuario.id };
     if (!panelVigente(socket.data, sesiones)) return next(new Error('no_autenticado'));
     return next();
   });
@@ -278,6 +278,10 @@ export function crearSockets(servidorHttp, { config, almacen, firmador, sesiones
         }
       }
       if (salaId && !almacen.existe(salaId)) throw new ErrorSala('sala_inexistente', 'La sala no existe o ya finalizó');
+      // Autorización por propiedad: una cuenta solo gobierna sus propias salas, aunque conozca otro identificador.
+      if (rol === 'docente' && salaId && almacen.propietarioDe(salaId) !== socket.data.usuarioId) {
+        throw new ErrorSala('prohibido', 'La sala pertenece a otra cuenta');
+      }
     }
 
     const claveDe = (salaId) => {
@@ -293,18 +297,19 @@ export function crearSockets(servidorHttp, { config, almacen, firmador, sesiones
       socket.join([`doc:${socket.data.salaId}`, `pres:${socket.data.salaId}`]);
       socket.emit('sesion', { rol, protocolo: PROTOCOLO, salaId: socket.data.salaId, estado: almacen.estadoDocente(socket.data.salaId) });
     } else {
-      socket.emit('sesion', { rol, protocolo: PROTOCOLO, salas: almacen.listarSalas() });
+      socket.emit('sesion', { rol, protocolo: PROTOCOLO, salas: almacen.listarSalas(socket.data.usuarioId) });
     }
 
     on('sala:crear', (datos) => {
       autorizar(null, { soloDocente: true });
-      const sala = almacen.crearSala(V.crearSala(datos));
+      const sala = almacen.crearSala({ ...V.crearSala(datos), propietarioId: socket.data.usuarioId });
+      historial?.abrir(almacen.resumenPersistible(sala.id));
       socket.join(`doc:${sala.id}`);
       log('sala_creada', { sala: sala.id.slice(0, 6) });
       return { sala, enlace: `${config.appUrl}/join/${sala.codigo}`, qr: `${config.appUrl}/qr/${sala.codigo}.svg`, clave: claveDe(sala.id) };
     });
 
-    on('sala:listar', () => { autorizar(null, { soloDocente: true }); return { salas: almacen.listarSalas() }; });
+    on('sala:listar', () => { autorizar(null, { soloDocente: true }); return { salas: almacen.listarSalas(socket.data.usuarioId) }; });
 
     on('sala:seguir', (datos) => {
       const { salaId } = conSala(datos);
@@ -408,9 +413,14 @@ export function crearSockets(servidorHttp, { config, almacen, firmador, sesiones
   });
 
   // ---------- Vencimiento automático y limpieza de memoria ----------
+  let ultimoPunto = ahora();
   const reloj = setInterval(() => {
     for (const id of almacen.purgar()) { cerrarSala(id, 'vencida'); log('sala_vencida', { sala: id.slice(0, 6) }); }
     for (const id of almacen.vencerVotaciones()) difundir(id);
+    if (historial && ahora() - ultimoPunto >= 60_000) {
+      ultimoPunto = ahora();
+      for (const id of almacen.idsActivos()) { const r = almacen.resumenPersistible(id); if (r?.propietarioId) { try { historial.checkpoint(r); } catch { /* sin bloquear la clase */ } } }
+    }
     sesiones.purgar();
     for (const l of [limiteFallidos, limiteUniones, limiteConexionDocente, limiteEventos, limiteEventosDocente]) l.purgar();
   }, 15_000);
