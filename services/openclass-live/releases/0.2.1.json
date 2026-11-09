@@ -2,7 +2,7 @@
   "version": "0.2.1",
   "protocol": 2,
   "archive": "openclass-live-0.2.1.tar.gz",
-  "archiveSha256": "5b579528a021df463fbb752a8f8b5f02bb34d8239fd18b00f5e808af65a9c5a3",
+  "archiveSha256": "4a0eee82187ad0bdc47e4e9fd732ff9dafad748a9561793671b079c8598ccd0a",
   "sourceBase": "192ff7e627342adaad8206cf12cbc96eba324430",
   "files": [
     {
@@ -57,8 +57,8 @@
     },
     {
       "path": "public/docente/index.html",
-      "sha256": "c33292c973422c465d01c200c297c92a3981bda61652286a32ac3c67d1df4d0b",
-      "gitSha256": "c33292c973422c465d01c200c297c92a3981bda61652286a32ac3c67d1df4d0b"
+      "sha256": "74474764515c75dc36852e51af8b677377486e2a506a654aaa8c9ab0e241499a",
+      "gitSha256": "74474764515c75dc36852e51af8b677377486e2a506a654aaa8c9ab0e241499a"
     },
     {
       "path": "public/favicon.svg",
@@ -67,8 +67,8 @@
     },
     {
       "path": "public/index.html",
-      "sha256": "9ac39e611fcac75beb09e6da165c18d11e6adde09b9cfbe4b013b537169c7d0d",
-      "gitSha256": "9ac39e611fcac75beb09e6da165c18d11e6adde09b9cfbe4b013b537169c7d0d"
+      "sha256": "589840561bb617b022568be7a06bad2e4e668fc32a3dc80a0fb1a40c2e204377",
+      "gitSha256": "589840561bb617b022568be7a06bad2e4e668fc32a3dc80a0fb1a40c2e204377"
     },
     {
       "path": "scripts/hash-password.mjs",
