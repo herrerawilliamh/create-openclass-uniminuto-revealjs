@@ -2,7 +2,7 @@
   "version": "0.4.0",
   "protocol": 2,
   "archive": "openclass-live-0.4.0.tar.gz",
-  "archiveSha256": "491d4eeb2d34ea8c0151254613e846d50f695eb02cd7b5325d6af03bd49c90de",
+  "archiveSha256": "16a76e98950ed7db3c8ba249a1af351d50ec1e22e85b0688f1d57e6f90db8bbd",
   "sourceBase": "79e06b5b497b19b7a097040066d1e85d63c0ef77",
   "files": [
     {
