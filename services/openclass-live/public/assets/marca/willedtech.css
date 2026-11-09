@@ -224,6 +224,6 @@
 [data-font="accessible"] {
   --wt-font-heading: var(--wt-font-accessible);
   --wt-font-body: var(--wt-font-accessible);
-  lineHeight: 1.85;
-  wordSpacing: 0.12em;
+  line-height: 1.85;
+  word-spacing: 0.12em;
 }
