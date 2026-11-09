@@ -197,6 +197,37 @@ test('2d. lector YAML estricto: estructura, bloques literales y construcciones p
   assert.equal(parseWorkflowYaml(workflow).jobs.publish.needs.join(), 'build,approval');
 });
 
+test('2e. P2-B: ancla, etiqueta y alias en mapas, secuencias y claves se rechazan en el AST', () => {
+  for (const mal of ['env: &x {}\n', 'env: !!map {}\n', 'env: &x\n  a: 1\n', 'a: &x [1]\n', 'a: !!seq [1]\n',
+    'a:\n  - &x 1\n', 'a:\n  - !!str 1\n', 'a:\n  - &m {b: 1}\n', 'a:\n  - !!map {b: 1}\n',
+    'a: &x {b: 1}\nc: *x\n', 'a: [*x]\n', '&k a: 1\n', '!!str a: 1\n', 'a: {b: &y 1}\n', 'a: {b: !!int 1}\n'])
+    assert.throws(() => parseWorkflowYaml(mal), /Ancla|Etiqueta|Alias|YAML/, JSON.stringify(mal));
+  for (const mal of ['env: &x {}', 'env: !!map {}']) {
+    const mod = workflow.replace(/^jobs:/m, `${mal}\njobs:`);
+    assert.notEqual(mod, workflow);
+    assert.ok(auditarWorkflow(mod).some(p => /falla cerrado/.test(p)), `${mal} aceptado`);
+  }
+});
+
+test('2f. P2-A: identidad, lock y bytes funcionan sin node_modules; workflow sí exige yaml', () => {
+  const aislado = mkdtempSync(path.join(tmpdir(), 'ocl-sinmodulos-'));
+  try {
+    mkdirSync(path.join(aislado, 'scripts'));
+    mkdirSync(path.join(aislado, 'releases'));
+    for (const f of ['publicacion-ci.mjs', 'procedencia-autosync.mjs', 'workflow-yaml.mjs'])
+      cpSync(path.join(import.meta.dirname, '..', 'scripts', f), path.join(aislado, 'scripts', f));
+    writeFileSync(path.join(aislado, 'package.json'), JSON.stringify({ version: '0.0.0' }));
+    const cli = path.join(aislado, 'scripts', 'publicacion-ci.mjs');
+    for (const cmd of ['identidad', 'lock', 'bytes']) {
+      const r = spawnSync(process.execPath, [cli, cmd], { cwd: aislado, encoding: 'utf8' });
+      assert.doesNotMatch(r.stderr + r.stdout, /ERR_MODULE_NOT_FOUND|Cannot find (package|module)/, `${cmd}: ${r.stderr}`);
+      assert.match(r.stderr, /PUBLICATION_GATE=FAIL/, `${cmd} debe llegar a su lógica`);
+    }
+    const w = spawnSync(process.execPath, [cli, 'workflow'], { cwd: aislado, encoding: 'utf8' });
+    assert.match(w.stderr, /yaml|ENOENT/i, 'workflow debe necesitar yaml/archivo');
+  } finally { rmSync(aislado, { recursive: true, force: true }); }
+});
+
 test('3. identidad: tag, ref, SHA, HEAD y rama de release deben coincidir exactamente', () => {
   assert.equal(verificarIdentidad(ident()), SHA);
   const otros = { b: 'b'.repeat(40) };
