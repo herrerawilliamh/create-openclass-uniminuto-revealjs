@@ -4,9 +4,9 @@ Procedencia: recursos privados de marca WillEdTech (tokens CSS, dos logotipos In
 por lectura de API sin clonar. No se publican identificadores internos del repositorio de origen (nombre, SHA,
 fechas) en este repositorio. `public/assets/marca/ORIGEN.json` clasifica cada recurso.
 
-**Estado de publicación: `BRAND_PUBLICATION_AUTHORIZED=NO`.** El propietario aún no ha autorizado de forma expresa
-la redistribución pública de estos recursos; la presencia en un repositorio privado no equivale a permiso. Mientras
-tanto este release no es publicable. Ver `docs/BRAND-PUBLICACION.md`.
+**Estado de publicación: `BRAND_PUBLICATION_AUTHORIZED=YES`** (solo los cuatro recursos indicados). El propietario
+declaró el 8 de noviembre de 2026 que puede distribuirlos públicamente; el resto del kit de marca sigue privado y
+excluido. Ver `docs/BRAND-PUBLICACION.md`.
 
 ## Qué cambia
 - Nombre visible: **WillEdTech Interact** (regla de nombres de BRAND.md §2). El servicio, la ruta

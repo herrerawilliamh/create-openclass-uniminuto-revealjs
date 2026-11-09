@@ -2,7 +2,7 @@
   "version": "0.3.0",
   "protocol": 2,
   "archive": "openclass-live-0.3.0.tar.gz",
-  "archiveSha256": "8e8294a41148bf7f93ee72590e3d09ac9db2e509a2a3a1eb8f7be72298155538",
+  "archiveSha256": "ca0e3bf4bc31133d1b87181788b8da51741e9298ffe0a252486d8659771cd85a",
   "sourceBase": "5c35888d1c8bc25231d773de5cfc23d3467802f4",
   "files": [
     {
@@ -127,8 +127,8 @@
     },
     {
       "path": "public/assets/marca/ORIGEN.json",
-      "sha256": "ebb5ddcbde5fe73e01fc3052d462c26ed718b4ef193350507a27f25067b06355",
-      "gitSha256": "ebb5ddcbde5fe73e01fc3052d462c26ed718b4ef193350507a27f25067b06355"
+      "sha256": "86d31be9cc42da38abfc5611e36de4f06ec96bfade8163251300ac62ad57da92",
+      "gitSha256": "c7ebb6ede4286ebbb8e805119348d4f7aff6a64704fd0b11f7b9fa698864c7fa"
     },
     {
       "path": "public/assets/marca/willedtech.css",

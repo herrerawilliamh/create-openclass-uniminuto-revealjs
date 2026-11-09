@@ -1,7 +1,7 @@
 # Graph Report - create-openclass-uniminuto-revealjs  (2026-11-08)
 
 ## Corpus Check
-- 156 files · ~170,521 words
+- 156 files · ~170,535 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 26 file(s) not represented in the graph (top: .css 11, (none) 10, .example 1)
 
@@ -11,7 +11,7 @@
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `e3daff8d`
+- Built from commit: `bb549093`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -587,7 +587,7 @@ Nodes (6): Cadena en `.github/workflows/openclass-live.yml`, Identidad del candi
 
 ### Community 113 - "Marca: clasificación y condición de publicación (OpenClass Live 0.3.0)"
 Cohesion: 0.33
-Nodes (5): Clasificación, Decisión humana pendiente, Historial local, Marca: clasificación y condición de publicación (OpenClass Live 0.3.0), Metadatos internos
+Nodes (5): Autorización del propietario, Clasificación, Historial, Marca: clasificación y condición de publicación (OpenClass Live 0.3.0), Metadatos internos
 
 ### Community 114 - "salas.mjs"
 Cohesion: 0.33
