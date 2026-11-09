@@ -184,7 +184,7 @@ export function OpenClassBuildTech() {
     switch (orden.ambito) {
       case 'navegar': return navegar(orden.accion);
       case 'medio': return multimedia.ejecutar(orden);
-      case 'live': return live ? live.ordenar(orden.accion, orden.valor) : { ok: false, mensaje: 'OpenClass Live no está activado en este curso.' };
+      case 'live': return live ? live.ordenar(orden.accion, orden.valor) : { ok: false, mensaje: 'Interact no está activado en este curso.' };
       case 'reloj': alternarRelojPublico(orden.valor); return { ok: true };
       default: return { ok: false, mensaje: 'Orden no admitida.' };
     }

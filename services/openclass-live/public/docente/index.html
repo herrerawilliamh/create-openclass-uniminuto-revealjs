@@ -5,87 +5,89 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="referrer" content="no-referrer">
   <meta name="robots" content="noindex, nofollow">
-  <title>OpenClass Live · Panel docente</title>
+  <title>Interact by WillEdTech · Panel docente</title>
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/assets/marca/willedtech.css">
+  <link rel="stylesheet" href="/assets/marca/fuentes.css">
   <link rel="stylesheet" href="/assets/estilos.css">
+  <link rel="stylesheet" href="/assets/docente.css">
   <script src="/socket.io/socket.io.min.js" defer></script>
   <script type="module" src="/assets/docente.mjs"></script>
 </head>
-<body>
-  <header class="barra">
-    <div>
-      <h1>OpenClass Live · Panel docente</h1>
-      <div class="sub" id="titulo-panel">Encuestas y preguntas en vivo</div>
+<body class="docente">
+  <a class="salto" href="#contenido">Saltar al contenido</a>
+  <header class="cinta">
+    <div class="cinta-fila">
+      <div class="marca-cinta">
+        <img src="/assets/marca/interact-marca-negativo.svg" alt="" width="32" height="32">
+        <div>
+          <h1>Interact by WillEdTech <span class="marca-rol">Panel docente</span></h1>
+          <div class="sub" id="titulo-panel">Encuestas y preguntas en vivo</div>
+        </div>
+      </div>
+      <p class="cinta-codigo oculto" id="cinta-codigo-caja"><span>Código de la sala</span> <strong id="cinta-codigo"></strong></p>
+      <div class="fila">
+        <span class="estado-conexion" id="conexion" role="status" aria-live="polite"></span>
+        <button type="button" class="mini secundario oculto" id="btn-salir">Cerrar sesión</button>
+      </div>
     </div>
-    <div class="fila">
-      <span class="estado-conexion" id="conexion" aria-live="polite"></span>
-      <button type="button" class="mini secundario oculto" id="btn-salir">Cerrar sesión</button>
-    </div>
+    <nav class="secciones oculto" id="nav-secciones" aria-label="Secciones de la sala">
+      <a href="#encuesta">Encuesta</a>
+      <a href="#preguntas">Preguntas <span class="contador oculto" id="cuenta-pendientes"></span></a>
+      <a href="#compartir">Compartir</a>
+      <a href="#cierre">Cierre</a>
+    </nav>
   </header>
-  <main class="ancho">
-    <section class="tarjeta oculto" id="vista-login" aria-labelledby="t-login">
-      <h2 id="t-login">Acceso docente</h2>
+  <main class="ancho" id="contenido" tabindex="-1">
+    <section class="acceso oculto" id="vista-login" aria-labelledby="t-login">
+      <h2 id="t-login">Entrar al panel docente</h2>
       <form id="form-login" autocomplete="on">
         <label for="password">Contraseña</label>
-        <input type="password" id="password" name="password" autocomplete="current-password" required>
+        <input type="password" id="password" name="password" autocomplete="current-password" required aria-describedby="error-login">
         <div id="error-login" class="aviso error oculto" role="alert"></div>
-        <button type="submit" id="btn-login">Entrar</button>
+        <div class="fila"><button type="submit" id="btn-login">Entrar</button>
+          <button type="button" class="secundario oculto" id="btn-reintentar">Reintentar conexión</button></div>
       </form>
+      <p class="suave">¿Sin contraseña? Pídala a quien administra el servicio.</p>
       <p class="suave">El enlace o QR de los estudiantes nunca concede acceso a este panel.</p>
     </section>
 
-    <section id="vista-salas" class="oculto">
+    <section id="vista-salas" class="oculto" aria-labelledby="t-salas">
       <div id="aviso-salas" class="aviso oculto" role="status"></div>
-      <div class="tarjeta">
-        <h2>Nueva sesión de clase</h2>
-        <form id="form-sala" class="fila" autocomplete="off">
-          <div class="crece"><label for="titulo-sala">Título visible para los estudiantes (opcional)</label>
-            <input type="text" id="titulo-sala" maxlength="80" placeholder="Ej.: Plataformas de desarrollo · Semana 3"></div>
-          <label class="fila"><input type="checkbox" id="premoderacion" checked> Revisar las preguntas antes de publicarlas</label>
-          <button type="submit">Crear sala</button>
-        </form>
-      </div>
-      <div class="tarjeta">
-        <h2>Salas abiertas</h2>
-        <ul id="lista-salas" class="preguntas"></ul>
+      <h2 id="t-salas" class="titulo-vista">Sus clases</h2>
+      <div class="salas-composicion">
+        <div class="hoja">
+          <h3>Abrir una sala nueva</h3>
+          <p class="suave">Cada clase tiene su propia sala, código y QR.</p>
+          <form id="form-sala" autocomplete="off">
+            <label for="titulo-sala">Título visible para los estudiantes <span class="suave">(opcional)</span></label>
+            <input type="text" id="titulo-sala" maxlength="80" placeholder="Ej.: Plataformas de desarrollo · Semana 3">
+            <label class="fila casilla"><input type="checkbox" id="premoderacion" checked> Revisar las preguntas antes de publicarlas</label>
+            <button type="submit">Crear sala</button>
+          </form>
+        </div>
+        <div class="hoja">
+          <h3>Salas abiertas</h3>
+          <ul id="lista-salas" class="preguntas"></ul>
+        </div>
       </div>
     </section>
 
     <section id="vista-sala" class="oculto">
-      <div class="rejilla">
-        <aside>
-          <!-- 1. Sala actual: QR, código y participantes -->
-          <div class="tarjeta" aria-labelledby="t-sala">
-            <div class="fila entre"><h2 id="t-sala">Sala de la clase</h2>
-              <button type="button" class="mini secundario" id="btn-volver" title="Ver o abrir otras salas">← Otras salas</button></div>
-            <div class="codigo-sala" id="codigo-sala"></div>
-            <img class="qr" id="qr" alt="Código QR para unirse a la sala">
-            <p class="texto-plano"><a id="enlace" target="_blank" rel="noopener noreferrer"></a></p>
-            <div class="fila"><button type="button" class="mini secundario" id="btn-copiar">Copiar enlace</button>
-              <span class="suave" id="vence"></span></div>
-            <div class="metricas">
-              <div class="metrica"><b id="m-conectados">0</b><span class="suave">conectados ahora</span></div>
-              <div class="metrica"><b id="m-unidos">0</b><span class="suave">han entrado</span></div>
-            </div>
-          </div>
-          <div class="tarjeta" aria-labelledby="t-presentacion">
-            <h3 id="t-presentacion">Conectar la presentación</h3>
-            <p class="suave">Copie la clave y péguela en «En vivo» (pie de la presentación, tecla L). Vale solo para esta sala; no la comparta con estudiantes.</p>
-            <button type="button" class="ancho-completo" id="btn-clave">Copiar clave de presentador</button>
-            <div id="aviso-clave" class="aviso oculto" role="status"></div>
-          </div>
-        </aside>
-        <div>
+      <div class="aula">
+        <div class="columna-mesa">
           <div id="aviso-sala" class="aviso oculto" role="status"></div>
-          <!-- 2 y 3. Pregunta activa, temporizador, tendencias privadas y controles del momento -->
-          <div class="tarjeta" id="panel-activa" aria-live="polite"></div>
-          <!-- 4. Preguntas de los estudiantes -->
-          <div class="tarjeta">
-            <h2>Preguntas de los estudiantes</h2>
+          <!-- Pregunta activa, tiempo, participación, acción principal y tendencias privadas -->
+          <section class="hoja" id="encuesta" aria-label="Encuesta">
+            <div id="panel-activa" aria-live="polite"></div>
+          </section>
+          <!-- Preguntas de los estudiantes -->
+          <section class="hoja" id="preguntas" aria-labelledby="t-preguntas">
+            <h2 id="t-preguntas">Preguntas de los estudiantes</h2>
             <p class="suave">Las pendientes aparecen veladas por si comparte esta ventana. En la presentación solo se muestra la que usted proyecte.</p>
             <ul id="lista-preguntas" class="preguntas"></ul>
-          </div>
-          <details class="tarjeta plegable" id="composer">
+          </section>
+          <details class="hoja plegable" id="composer">
             <summary><b>Crear pregunta improvisada</b> <span class="suave">· opcional: las preguntas de la clase se escriben en el Markdown</span></summary>
             <form id="form-encuesta" autocomplete="off">
               <label for="enunciado">Enunciado</label>
@@ -105,12 +107,46 @@
                 <button type="button" class="secundario" id="btn-guardar">Guardar para después</button></div>
             </form>
           </details>
-          <details class="tarjeta plegable" id="bloque-historial">
+          <details class="hoja plegable" id="bloque-historial">
             <summary><b>Preguntas de esta sesión</b> <span class="suave" id="cuenta-historial"></span></summary>
             <ul id="historial" class="preguntas"></ul>
           </details>
-          <!-- 5. Configuración secundaria -->
-          <details class="tarjeta plegable" id="configuracion">
+        </div>
+
+        <aside class="columna-apoyo" aria-label="Sala, acceso y configuración">
+          <!-- Zona secundaria: QR, enlace, conexión con la presentación -->
+          <section class="hoja salida" id="compartir" aria-labelledby="t-sala">
+            <div class="fila entre"><h2 id="t-sala">Compartir con la clase</h2>
+              <button type="button" class="mini secundario" id="btn-volver" title="Ver o abrir otras salas">← Otras salas</button></div>
+            <div class="salida-datos">
+              <div>
+                <div class="codigo-sala" id="codigo-sala"></div>
+                <p class="texto-plano enlace-sala"><a id="enlace" target="_blank" rel="noopener noreferrer"></a></p>
+                <div class="fila"><button type="button" class="mini secundario" id="btn-copiar">Copiar enlace</button>
+                  <span class="suave" id="vence"></span></div>
+                <div id="aviso-enlace" class="aviso oculto" role="status"></div>
+              </div>
+              <img class="qr" id="qr" alt="Código QR para unirse a la sala">
+            </div>
+            <div class="metricas">
+              <div class="metrica"><b id="m-conectados">0</b><span class="suave">conectados ahora</span></div>
+              <div class="metrica"><b id="m-unidos">0</b><span class="suave">han entrado</span></div>
+            </div>
+            <div class="separa" aria-labelledby="t-presentacion">
+              <h3 id="t-presentacion"><span class="solo-lector">Paso técnico: </span>Conectar la presentación</h3>
+              <p class="suave">Requiere un curso ya preparado. Sin él, use preguntas improvisadas desde este panel.</p>
+              <ol class="pasos">
+                <li>Copie la clave. Vale solo para esta sala; no la comparta con estudiantes.</li>
+                <li>En la presentación, abra «En vivo» (pie, tecla L) y péguela.</li>
+                <li>Compruebe el punto verde en ese botón.</li>
+              </ol>
+              <button type="button" class="secundario ancho-completo" id="btn-clave">Copiar clave de presentador</button>
+              <div id="aviso-clave" class="aviso oculto" role="status"></div>
+              <p class="suave">Este panel no detecta si la presentación quedó conectada.</p>
+            </div>
+          </section>
+
+          <details class="hoja plegable" id="configuracion">
             <summary><b>Configuración de la sesión</b> <span class="suave" id="resumen-config"></span></summary>
             <fieldset class="segmentos-grupo">
               <legend>Tiempo de votación <span class="suave">(todas las preguntas)</span></legend>
@@ -124,12 +160,26 @@
               <label class="fila"><input type="checkbox" id="q-abiertas"> Recibir preguntas</label>
               <label class="fila"><input type="checkbox" id="q-premod"> Revisar antes de publicar</label>
             </div>
-            <h3>Seguridad y cierre</h3>
-            <div class="fila"><button type="button" class="mini secundario" id="btn-revocar">Revocar claves de presentador</button>
-              <button type="button" class="mini peligro" id="btn-finalizar">Finalizar sesión</button></div>
-            <p class="suave">Finalizar elimina del servidor encuestas, respuestas y preguntas de esta sala.</p>
           </details>
-        </div>
+
+          <section class="hoja cierre" id="cierre" aria-labelledby="t-cierre">
+            <h2 id="t-cierre">Terminar la clase</h2>
+            <table class="salidas">
+              <caption class="solo-lector">Qué hace cada salida</caption>
+              <thead><tr><th scope="col">Salida</th><th scope="col">La sala</th><th scope="col">Soluciones de esta pestaña</th></tr></thead>
+              <tbody>
+                <tr><th scope="row">Otras salas</th><td>Sigue abierta</td><td>Se borran</td></tr>
+                <tr><th scope="row">Cerrar sesión</th><td>Sigue abierta</td><td>Se borran</td></tr>
+                <tr><th scope="row">Finalizar sesión</th><td>Se elimina</td><td>Se borran</td></tr>
+              </tbody>
+            </table>
+            <p class="suave">Finalizar elimina del servidor encuestas, respuestas y preguntas de esta sala, y desconecta a todos.</p>
+            <div class="fila">
+              <button type="button" class="secundario" id="btn-revocar">Revocar claves de presentador</button>
+              <button type="button" class="peligro" id="btn-finalizar">Finalizar sesión</button>
+            </div>
+          </section>
+        </aside>
       </div>
     </section>
   </main>

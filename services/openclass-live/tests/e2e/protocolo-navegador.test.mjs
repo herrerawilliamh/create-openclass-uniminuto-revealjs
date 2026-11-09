@@ -2,7 +2,7 @@
  * Negociación de protocolo en Chrome real (Node >= 22): la presentación v0.2 contra el servicio v0.1
  * REAL (src/ y public/ del commit 37c15cd, extraídos con git a una carpeta temporal y servidos con las
  * mismas dependencias). El adaptador recibe una `sesion` sin versión, corta la conexión, no recuerda la
- * clave, muestra «La presentación y OpenClass Live utilizan versiones diferentes…» y no envía ninguna
+ * clave, muestra «La presentación y Interact utilizan versiones diferentes…» y no envía ninguna
  * encuesta; «Iniciar votación» no aparece. (La combinación inversa, adaptador v0.1 contra servicio v0.2,
  * está en tests/integracion.test.mjs con el handshake exacto del v0.1: `auth: { clave }`.)
  * Variables: OPENCLASS_LIVE_DIST=<dist compilado con LIVE activo> (p. ej., el que deja
@@ -24,7 +24,7 @@ const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../.
 const SERVICIO = path.join(RAIZ, 'services/openclass-live');
 const COMMIT_V01 = '37c15cd';
 const PASSWORD = 'clave-e2e-protocolo-openclass';
-const MENSAJE = 'La presentación y OpenClass Live utilizan versiones diferentes. Actualice el servicio OpenClass Live.';
+const MENSAJE = 'La presentación y Interact utilizan versiones diferentes. Actualice el servicio Interact.';
 const npm = (cwd, ...a) => spawnSync(process.platform === 'win32' ? 'npm.cmd' : 'npm', a, { cwd, stdio: 'inherit', shell: process.platform === 'win32', env: { ...process.env, SITE_BASE: '/' } });
 
 const ENCUESTA = `

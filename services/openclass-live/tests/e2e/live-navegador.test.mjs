@@ -569,7 +569,7 @@ test('OpenClass Live en Chrome: una sala para toda la clase, QR integrado y tres
   assert.equal(await deck.evaluar(`document.querySelector('.oc-live-banda').hidden`), true, 'una pregunta sin moderar no aparece en la presentación');
   assert.equal(await panel.evaluar(`document.querySelector('#lista-preguntas .pregunta.pendiente .velo') !== null`), true, 'pendiente velada en el panel');
   assert.doesNotMatch(await panel.evaluar(`document.getElementById('panel-activa').textContent`), /\bnull\b|undefined/);
-  await panel.evaluar(`document.getElementById('lista-preguntas').closest('.tarjeta').scrollIntoView()`);
+  await panel.evaluar(`document.getElementById('lista-preguntas').closest('.hoja, .tarjeta').scrollIntoView()`);
   await capturar(panel, '10-panel-preguntas');
   await pulsar(panel, 'Proyectar en la presentación', `document.getElementById('lista-preguntas')`);
   await deck.esperarA(`!document.querySelector('.oc-live-banda').hidden`);

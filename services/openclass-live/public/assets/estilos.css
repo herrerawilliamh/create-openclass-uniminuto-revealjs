@@ -1,18 +1,22 @@
-/* OpenClass Live: tema neutro (sin recursos institucionales). Móvil primero. */
+/* Interact by WillEdTech (servicio openclass-live): WillEdTech Brand v3, tokens en marca/willedtech.css. Sin recursos institucionales. Móvil primero. */
 :root {
-  --fondo: #f4f6fa; --panel: #ffffff; --texto: #1d2433; --suave: #5b6478; --borde: #d9dee8;
-  --acento: #2f4a8a; --acento-claro: #e7ecf7; --ok: #1f7a4d; --ok-claro: #e3f4ea; --alerta: #a14a00;
-  --alerta-claro: #fff1e0; --error: #b42318; --error-claro: #fdecea; --barra: #4a64a8; --radio: 12px;
+  --fondo: rgb(var(--wt-canvas)); --panel: rgb(var(--wt-surface)); --texto: rgb(var(--wt-ink)); --suave: rgb(var(--wt-ink-soft)); --borde: rgb(var(--wt-line-strong));
+  --acento: rgb(var(--wt-primary-hover)); --acento-claro: rgb(var(--wt-primary-soft)); --ok: rgb(var(--wt-success-700)); --ok-claro: rgb(var(--wt-success-soft)); --alerta: rgb(var(--wt-warning-ink));
+  --alerta-claro: rgb(var(--wt-warning-soft)); --error: rgb(var(--wt-error)); --error-claro: rgb(var(--wt-error-soft)); --barra: rgb(var(--wt-primary)); --radio: 12px; --foco: rgb(var(--wt-focus));
+  --tipo-titulo: var(--wt-font-heading); --tipo-texto: var(--wt-font-body);
   color-scheme: light;
 }
 * { box-sizing: border-box; }
 html { -webkit-text-size-adjust: 100%; }
-body { margin: 0; background: var(--fondo); color: var(--texto); font: 16px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+body { margin: 0; background: var(--fondo); color: var(--texto); font: 16px/1.5 var(--tipo-texto); }
 main { max-width: 720px; margin: 0 auto; padding: 16px; }
 main.ancho { max-width: 1180px; }
-header.barra { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 16px; background: var(--acento); color: #fff; }
-header.barra h1 { font-size: 1.05rem; margin: 0; font-weight: 650; letter-spacing: .01em; }
-header.barra .sub { opacity: .85; font-size: .9rem; }
+header.barra { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 16px; background: var(--barra); color: #fff; }
+header.barra .marca { display: flex; align-items: center; gap: 12px; }
+header.barra .marca img { width: 32px; height: 32px; flex: none; }
+header.barra h1 { font-size: 1.05rem; margin: 0; }
+header.barra .sub { font-size: .9rem; }
+h1, h2, h3 { font-family: var(--tipo-titulo); font-weight: 800; letter-spacing: -.02em; }
 h2 { font-size: 1.15rem; margin: 0 0 12px; }
 h3 { font-size: 1rem; margin: 16px 0 8px; }
 .tarjeta { background: var(--panel); border: 1px solid var(--borde); border-radius: var(--radio); padding: 16px; margin: 0 0 16px; }
@@ -20,11 +24,11 @@ h3 { font-size: 1rem; margin: 16px 0 8px; }
 .suave { color: var(--suave); font-size: .92rem; }
 label { display: block; font-weight: 600; margin: 12px 0 4px; }
 input[type=text], input[type=password], textarea, select {
-  width: 100%; font: inherit; padding: 10px 12px; border: 1px solid var(--borde); border-radius: 10px; background: #fff; color: var(--texto);
+  width: 100%; font: inherit; padding: 10px 12px; border: 1px solid var(--borde); border-radius: 10px; background: var(--panel); color: var(--texto);
 }
 textarea { min-height: 84px; resize: vertical; }
 textarea.codigo, pre, code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: .9rem; }
-input:focus-visible, textarea:focus-visible, select:focus-visible, button:focus-visible { outline: 3px solid #8aa2dd; outline-offset: 2px; }
+input:focus-visible, textarea:focus-visible, select:focus-visible, button:focus-visible { outline: 3px solid var(--foco); outline-offset: 2px; }
 button {
   font: inherit; font-weight: 600; border: 1px solid var(--acento); background: var(--acento); color: #fff;
   border-radius: 10px; padding: 10px 16px; cursor: pointer; min-height: 44px;
@@ -40,12 +44,12 @@ button:disabled { opacity: .5; cursor: not-allowed; }
 .aviso.alerta { background: var(--alerta-claro); color: var(--alerta); }
 .aviso.error { background: var(--error-claro); color: var(--error); }
 .codigo-sala { font: 700 2.2rem/1 ui-monospace, Menlo, Consolas, monospace; letter-spacing: .18em; }
-.chip { display: inline-block; padding: 2px 10px; border-radius: 999px; font-size: .82rem; font-weight: 600; background: var(--acento-claro); color: var(--acento); }
+.chip { display: inline-block; padding: 2px 10px; border-radius: 999px; font-size: .82rem; font-weight: 600; background: var(--acento-claro); color: rgb(var(--wt-primary-ink)); }
 .chip.abierta { background: var(--ok-claro); color: var(--ok); }
 .chip.cerrada { background: var(--alerta-claro); color: var(--alerta); }
 .chip.tiempo { font-variant-numeric: tabular-nums; background: var(--acento); color: #fff; }
 .chip.tiempo.urgente { background: var(--alerta); }
-pre { background: #10172a; color: #e8ecf5; padding: 12px; border-radius: 10px; overflow-x: auto; white-space: pre; margin: 8px 0; }
+pre { background: rgb(var(--wt-neutral-950)); color: rgb(var(--wt-neutral-50)); padding: 12px; border-radius: 10px; overflow-x: auto; white-space: pre; margin: 8px 0; }
 .enunciado { font-size: 1.1rem; font-weight: 600; white-space: pre-wrap; margin: 0 0 8px; }
 .texto-plano { white-space: pre-wrap; overflow-wrap: anywhere; }
 
@@ -63,7 +67,7 @@ pre { background: #10172a; color: #e8ecf5; padding: 12px; border-radius: 10px; o
 .res-fila { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 8px; align-items: center; }
 .res-texto { overflow-wrap: anywhere; }
 .res-dato { font-variant-numeric: tabular-nums; color: var(--suave); font-size: .9rem; }
-.res-barra { grid-column: 1 / -1; height: 12px; background: #e6e9f0; border-radius: 6px; overflow: hidden; }
+.res-barra { grid-column: 1 / -1; height: 12px; background: var(--acento-claro); border-radius: 6px; overflow: hidden; }
 .res-barra > i { display: block; height: 100%; background: var(--barra); border-radius: 6px; transition: width .3s; }
 .res-fila.correcta .res-barra > i { background: var(--ok); }
 .res-fila.correcta .res-texto::after { content: "  ✓ correcta"; color: var(--ok); font-weight: 700; }
@@ -83,7 +87,7 @@ table.comparar td.num { text-align: right; font-variant-numeric: tabular-nums; }
 .pregunta .votos button { min-height: 40px; padding: 4px 8px; width: 100%; background: #fff; color: var(--acento); }
 .pregunta .votos button[aria-pressed=true] { background: var(--acento); color: #fff; }
 .pregunta.respondida { opacity: .7; }
-.pregunta.oculta { opacity: .55; background: #f6f6f6; }
+.pregunta.oculta { opacity: .55; background: rgb(var(--wt-surface-sunken)); }
 .pregunta .acciones { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 6px; }
 .pregunta .velo { filter: blur(5px); user-select: none; }
 
@@ -96,7 +100,8 @@ table.comparar td.num { text-align: right; font-variant-numeric: tabular-nums; }
 .metricas { display: flex; flex-wrap: wrap; gap: 16px; }
 .metrica b { display: block; font-size: 1.6rem; line-height: 1.1; }
 .estado-conexion { font-size: .85rem; }
-.estado-conexion.offline { color: #ffd7a8; }
+.estado-conexion.offline { color: #fff; font-weight: 700; }
+.estado-conexion.offline::before { content: "⚠ "; }
 .fila.entre { justify-content: space-between; }
 .fila.entre h2 { margin: 0; }
 button.ancho-completo { width: 100%; }
@@ -112,7 +117,8 @@ fieldset.segmentos-grupo legend { font-weight: 600; padding: 0; margin-bottom: 6
 .segmento { position: relative; display: flex; align-items: center; justify-content: center; min-height: 44px; margin: 0; border: 1px solid var(--acento); border-radius: 10px; color: var(--acento); cursor: pointer; }
 .segmento input { position: absolute; inset: 0; opacity: 0; margin: 0; cursor: pointer; }
 .segmento.activa { background: var(--acento); color: #fff; }
-.segmento:has(input:focus-visible) { outline: 3px solid #8aa2dd; outline-offset: 2px; }
+.segmento:has(input:focus-visible) { outline: 3px solid var(--foco); outline-offset: 2px; }
 details.avanzado { margin: 8px 0; }
 details.avanzado > summary { cursor: pointer; color: var(--suave); font-size: .92rem; }
 details.avanzado label { font-weight: 500; }
+[role=tabpanel]:focus-visible, [role=tab]:focus-visible { outline: 3px solid var(--foco); outline-offset: 2px; }

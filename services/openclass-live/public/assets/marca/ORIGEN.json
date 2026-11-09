@@ -1,0 +1,38 @@
+{
+  "BRAND_PUBLICATION_AUTHORIZED": "YES",
+  "autorizacionExpresaDelPropietario": {
+    "fecha": "2026-11-08",
+    "declarante": "propietario del proyecto",
+    "naturaleza": "declaración del propietario de que es titular de los derechos necesarios o cuenta con autorización suficiente; no es una licencia transferida ni una certificación independiente",
+    "alcance": "distribución pública de los cuatro recursos listados, en el repositorio público y en los artefactos de distribución de Interact by WillEdTech",
+    "exclusiones": "el repositorio privado de marca y los demás recursos del kit no están autorizados y permanecen excluidos"
+  },
+  "estado": "Los cuatro recursos listados cuentan con la declaración de autorización del propietario (2026-11-08) para su distribución pública. El resto del kit de marca permanece privado y excluido. Ver docs/BRAND-PUBLICACION.md.",
+  "recursos": {
+    "willedtech.css": {
+      "tipo": "tokens de marca (CSS)",
+      "titularidad": "declarada por el propietario (2026-11-08)",
+      "redistribucionPublica": "SI",
+      "modificacion": "se corrigieron las propiedades CSS inválidas lineHeight y wordSpacing por line-height y word-spacing"
+    },
+    "interact-marca.svg": {
+      "tipo": "logotipo",
+      "titularidad": "declarada por el propietario (2026-11-08)",
+      "redistribucionPublica": "SI",
+      "modificacion": "ninguna"
+    },
+    "interact-marca-negativo.svg": {
+      "tipo": "logotipo",
+      "titularidad": "declarada por el propietario (2026-11-08)",
+      "redistribucionPublica": "SI",
+      "modificacion": "ninguna"
+    },
+    "../../favicon.svg": {
+      "tipo": "icono de aplicación",
+      "titularidad": "declarada por el propietario (2026-11-08)",
+      "redistribucionPublica": "SI",
+      "modificacion": "ninguna"
+    }
+  },
+  "fuentes": "Las fuentes de fuentes/ son de terceros bajo SIL OFL 1.1; sus avisos están en fuentes/AVISOS.txt."
+}

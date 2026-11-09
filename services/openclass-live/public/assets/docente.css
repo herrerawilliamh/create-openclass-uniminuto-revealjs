@@ -1,0 +1,182 @@
+/* Interact by WillEdTech · panel docente (Teacher Experience VNext, I4).
+   Se carga después de estilos.css y solo en /docente/. Colores: tokens --wt-* de marca/willedtech.css (WillEdTech Brand v3).
+   El amarillo solo como relleno con tinta encima; el texto naranja usa secondary-ink. */
+body.docente {
+  --tinta: rgb(var(--wt-ink)); --grafito: rgb(var(--wt-ink-soft)); --tiza: rgb(var(--wt-line-strong)); --raya: rgb(var(--wt-ink) / .18);
+  --anil: rgb(var(--wt-primary)); --anil-hondo: rgb(var(--wt-primary-hover)); --anil-velo: rgb(var(--wt-primary-soft)); --marcador: rgb(var(--wt-accent)); --campana: rgb(var(--wt-secondary)); --campana-texto: rgb(var(--wt-secondary-ink));
+  --visto: rgb(var(--wt-success-700)); --visto-velo: rgb(var(--wt-success-soft)); --tachon: rgb(var(--wt-error));
+  --fondo: rgb(var(--wt-canvas)); --texto: var(--tinta); --suave: var(--grafito); --borde: var(--raya);
+  --acento: var(--anil-hondo); --acento-claro: var(--anil-velo); --barra: var(--anil);
+  --e1: 4px; --e2: 8px; --e3: 12px; --e4: 16px; --e6: 24px; --e8: 32px; --toque: 44px;
+  --t-nota: .875rem; --t-enunciado: 1.5625rem; --t-reloj: 3.0625rem;
+}
+body.docente { background: var(--fondo); color: var(--tinta); font-family: var(--wt-font-body); }
+body.docente h1, body.docente h2, body.docente h3 { text-wrap: balance; line-height: 1.25; }
+body.docente p { text-wrap: pretty; }
+body.docente a { color: var(--anil-hondo); }
+body.docente .suave { font-size: var(--t-nota); color: var(--grafito); }
+body.docente :focus-visible { outline: 3px solid var(--tinta); outline-offset: 3px; box-shadow: 0 0 0 3px var(--marcador); border-radius: 6px; }
+body.docente input:focus-visible, body.docente textarea:focus-visible, body.docente select:focus-visible, body.docente button:focus-visible { outline: 3px solid var(--tinta); outline-offset: 3px; }
+
+.salto { position: absolute; left: var(--e4); top: -100px; z-index: 5; background: rgb(var(--wt-surface)); padding: var(--e3) var(--e4); border-radius: 6px; }
+.salto:focus { top: var(--e2); }
+.solo-lector { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+main:focus { outline: none; }
+
+/* Cinta: identidad, código y navegación de la sala */
+.cinta { position: sticky; top: 0; z-index: 4; padding: var(--e2) var(--e4); background: var(--anil); color: #fff; }
+.cinta-fila { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--e1) var(--e4); max-width: 1360px; margin: 0 auto; }
+.cinta h1 { margin: 0; font-size: 1.05rem; }
+.marca-cinta { display: flex; align-items: center; gap: var(--e3); }
+.marca-cinta img { width: 32px; height: 32px; flex: none; }
+.marca-rol { font-weight: 400; opacity: .9; }
+.cinta .sub { font-size: var(--t-nota); opacity: 1; }
+.cinta-codigo { display: flex; align-items: baseline; gap: var(--e2); margin: 0; font-size: var(--t-nota); }
+.cinta-codigo strong { font: 700 1.5625rem/1.1 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; letter-spacing: .08em; }
+.cinta .estado-conexion { font-size: var(--t-nota); }
+.cinta .estado-conexion.offline { color: #fff; font-weight: 700; }
+.cinta .estado-conexion.offline::before { content: "⚠ "; }
+.cinta button.secundario { border-color: #fff; }
+.secciones { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--e1); max-width: 1360px; margin: var(--e1) auto 0; }
+body.docente .secciones a { display: flex; align-items: center; justify-content: center; gap: var(--e1); min-height: var(--toque); border-radius: 6px; color: #fff; font-size: var(--t-nota); font-weight: 600; text-decoration: none; }
+body.docente .secciones a:hover { background: var(--anil-hondo); }
+body.docente .secciones a:focus-visible { outline-color: #fff; box-shadow: 0 0 0 3px var(--tinta); }
+.contador { min-width: 1.5em; padding: 0 6px; border-radius: 999px; background: var(--marcador); color: var(--tinta); font-weight: 700; text-align: center; }
+
+main.ancho { max-width: 1360px; padding: var(--e4); scroll-margin-top: 120px; }
+html { scroll-padding-top: 128px; }
+
+/* Botones: la acción principal es llena; las alternativas, con borde; las destructivas, rojas */
+body.docente button { min-height: var(--toque); border: 2px solid var(--anil); border-radius: 6px; background: var(--anil); color: #fff; transition: background-color .12s; }
+body.docente button:hover { background: var(--anil-hondo); border-color: var(--anil-hondo); }
+body.docente button:active { transform: scale(.97); }
+body.docente button.secundario { background: #fff; border-color: var(--anil-hondo); color: var(--anil-hondo); }
+body.docente button.secundario:hover { background: var(--anil-velo); }
+body.docente button.peligro { background: var(--tachon); border-color: var(--tachon); }
+body.docente button.peligro:hover { border-color: var(--tinta); background: var(--tachon); }
+body.docente button.mini { min-height: var(--toque); padding: 4px 12px; font-size: .9rem; }
+body.docente button:disabled { opacity: .55; }
+.cinta button.mini { background: transparent; color: #fff; }
+.cinta button.mini:hover { background: var(--anil-hondo); }
+body.docente input[type=text], body.docente input[type=password], body.docente textarea, body.docente select { min-height: var(--toque); border: 1px solid var(--grafito); border-radius: 6px; }
+body.docente .casilla { margin: var(--e3) 0; font-weight: 500; }
+body.docente input[type=checkbox] { width: 22px; height: 22px; accent-color: var(--anil-hondo); }
+
+/* Hojas */
+.hoja { display: grid; gap: var(--e3); align-content: start; margin: 0; padding: var(--e4); background: #fff; border: 1px solid var(--raya); border-radius: 16px; min-width: 0; }
+.hoja > * { margin-top: 0; margin-bottom: 0; }
+.hoja h2 { margin: 0; }
+.hoja h3 { margin: var(--e2) 0 0; }
+.hoja.plegable > summary { min-height: var(--toque); display: flex; flex-wrap: wrap; align-items: center; gap: var(--e2); cursor: pointer; list-style: none; }
+.hoja.plegable > summary::before, details.avanzado > summary::before { content: "▸"; display: inline-block; transition: transform .12s; }
+.hoja.plegable[open] > summary::before, details.avanzado[open] > summary::before { transform: rotate(90deg); }
+.hoja.plegable > summary::-webkit-details-marker { display: none; }
+.aula { display: grid; gap: var(--e6); }
+.columna-mesa, .columna-apoyo { display: grid; gap: var(--e6); align-content: start; min-width: 0; }
+.titulo-vista { margin: var(--e2) 0 var(--e4); font-size: 1.5625rem; }
+.salas-composicion { display: grid; gap: var(--e6); }
+#panel-activa { display: grid; gap: var(--e4); }
+#panel-activa > * { margin: 0; }
+
+/* Pregunta activa: pregunta, tiempo y participación primero */
+#panel-activa .enunciado { font-size: var(--t-enunciado); font-weight: 650; line-height: 1.25; max-width: 40ch; }
+#panel-activa h2 { font-size: 1.1rem; }
+#panel-activa .metricas { gap: var(--e4) var(--e8); align-items: flex-end; }
+#panel-activa .metrica b { font-size: var(--t-enunciado); font-weight: 650; font-variant-numeric: tabular-nums; }
+#panel-activa .metrica b.reloj { font-size: var(--t-reloj); font-weight: 700; line-height: 1; letter-spacing: -.02em; }
+.metrica b.reloj.urgente { color: var(--tachon); }
+.chip { border: 1px solid var(--tinta); background: #fff; color: var(--tinta); border-radius: 6px; }
+.chip.abierta { background: var(--marcador); color: var(--tinta); }
+.chip.cerrada { background: #fff; color: var(--tinta); }
+.chip.lista { background: var(--anil-velo); }
+.acciones-momento { margin: 0; padding-top: var(--e2); }
+.acciones-momento button { min-height: 48px; }
+.nota-alcance { margin: 0; }
+.res-barra { background: var(--anil-velo); border-radius: 6px; }
+.res-barra > i { background: var(--anil); transition: none; }
+.res-fila.correcta .res-barra > i { background: var(--visto); }
+.res-fila.correcta .res-texto::after { color: var(--visto); }
+.res-dato { color: var(--grafito); }
+
+/* Quién ve qué: la regla de tres decisiones distintas */
+.regla-caja { display: grid; gap: var(--e2); margin-top: var(--e2); }
+.regla { display: grid; margin: 0; border-top: 2px solid var(--tinta); }
+.regla > div { display: grid; grid-template-columns: 8.5rem minmax(0, 1fr); gap: var(--e3); padding: var(--e3) 0; border-bottom: 1px solid var(--raya); }
+.regla dt { display: flex; gap: var(--e2); align-items: flex-start; font-weight: 600; }
+.regla dd { margin: 0; font-size: var(--t-nota); }
+.signo { flex: none; display: inline-block; width: 14px; height: 14px; margin-top: 4px; border-radius: 50%; }
+.s-privado { border: 2px dashed var(--tinta); }
+.s-telefonos { background: var(--anil); border: 2px solid var(--anil); }
+.s-nosabe { border: 2px solid var(--grafito); }
+.s-sello { border: 2px solid var(--tinta); border-radius: 2px; transform: rotate(45deg); }
+
+/* Preguntas de estudiantes y listas */
+.preguntas { gap: 0; border-top: 2px solid var(--tinta); }
+.pregunta { border: 0; border-bottom: 1px solid var(--raya); border-radius: 0; padding: var(--e4) 0; background: transparent; }
+.pregunta .votos b { font-variant-numeric: tabular-nums; }
+.pregunta .votos button { min-height: var(--toque); }
+.pregunta .acciones { gap: var(--e2); }
+.pregunta.oculta { background: transparent; opacity: .6; }
+.pregunta.respondida { opacity: .75; }
+.preguntas > li.suave { padding: var(--e4) 0; }
+.salida { background: #fff; }
+.salida-datos { display: grid; grid-template-columns: minmax(0, 1fr) 160px; gap: var(--e4); align-items: start; }
+.salida .codigo-sala { font-size: 1.5625rem; letter-spacing: .08em; }
+.enlace-sala { font-size: var(--t-nota); }
+.qr { max-width: 160px; }
+.separa { display: grid; gap: var(--e3); padding-top: var(--e4); border-top: 1px solid var(--raya); }
+.pasos { display: grid; gap: var(--e1); margin: 0; padding-left: var(--e6); font-size: var(--t-nota); }
+.metrica b { font-variant-numeric: tabular-nums; }
+
+/* Cierre */
+.salidas { width: 100%; border-collapse: collapse; font-size: var(--t-nota); }
+.salidas th, .salidas td { padding: var(--e2) var(--e2) var(--e2) 0; border-bottom: 1px solid var(--raya); text-align: left; vertical-align: top; }
+.salidas thead th { border-bottom: 2px solid var(--tinta); }
+.salidas tbody th { font-weight: 600; }
+
+/* Configuración */
+.segmento { border: 2px solid var(--anil-hondo); border-radius: 6px; color: var(--anil-hondo); }
+.segmento.activa { background: var(--anil-hondo); color: #fff; }
+.segmento:has(input:focus-visible) { outline: 3px solid var(--tinta); outline-offset: 3px; }
+details.avanzado > summary { min-height: var(--toque); display: flex; align-items: center; gap: var(--e2); list-style: none; cursor: pointer; color: var(--anil-hondo); font-weight: 600; }
+
+/* Avisos: nunca solo por color */
+.aviso { border-radius: 6px; border: 1px solid transparent; }
+.aviso.error { border-color: var(--tachon); }
+.aviso.ok { border-color: var(--visto); }
+.aviso.alerta { border-color: var(--campana-texto); color: var(--campana-texto); background: rgb(var(--wt-warning-soft)); }
+
+/* Acceso docente */
+.acceso { max-width: 440px; margin: var(--e8) auto; padding: var(--e6); background: #fff; border: 1px solid var(--raya); border-radius: 16px; }
+.acceso h2 { margin-top: 0; font-size: 1.5625rem; }
+.acceso form { display: grid; gap: var(--e2); }
+.acceso .fila { margin-top: var(--e2); }
+
+@media (min-width: 768px) {
+  .cinta { padding: var(--e2) var(--e6); }
+  .secciones { display: flex; gap: var(--e2); }
+  .secciones a { padding: 0 var(--e3); }
+  main.ancho { padding: var(--e6); }
+  .hoja { padding: var(--e6); }
+  .salas-composicion { grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); align-items: start; }
+  .salida-datos { grid-template-columns: minmax(0, 1fr) 200px; }
+  .qr { max-width: 200px; }
+}
+@media (min-width: 1024px) {
+  html { scroll-padding-top: 96px; }
+  .cinta-fila { flex-wrap: nowrap; }
+  .aula { grid-template-columns: minmax(0, 1fr) 340px; align-items: start; }
+  .salida-datos { grid-template-columns: minmax(0, 1fr); }
+  .qr { max-width: 180px; }
+}
+@media (min-width: 1440px) {
+  .aula { grid-template-columns: minmax(0, 1fr) 400px; }
+  #panel-activa .enunciado { font-size: 1.75rem; }
+}
+@media (max-width: 480px) {
+  .regla > div { grid-template-columns: minmax(0, 1fr); gap: var(--e1); }
+  .segmentos { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-height: 500px) { .cinta { position: static; } html { scroll-padding-top: var(--e4); } }
+@media (prefers-reduced-motion: reduce) { body.docente button { transition: none; } body.docente button:active { transform: none; } }
+@media (forced-colors: active) { .res-barra > i, .signo.s-telefonos { background: CanvasText; } }

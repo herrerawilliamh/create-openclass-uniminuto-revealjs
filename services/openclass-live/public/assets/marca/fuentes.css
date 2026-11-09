@@ -1,0 +1,8 @@
+/* Fuentes autoalojadas (Fontsource, subconjunto latin): merriweather-sans 5.2.5, atkinson-hyperlegible 5.2.5, opendyslexic 5.3.0.
+   Licencias SIL Open Font License 1.1 (https://openfontlicense.org); copias sin modificar.
+   Avisos y textos de licencia: fuentes/AVISOS.txt y fuentes/OFL-*.txt. */
+@font-face { font-family: "Merriweather Sans"; font-style: normal; font-weight: 800; font-display: swap; src: url("/assets/marca/fuentes/merriweather-sans-latin-800-normal.woff2") format("woff2"); }
+@font-face { font-family: "Atkinson Hyperlegible"; font-style: normal; font-weight: 400; font-display: swap; src: url("/assets/marca/fuentes/atkinson-hyperlegible-latin-400-normal.woff2") format("woff2"); }
+@font-face { font-family: "Atkinson Hyperlegible"; font-style: normal; font-weight: 700; font-display: swap; src: url("/assets/marca/fuentes/atkinson-hyperlegible-latin-700-normal.woff2") format("woff2"); }
+@font-face { font-family: "OpenDyslexic"; font-style: normal; font-weight: 400; font-display: swap; src: url("/assets/marca/fuentes/opendyslexic-latin-400-normal.woff2") format("woff2"); }
+@font-face { font-family: "OpenDyslexic"; font-style: normal; font-weight: 700; font-display: swap; src: url("/assets/marca/fuentes/opendyslexic-latin-700-normal.woff2") format("woff2"); }

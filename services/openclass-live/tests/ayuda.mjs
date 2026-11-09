@@ -13,13 +13,13 @@ export const PRESENTADOR = 'http://localhost:8613';
 export const V2 = { protocolo: PROTOCOLO.version, capacidades: [...PROTOCOLO.capacidades] };
 const HASH = hashPassword(PASSWORD);
 
-export async function iniciar({ env = {}, ahora } = {}) {
+export async function iniciar({ env = {}, ahora, barridoMs } = {}) {
   const lineas = [];
   const config = leerConfig({
     APP_URL: ORIGEN, SESSION_SECRET: 'p'.repeat(24) + Math.random().toString(36).repeat(3), ADMIN_PASSWORD_HASH: HASH,
     PRESENTER_ORIGINS: PRESENTADOR, TRUST_PROXY: 'true', MAX_ROOM_PARTICIPANTS: '200', ...env,
   });
-  const app = crearApp(config, { log: (evento, datos = {}) => lineas.push(JSON.stringify({ evento, ...datos })), ahora });
+  const app = crearApp(config, { log: (evento, datos = {}) => lineas.push(JSON.stringify({ evento, ...datos })), ahora, intervaloSesionesMs: barridoMs });
   const { port } = await app.escuchar(0, '127.0.0.1');
   const base = `http://127.0.0.1:${port}`;
   const abiertos = new Set();

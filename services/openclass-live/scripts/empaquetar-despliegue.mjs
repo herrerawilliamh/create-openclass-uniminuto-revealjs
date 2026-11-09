@@ -3,13 +3,13 @@
  *   docker-compose.yml, Dockerfile, .dockerignore, .env.example, package.json, package-lock.json, src/, public/,
  *   scripts/hash-password.mjs (para generar el hash de la contraseña dentro de la VPS)
  * Salida: despliegue/openclass-live-<versión>.tar.gz + SHA256SUMS (carpeta ignorada por git).
+ * Formato canónico y reproducible: ver scripts/tar-determinista.mjs.
  * Se niega a empaquetar si encuentra archivos que no pertenecen al servicio.
  */
 import { createHash } from 'node:crypto';
 import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync, lstatSync, chmodSync, utimesSync, writeFileSync } from 'node:fs';
-import { spawnSync } from 'node:child_process';
 import path from 'node:path';
-import { gzipSync } from 'node:zlib';
+import { construirTar, comprimirDeterminista } from './tar-determinista.mjs';
 import { fileURLToPath } from 'node:url';
 
 const raiz = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -23,7 +23,7 @@ const nombre = `openclass-live-${version}`;
 const salida = path.join(raiz, 'despliegue');
 const carpeta = path.join(salida, nombre);
 const ARCHIVOS = ['docker-compose.yml', 'Dockerfile', '.dockerignore', '.env.example', 'package.json', 'package-lock.json', 'src', 'public', 'scripts/hash-password.mjs'];
-const PERMITIDAS = /\.(mjs|html|css|svg|json|yml|example)$|^(Dockerfile|\.dockerignore)$/;
+const PERMITIDAS = /\.(mjs|html|css|svg|json|yml|example|woff2|txt)$|^(Dockerfile|\.dockerignore)$/;
 
 rmSync(carpeta, { recursive: true, force: true });
 mkdirSync(carpeta, { recursive: true });
@@ -50,18 +50,11 @@ const lista = [];
 })(carpeta);
 
 const tar = path.join(salida, `${nombre}.tar.gz`);
-// Metadatos y orden constantes; gzip de Node omite la fecha de generación.
+// Formato canónico: USTAR + gzip deterministas escritos por scripts/tar-determinista.mjs (independiente del `tar` del sistema).
 lista.sort();
 for (const f of lista) { chmodSync(path.join(carpeta, f), 0o644); utimesSync(path.join(carpeta, f), 0, 0); }
-const tipoTar = spawnSync('tar', ['--version'], { encoding: 'utf8' });
-const propietario = tipoTar.stdout?.includes('GNU tar')
-  ? ['--owner=root:0', '--group=root:0']
-  : ['--uid', '0', '--gid', '0', '--uname', 'root', '--gname', 'root'];
-const r = spawnSync('tar', ['--format', 'ustar', ...propietario, '-cf', '-', '-T', '-'], {
-  cwd: salida, input: lista.map((f) => `${nombre}/${f}`).join('\n') + '\n', maxBuffer: 16 * 1024 * 1024,
-});
-if (r.status !== 0) throw new Error(`tar falló: ${r.stderr}`);
-writeFileSync(tar, gzipSync(r.stdout, { level: 9 }));
+const tarBytes = construirTar(lista.map((f) => ({ ruta: `${nombre}/${f}`, bytes: readFileSync(path.join(carpeta, f)) })));
+writeFileSync(tar, comprimirDeterminista(tarBytes));
 const suma = createHash('sha256').update(readFileSync(tar)).digest('hex');
 writeFileSync(path.join(salida, 'SHA256SUMS'), `${suma}  ${nombre}.tar.gz\n`);
 console.log(`${lista.length} archivos → despliegue/${nombre}.tar.gz`);

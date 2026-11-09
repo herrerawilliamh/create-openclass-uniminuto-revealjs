@@ -9,10 +9,10 @@ services:
       context: .
       dockerfile: Dockerfile
       labels:
-        org.opencontainers.image.version: "0.2.0"
+        org.opencontainers.image.version: "0.3.0"
         org.opencontainers.image.revision: ${LIVE_REVISION:?Full approved Git SHA required}
         org.opencontainers.image.source: https://github.com/herrerawilliamh/create-openclass-uniminuto-revealjs
-    image: openclass-live:0.2.0-${LIVE_REVISION:?Full approved Git SHA required}
+    image: openclass-live:0.3.0-${LIVE_REVISION:?Full approved Git SHA required}
     pull_policy: never
     container_name: openclass-live
     restart: unless-stopped

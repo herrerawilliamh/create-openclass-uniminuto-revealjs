@@ -1,5 +1,5 @@
 /**
- * OpenClass Live: integración con servidor real y clientes Socket.IO (WebSocket y polling).
+ * Interact: integración con servidor real y clientes Socket.IO (WebSocket y polling).
  * Cubre: sesión, multicliente simultáneo, segunda ronda, preguntas y moderación, reconexión,
  * vencimiento, sala cerrada, operaciones no autorizadas, orígenes, límites y privacidad de registros.
  */
@@ -388,8 +388,8 @@ test('protocolo: el servicio v0.2 rechaza en el handshake a un adaptador v0.1 y 
   assert.equal(componenteDesactualizado(undefined), 'servicio');
   assert.equal(componenteDesactualizado({ version: 2, capacidades: ['temporizador-sala'] }), 'servicio');
   assert.equal(componenteDesactualizado({ version: 3, capacidades: [...PROTOCOLO.capacidades, 'otra'] }), 'presentacion');
-  assert.equal(textoIncompatible('servicio'), 'La presentación y OpenClass Live utilizan versiones diferentes. Actualice el servicio OpenClass Live.');
-  assert.match(textoIncompatible('presentacion'), /^La presentación y OpenClass Live utilizan versiones diferentes\. Actualice la presentación/);
+  assert.equal(textoIncompatible('servicio'), 'La presentación y Interact utilizan versiones diferentes. Actualice el servicio Interact.');
+  assert.match(textoIncompatible('presentacion'), /^La presentación y Interact utilizan versiones diferentes\. Actualice la presentación/);
 });
 
 test('cierre de sesión docente: revoca la cookie para HTTP y Socket.IO; CSRF obligatorio', async (t) => {
@@ -398,7 +398,9 @@ test('cierre de sesión docente: revoca la cookie para HTTP y Socket.IO; CSRF ob
   assert.equal(sinCsrf.estado, 403);
   const ok = await srv.peticion('/api/docente/logout', { metodo: 'POST', cuerpo: {}, cabeceras: { cookie, 'x-oc-csrf': csrf } });
   assert.equal(ok.estado, 200);
-  assert.equal((await pedir(doc, 'sala:seguir', { salaId: sala.id })).error, 'no_autenticado');
+  // H02: el servidor corta el socket del panel al cerrar sesión (ya no queda abierto para recibir estado).
+  await esperar(200);
+  assert.equal(doc.connected, false);
   assert.equal(await rechazo(srv.conectar('/docente', { cabeceras: { cookie } })), 'no_autenticado');
   assert.equal((await srv.peticion('/api/docente/sesion', { cabeceras: { cookie } })).json.autenticado, false);
 });
@@ -453,4 +455,16 @@ test('privacidad: registros sin alias, textos, respuestas ni IP; rutas sin conte
   }
   const salud = await srv.peticion('/healthz');
   assert.deepEqual(salud.json, { estado: 'ok' }, 'healthz no expone datos de salas');
+});
+
+test('OC-A02 (Socket.IO): encuesta:crear con abrir y otra votación abierta responde otra_abierta sin encuesta residual', async (t) => {
+  const { srv, doc, sala } = await preparar(t);
+  const primera = (await pedir(doc, 'encuesta:crear', { salaId: sala.id, encuesta: ENCUESTA, abrir: true })).encuesta;
+  const total = () => srv.app.almacen.historial(sala.id).length;
+  const antes = total();
+  const r = await pedir(doc, 'encuesta:crear', { salaId: sala.id, encuesta: { ...ENCUESTA, enunciado: 'Segunda' }, abrir: true });
+  assert.equal(r.ok, false);
+  assert.equal(r.error, 'otra_abierta');
+  assert.equal(total(), antes);
+  assert.equal(srv.app.almacen.estadoDocente(sala.id).activa.id, primera.id);
 });

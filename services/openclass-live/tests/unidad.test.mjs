@@ -360,3 +360,19 @@ test('limitador: cubeta de fichas y consulta sin gasto', () => {
   assert.equal(l.disponible('ip'), false);
   assert.equal(l.permitir('ip'), false);
 });
+
+test('OC-A02: crear y abrir con otra votación abierta se rechaza sin dejar encuesta residual', () => {
+  const { a } = nuevo();
+  const s = a.crearSala();
+  const e1 = a.crearEncuesta(s.id, encuesta(), { abrir: true });
+  assert.equal(e1.estado, 'abierta');
+  const total = () => a.historial(s.id).length;
+  const antes = total();
+  assert.throws(() => a.crearEncuesta(s.id, encuesta({ enunciado: 'Otra' }), { abrir: true }), (err) => err instanceof ErrorSala && err.codigo === 'otra_abierta');
+  assert.equal(total(), antes, 'ninguna encuesta residual');
+  assert.equal(a.estadoDocente(s.id).activa.id, e1.id, 'la votación abierta sigue activa');
+  assert.equal(a.estadoDocente(s.id).activa.estado, 'abierta');
+  a.crearEncuesta(s.id, encuesta({ enunciado: 'Lista' }));
+  a.cerrarEncuesta(s.id, e1.id);
+  assert.equal(a.crearEncuesta(s.id, encuesta({ enunciado: 'Nueva' }), { abrir: true }).estado, 'abierta');
+});

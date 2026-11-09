@@ -1,0 +1,1664 @@
+{
+  "capturas": [
+    {
+      "archivo": "vnext-01-inicio-sesion.png",
+      "descripcion": "Inicio de sesión"
+    },
+    {
+      "archivo": "vnext-03-sala-creada-qr.png",
+      "descripcion": "Sala creada con código, enlace y QR"
+    },
+    {
+      "archivo": "vnext-02-lista-salas.png",
+      "descripcion": "Lista de salas abiertas"
+    },
+    {
+      "archivo": "vnext-04-votacion-abierta.png",
+      "descripcion": "Votación abierta (sin votos)"
+    },
+    {
+      "archivo": "vnext-05-votacion-con-tendencias.png",
+      "descripcion": "Votación abierta con tendencias privadas"
+    },
+    {
+      "archivo": "vnext-s1-estudiante-votacion-abierta.png",
+      "descripcion": "Estudiante: votación abierta"
+    },
+    {
+      "archivo": "vnext-s2-estudiante-respuesta-registrada.png",
+      "descripcion": "Estudiante: respuesta registrada"
+    },
+    {
+      "archivo": "vnext-06-votacion-cerrada.png",
+      "descripcion": "Votación cerrada, resultados aún solo para el docente"
+    },
+    {
+      "archivo": "vnext-07-resultados-publicados.png",
+      "descripcion": "Resultados publicados en teléfonos; la solución sigue privada"
+    },
+    {
+      "archivo": "vnext-08-segunda-ronda.png",
+      "descripcion": "Segunda ronda abierta"
+    },
+    {
+      "archivo": "vnext-s3-estudiante-solucion-revelada.png",
+      "descripcion": "Estudiante: solución y explicación reveladas"
+    },
+    {
+      "archivo": "vnext-09-solucion-revelada.png",
+      "descripcion": "Solución y explicación reveladas con comparación de rondas"
+    },
+    {
+      "archivo": "vnext-10-pregunta-pendiente-velada.png",
+      "descripcion": "Pregunta pendiente velada (antes de moderar)"
+    },
+    {
+      "archivo": "vnext-s4-estudiante-preguntas.png",
+      "descripcion": "Estudiante: pestaña Preguntas con la pregunta aprobada"
+    },
+    {
+      "archivo": "vnext-11-pregunta-moderada.png",
+      "descripcion": "Pregunta leída y aprobada por la persona docente"
+    },
+    {
+      "archivo": "vnext-12-terminar-la-clase.png",
+      "descripcion": "Sección «Terminar la clase» antes de finalizar"
+    },
+    {
+      "archivo": "vnext-13-sesion-finalizada.png",
+      "descripcion": "Panel tras finalizar la sala"
+    },
+    {
+      "archivo": "vnext-14-estudiante-sesion-terminada.png",
+      "descripcion": "Vista del estudiante cuando la sala finaliza"
+    }
+  ],
+  "contraste": {
+    "login": {
+      "fallosTexto": [],
+      "componentes": [
+        {
+          "el": "input#password[password]",
+          "bordeVsFondoPadre": 6.29,
+          "bordeVsCampo": 6.29
+        }
+      ],
+      "botones": [
+        {
+          "el": "button#btn-login",
+          "texto": "Entrar",
+          "fondoVsPadre": 5.31,
+          "bordeVsPadre": 5.31
+        }
+      ]
+    },
+    "sala-sin-votacion": {
+      "fallosTexto": [],
+      "componentes": [
+        {
+          "el": "textarea#enunciado[textarea]",
+          "bordeVsFondoPadre": 6.29,
+          "bordeVsCampo": 6.29
+        },
+        {
+          "el": "textarea#codigo[textarea]",
+          "bordeVsFondoPadre": 6.29,
+          "bordeVsCampo": 6.29
+        },
+        {
+          "el": "select#tipo[select-one]",
+          "bordeVsFondoPadre": 6.29,
+          "bordeVsCampo": 6.29
+        },
+        {
+          "el": "input[text]",
+          "bordeVsFondoPadre": 6.29,
+          "bordeVsCampo": 6.29
+        },
+        {
+          "el": "input[checkbox]",
+          "sinBorde": true
+        },
+        {
+          "el": "input[text]",
+          "bordeVsFondoPadre": 6.29,
+          "bordeVsCampo": 6.29
+        },
+        {
+          "el": "input[checkbox]",
+          "sinBorde": true
+        },
+        {
+          "el": "input[text]",
+          "bordeVsFondoPadre": 6.29,
+          "bordeVsCampo": 6.29
+        },
+        {
+          "el": "input[checkbox]",
+          "sinBorde": true
+        },
+        {
+          "el": "input[text]",
+          "bordeVsFondoPadre": 6.29,
+          "bordeVsCampo": 6.29
+        },
+        {
+          "el": "input[checkbox]",
+          "sinBorde": true
+        },
+        {
+          "el": "textarea#explicacion[textarea]",
+          "bordeVsFondoPadre": 6.29,
+          "bordeVsCampo": 6.29
+        },
+        {
+          "el": "input#duracion-0[radio]",
+          "sinBorde": true
+        },
+        {
+          "el": "input#q-abiertas[checkbox]",
+          "sinBorde": true
+        },
+        {
+          "el": "input#q-premod[checkbox]",
+          "sinBorde": true
+        }
+      ],
+      "botones": [
+        {
+          "el": "button#btn-salir",
+          "texto": "Cerrar sesión",
+          "fondoVsPadre": 5.31,
+          "bordeVsPadre": 1.31
+        },
+        {
+          "el": "button",
+          "texto": "×",
+          "fondoVsPadre": 1,
+          "bordeVsPadre": 6.97
+        },
+        {
+          "el": "button",
+          "texto": "×",
+          "fondoVsPadre": 1,
+          "bordeVsPadre": 6.97
+        },
+        {
+          "el": "button",
+          "texto": "×",
+          "fondoVsPadre": 1,
+          "bordeVsPadre": 6.97
+        },
+        {
+          "el": "button",
+          "texto": "×",
+          "fondoVsPadre": 1,
+          "bordeVsPadre": 6.97
+        },
+        {
+          "el": "button#btn-mas",
+          "texto": "+ Opción",
+          "fondoVsPadre": 1,
+          "bordeVsPadre": 6.97
+        },
+        {
+          "el": "button#btn-abrir-nueva",
+          "texto": "Abrir votación ahora",
+          "fondoVsPadre": 5.31,
+          "bordeVsPadre": 5.31
+        },
+        {
+          "el": "button#btn-guardar",
+          "texto": "Guardar para después",
+          "fondoVsPadre": 1,
+          "bordeVsPadre": 6.97
+        },
+        {
+          "el": "button#btn-volver",
+          "texto": "← Otras salas",
+          "fondoVsPadre": 1,
+          "bordeVsPadre": 6.97
+        },
+        {
+          "el": "button#btn-copiar",
+          "texto": "Copiar enlace",
+          "fondoVsPadre": 1,
+          "bordeVsPadre": 6.97
+        },
+        {
+          "el": "button#btn-clave",
+          "texto": "Copiar clave de presentador",
+          "fondoVsPadre": 1,
+          "bordeVsPadre": 6.97
+        },
+        {
+          "el": "button#btn-revocar",
+          "texto": "Revocar claves de presentado",
+          "fondoVsPadre": 1,
+          "bordeVsPadre": 6.97
+        },
+        {
+          "el": "button#btn-finalizar",
+          "texto": "Finalizar sesión",
+          "fondoVsPadre": 6.57,
+          "bordeVsPadre": 6.57
+        }
+      ]
+    },
+    "lista-salas": {
+      "fallosTexto": [],
+      "componentes": [
+        {
+          "el": "input#titulo-sala[text]",
+          "bordeVsFondoPadre": 6.29,
+          "bordeVsCampo": 6.29
+        },
+        {
+          "el": "input#premoderacion[checkbox]",
+          "sinBorde": true
+        }
+      ],
+      "botones": [
+        {
+          "el": "button#btn-salir",
+          "texto": "Cerrar sesión",
+          "fondoVsPadre": 5.31,
+          "bordeVsPadre": 1.31
+        },
+        {
+          "el": "button",
+          "texto": "Crear sala",
+          "fondoVsPadre": 5.31,
+          "bordeVsPadre": 5.31
+        },
+        {
+          "el": "button",
+          "texto": "Abrir panel",
+          "fondoVsPadre": 5.31,
+          "bordeVsPadre": 5.31
+        }
+      ]
+    },
+    "votacion-abierta": {
+      "fallosTexto": [],
+      "componentes": [
+        {
+          "el": "textarea#enunciado[textarea]",
+          "bordeVsFondoPadre": 6.29,
+          "bordeVsCampo": 6.29
+        },
+        {
+          "el": "textarea#codigo[textarea]",
+          "bordeVsFondoPadre": 6.29,
+          "bordeVsCampo": 6.29
+        },
+        {
+          "el": "select#tipo[select-one]",
+          "bordeVsFondoPadre": 6.29,
+          "bordeVsCampo": 6.29
+        },
+        {
+          "el": "input[text]",
+          "bordeVsFondoPadre": 6.29,
+          "bordeVsCampo": 6.29
+        },
+        {
+          "el": "input[checkbox]",
+          "sinBorde": true
+        },
+        {
+          "el": "input[text]",
+          "bordeVsFondoPadre": 6.29,
+          "bordeVsCampo": 6.29
+        },
+        {
+          "el": "input[checkbox]",
+          "sinBorde": true
+        },
+        {
+          "el": "input[text]",
+          "bordeVsFondoPadre": 6.29,
+          "bordeVsCampo": 6.29
+        },
+        {
+          "el": "input[checkbox]",
+          "sinBorde": true
+        },
+        {
+          "el": "input[text]",
+          "bordeVsFondoPadre": 6.29,
+          "bordeVsCampo": 6.29
+        },
+        {
+          "el": "input[checkbox]",
+          "sinBorde": true
+        },
+        {
+          "el": "textarea#explicacion[textarea]",
+          "bordeVsFondoPadre": 6.29,
+          "bordeVsCampo": 6.29
+        },
+        {
+          "el": "input#duracion-0[radio]",
+          "sinBorde": true
+        },
+        {
+          "el": "input#q-abiertas[checkbox]",
+          "sinBorde": true
+        },
+        {
+          "el": "input#q-premod[checkbox]",
+          "sinBorde": true
+        }
+      ],
+      "botones": [
+        {
+          "el": "button#btn-salir",
+          "texto": "Cerrar sesión",
+          "fondoVsPadre": 5.31,
+          "bordeVsPadre": 1.31
+        },
+        {
+          "el": "button#btn-cerrar",
+          "texto": "Cerrar ahora",
+          "fondoVsPadre": 5.31,
+          "bordeVsPadre": 5.31
+        },
+        {
+          "el": "button#btn-extender",
+          "texto": "+30 segundos",
+          "fondoVsPadre": 1,
+          "bordeVsPadre": 6.97
+        },
+        {
+          "el": "button#btn-retirar",
+          "texto": "Retirar de las pantallas",
+          "fondoVsPadre": 1,
+          "bordeVsPadre": 6.97
+        },
+        {
+          "el": "button",
+          "texto": "×",
+          "fondoVsPadre": 1,
+          "bordeVsPadre": 6.97
+        },
+        {
+          "el": "button",
+          "texto": "×",
+          "fondoVsPadre": 1,
+          "bordeVsPadre": 6.97
+        },
+        {
+          "el": "button",
+          "texto": "×",
+          "fondoVsPadre": 1,
+          "bordeVsPadre": 6.97
+        },
+        {
+          "el": "button",
+          "texto": "×",
+          "fondoVsPadre": 1,
+          "bordeVsPadre": 6.97
+        },
+        {
+          "el": "button#btn-mas",
+          "texto": "+ Opción",
+          "fondoVsPadre": 1,
+          "bordeVsPadre": 6.97
+        },
+        {
+          "el": "button#btn-abrir-nueva",
+          "texto": "Abrir votación ahora",
+          "fondoVsPadre": 5.31,
+          "bordeVsPadre": 5.31
+        },
+        {
+          "el": "button#btn-guardar",
+          "texto": "Guardar para después",
+          "fondoVsPadre": 1,
+          "bordeVsPadre": 6.97
+        },
+        {
+          "el": "button#btn-volver",
+          "texto": "← Otras salas",
+          "fondoVsPadre": 1,
+          "bordeVsPadre": 6.97
+        },
+        {
+          "el": "button#btn-copiar",
+          "texto": "Copiar enlace",
+          "fondoVsPadre": 1,
+          "bordeVsPadre": 6.97
+        },
+        {
+          "el": "button#btn-clave",
+          "texto": "Copiar clave de presentador",
+          "fondoVsPadre": 1,
+          "bordeVsPadre": 6.97
+        },
+        {
+          "el": "button#btn-revocar",
+          "texto": "Revocar claves de presentado",
+          "fondoVsPadre": 1,
+          "bordeVsPadre": 6.97
+        },
+        {
+          "el": "button#btn-finalizar",
+          "texto": "Finalizar sesión",
+          "fondoVsPadre": 6.57,
+          "bordeVsPadre": 6.57
+        }
+      ]
+    },
+    "votacion-con-votos": {
+      "fallosTexto": [],
+      "componentes": [
+        {
+          "el": "textarea#enunciado[textarea]",
+          "bordeVsFondoPadre": 6.29,
+          "bordeVsCampo": 6.29
+        },
+        {
+          "el": "textarea#codigo[textarea]",
+          "bordeVsFondoPadre": 6.29,
+          "bordeVsCampo": 6.29
+        },
+        {
+          "el": "select#tipo[select-one]",
+          "bordeVsFondoPadre": 6.29,
+          "bordeVsCampo": 6.29
+        },
+        {
+          "el": "input[text]",
+          "bordeVsFondoPadre": 6.29,
+          "bordeVsCampo": 6.29
+        },
+        {
+          "el": "input[checkbox]",
+          "sinBorde": true
+        },
+        {
+          "el": "input[text]",
+          "bordeVsFondoPadre": 6.29,
+          "bordeVsCampo": 6.29
+        },
+        {
+          "el": "input[checkbox]",
+          "sinBorde": true
+        },
+        {
+          "el": "input[text]",
+          "bordeVsFondoPadre": 6.29,
+          "bordeVsCampo": 6.29
+        },
+        {
+          "el": "input[checkbox]",
+          "sinBorde": true
+        },
+        {
+          "el": "input[text]",
+          "bordeVsFondoPadre": 6.29,
+          "bordeVsCampo": 6.29
+        },
+        {
+          "el": "input[checkbox]",
+          "sinBorde": true
+        },
+        {
+          "el": "textarea#explicacion[textarea]",
+          "bordeVsFondoPadre": 6.29,
+          "bordeVsCampo": 6.29
+        },
+        {
+          "el": "input#duracion-0[radio]",
+          "sinBorde": true
+        },
+        {
+          "el": "input#q-abiertas[checkbox]",
+          "sinBorde": true
+        },
+        {
+          "el": "input#q-premod[checkbox]",
+          "sinBorde": true
+        }
+      ],
+      "botones": [
+        {
+          "el": "button#btn-salir",
+          "texto": "Cerrar sesión",
+          "fondoVsPadre": 5.31,
+          "bordeVsPadre": 1.31
+        },
+        {
+          "el": "button#btn-cerrar",
+          "texto": "Cerrar ahora",
+          "fondoVsPadre": 5.31,
+          "bordeVsPadre": 5.31
+        },
+        {
+          "el": "button#btn-extender",
+          "texto": "+30 segundos",
+          "fondoVsPadre": 1,
+          "bordeVsPadre": 6.97
+        },
+        {
+          "el": "button#btn-retirar",
+          "texto": "Retirar de las pantallas",
+          "fondoVsPadre": 1,
+          "bordeVsPadre": 6.97
+        },
+        {
+          "el": "button",
+          "texto": "×",
+          "fondoVsPadre": 1,
+          "bordeVsPadre": 6.97
+        },
+        {
+          "el": "button",
+          "texto": "×",
+          "fondoVsPadre": 1,
+          "bordeVsPadre": 6.97
+        },
+        {
+          "el": "button",
+          "texto": "×",
+          "fondoVsPadre": 1,
+          "bordeVsPadre": 6.97
+        },
+        {
+          "el": "button",
+          "texto": "×",
+          "fondoVsPadre": 1,
+          "bordeVsPadre": 6.97
+        },
+        {
+          "el": "button#btn-mas",
+          "texto": "+ Opción",
+          "fondoVsPadre": 1,
+          "bordeVsPadre": 6.97
+        },
+        {
+          "el": "button#btn-abrir-nueva",
+          "texto": "Abrir votación ahora",
+          "fondoVsPadre": 5.31,
+          "bordeVsPadre": 5.31
+        },
+        {
+          "el": "button#btn-guardar",
+          "texto": "Guardar para después",
+          "fondoVsPadre": 1,
+          "bordeVsPadre": 6.97
+        },
+        {
+          "el": "button#btn-volver",
+          "texto": "← Otras salas",
+          "fondoVsPadre": 1,
+          "bordeVsPadre": 6.97
+        },
+        {
+          "el": "button#btn-copiar",
+          "texto": "Copiar enlace",
+          "fondoVsPadre": 1,
+          "bordeVsPadre": 6.97
+        },
+        {
+          "el": "button#btn-clave",
+          "texto": "Copiar clave de presentador",
+          "fondoVsPadre": 1,
+          "bordeVsPadre": 6.97
+        },
+        {
+          "el": "button#btn-revocar",
+          "texto": "Revocar claves de presentado",
+          "fondoVsPadre": 1,
+          "bordeVsPadre": 6.97
+        },
+        {
+          "el": "button#btn-finalizar",
+          "texto": "Finalizar sesión",
+          "fondoVsPadre": 6.57,
+          "bordeVsPadre": 6.57
+        }
+      ]
+    },
+    "estudiante-votacion-abierta": {
+      "fallosTexto": [],
+      "componentes": [
+        {
+          "el": "input[radio]",
+          "sinBorde": true
+        },
+        {
+          "el": "input[radio]",
+          "sinBorde": true
+        }
+      ],
+      "botones": [
+        {
+          "el": "button#tab-encuesta",
+          "texto": "Encuesta",
+          "fondoVsPadre": 7.87,
+          "bordeVsPadre": 7.87
+        },
+        {
+          "el": "button#tab-preguntas",
+          "texto": "Preguntas",
+          "fondoVsPadre": 1.08,
+          "bordeVsPadre": 7.87
+        },
+        {
+          "el": "button#btn-enviar",
+          "texto": "Enviar respuesta",
+          "fondoVsPadre": 8.51,
+          "bordeVsPadre": 8.51
+        },
+        {
+          "el": "button#btn-salir",
+          "texto": "Salir",
+          "fondoVsPadre": 1.08,
+          "bordeVsPadre": 7.87
+        }
+      ]
+    },
+    "votacion-cerrada": {
+      "fallosTexto": [],
+      "componentes": [
+        {
+          "el": "textarea#enunciado[textarea]",
+          "bordeVsFondoPadre": 6.29,
+          "bordeVsCampo": 6.29
+        },
+        {
+          "el": "textarea#codigo[textarea]",
+          "bordeVsFondoPadre": 6.29,
+          "bordeVsCampo": 6.29
+        },
+        {
+          "el": "select#tipo[select-one]",
+          "bordeVsFondoPadre": 6.29,
+          "bordeVsCampo": 6.29
+        },
+        {
+          "el": "input[text]",
+          "bordeVsFondoPadre": 6.29,
+          "bordeVsCampo": 6.29
+        },
+        {
+          "el": "input[checkbox]",
+          "sinBorde": true
+        },
+        {
+          "el": "input[text]",
+          "bordeVsFondoPadre": 6.29,
+          "bordeVsCampo": 6.29
+        },
+        {
+          "el": "input[checkbox]",
+          "sinBorde": true
+        },
+        {
+          "el": "input[text]",
+          "bordeVsFondoPadre": 6.29,
+          "bordeVsCampo": 6.29
+        },
+        {
+          "el": "input[checkbox]",
+          "sinBorde": true
+        },
+        {
+          "el": "input[text]",
+          "bordeVsFondoPadre": 6.29,
+          "bordeVsCampo": 6.29
+        },
+        {
+          "el": "input[checkbox]",
+          "sinBorde": true
+        },
+        {
+          "el": "textarea#explicacion[textarea]",
+          "bordeVsFondoPadre": 6.29,
+          "bordeVsCampo": 6.29
+        },
+        {
+          "el": "input#duracion-0[radio]",
+          "sinBorde": true
+        },
+        {
+          "el": "input#q-abiertas[checkbox]",
+          "sinBorde": true
+        },
+        {
+          "el": "input#q-premod[checkbox]",
+          "sinBorde": true
+        }
+      ],
+      "botones": [
+        {
+          "el": "button#btn-salir",
+          "texto": "Cerrar sesión",
+          "fondoVsPadre": 5.31,
+          "bordeVsPadre": 1.31
+        },
+        {
+          "el": "button#btn-publicar",
+          "texto": "Publicar en teléfonos",
+          "fondoVsPadre": 5.31,
+          "bordeVsPadre": 5.31
+        },
+        {
+          "el": "button#btn-retirar",
+          "texto": "Retirar de las pantallas",
+          "fondoVsPadre": 1,
+          "bordeVsPadre": 6.97
+        },
+        {
+          "el": "button",
+          "texto": "×",
+          "fondoVsPadre": 1,
+          "bordeVsPadre": 6.97
+        },
+        {
+          "el": "button",
+          "texto": "×",
+          "fondoVsPadre": 1,
+          "bordeVsPadre": 6.97
+        },
+        {
+          "el": "button",
+          "texto": "×",
+          "fondoVsPadre": 1,
+          "bordeVsPadre": 6.97
+        },
+        {
+          "el": "button",
+          "texto": "×",
+          "fondoVsPadre": 1,
+          "bordeVsPadre": 6.97
+        },
+        {
+          "el": "button#btn-mas",
+          "texto": "+ Opción",
+          "fondoVsPadre": 1,
+          "bordeVsPadre": 6.97
+        },
+        {
+          "el": "button#btn-abrir-nueva",
+          "texto": "Abrir votación ahora",
+          "fondoVsPadre": 5.31,
+          "bordeVsPadre": 5.31
+        },
+        {
+          "el": "button#btn-guardar",
+          "texto": "Guardar para después",
+          "fondoVsPadre": 1,
+          "bordeVsPadre": 6.97
+        },
+        {
+          "el": "button#btn-volver",
+          "texto": "← Otras salas",
+          "fondoVsPadre": 1,
+          "bordeVsPadre": 6.97
+        },
+        {
+          "el": "button#btn-copiar",
+          "texto": "Copiar enlace",
+          "fondoVsPadre": 1,
+          "bordeVsPadre": 6.97
+        },
+        {
+          "el": "button#btn-clave",
+          "texto": "Copiar clave de presentador",
+          "fondoVsPadre": 1,
+          "bordeVsPadre": 6.97
+        },
+        {
+          "el": "button#btn-revocar",
+          "texto": "Revocar claves de presentado",
+          "fondoVsPadre": 1,
+          "bordeVsPadre": 6.97
+        },
+        {
+          "el": "button#btn-finalizar",
+          "texto": "Finalizar sesión",
+          "fondoVsPadre": 6.57,
+          "bordeVsPadre": 6.57
+        }
+      ]
+    },
+    "resultados-publicados": {
+      "fallosTexto": [],
+      "componentes": [
+        {
+          "el": "textarea#enunciado[textarea]",
+          "bordeVsFondoPadre": 6.29,
+          "bordeVsCampo": 6.29
+        },
+        {
+          "el": "textarea#codigo[textarea]",
+          "bordeVsFondoPadre": 6.29,
+          "bordeVsCampo": 6.29
+        },
+        {
+          "el": "select#tipo[select-one]",
+          "bordeVsFondoPadre": 6.29,
+          "bordeVsCampo": 6.29
+        },
+        {
+          "el": "input[text]",
+          "bordeVsFondoPadre": 6.29,
+          "bordeVsCampo": 6.29
+        },
+        {
+          "el": "input[checkbox]",
+          "sinBorde": true
+        },
+        {
+          "el": "input[text]",
+          "bordeVsFondoPadre": 6.29,
+          "bordeVsCampo": 6.29
+        },
+        {
+          "el": "input[checkbox]",
+          "sinBorde": true
+        },
+        {
+          "el": "input[text]",
+          "bordeVsFondoPadre": 6.29,
+          "bordeVsCampo": 6.29
+        },
+        {
+          "el": "input[checkbox]",
+          "sinBorde": true
+        },
+        {
+          "el": "input[text]",
+          "bordeVsFondoPadre": 6.29,
+          "bordeVsCampo": 6.29
+        },
+        {
+          "el": "input[checkbox]",
+          "sinBorde": true
+        },
+        {
+          "el": "textarea#explicacion[textarea]",
+          "bordeVsFondoPadre": 6.29,
+          "bordeVsCampo": 6.29
+        },
+        {
+          "el": "input#duracion-0[radio]",
+          "sinBorde": true
+        },
+        {
+          "el": "input#q-abiertas[checkbox]",
+          "sinBorde": true
+        },
+        {
+          "el": "input#q-premod[checkbox]",
+          "sinBorde": true
+        }
+      ],
+      "botones": [
+        {
+          "el": "button#btn-salir",
+          "texto": "Cerrar sesión",
+          "fondoVsPadre": 5.31,
+          "bordeVsPadre": 1.31
+        },
+        {
+          "el": "button#btn-ronda2",
+          "texto": "Discutir y repetir",
+          "fondoVsPadre": 5.31,
+          "bordeVsPadre": 5.31
+        },
+        {
+          "el": "button#btn-revelar",
+          "texto": "Revelar explicación",
+          "fondoVsPadre": 1,
+          "bordeVsPadre": 6.97
+        },
+        {
+          "el": "button#btn-retirar",
+          "texto": "Retirar de las pantallas",
+          "fondoVsPadre": 1,
+          "bordeVsPadre": 6.97
+        },
+        {
+          "el": "button",
+          "texto": "×",
+          "fondoVsPadre": 1,
+          "bordeVsPadre": 6.97
+        },
+        {
+          "el": "button",
+          "texto": "×",
+          "fondoVsPadre": 1,
+          "bordeVsPadre": 6.97
+        },
+        {
+          "el": "button",
+          "texto": "×",
+          "fondoVsPadre": 1,
+          "bordeVsPadre": 6.97
+        },
+        {
+          "el": "button",
+          "texto": "×",
+          "fondoVsPadre": 1,
+          "bordeVsPadre": 6.97
+        },
+        {
+          "el": "button#btn-mas",
+          "texto": "+ Opción",
+          "fondoVsPadre": 1,
+          "bordeVsPadre": 6.97
+        },
+        {
+          "el": "button#btn-abrir-nueva",
+          "texto": "Abrir votación ahora",
+          "fondoVsPadre": 5.31,
+          "bordeVsPadre": 5.31
+        },
+        {
+          "el": "button#btn-guardar",
+          "texto": "Guardar para después",
+          "fondoVsPadre": 1,
+          "bordeVsPadre": 6.97
+        },
+        {
+          "el": "button#btn-volver",
+          "texto": "← Otras salas",
+          "fondoVsPadre": 1,
+          "bordeVsPadre": 6.97
+        },
+        {
+          "el": "button#btn-copiar",
+          "texto": "Copiar enlace",
+          "fondoVsPadre": 1,
+          "bordeVsPadre": 6.97
+        },
+        {
+          "el": "button#btn-clave",
+          "texto": "Copiar clave de presentador",
+          "fondoVsPadre": 1,
+          "bordeVsPadre": 6.97
+        },
+        {
+          "el": "button#btn-revocar",
+          "texto": "Revocar claves de presentado",
+          "fondoVsPadre": 1,
+          "bordeVsPadre": 6.97
+        },
+        {
+          "el": "button#btn-finalizar",
+          "texto": "Finalizar sesión",
+          "fondoVsPadre": 6.57,
+          "bordeVsPadre": 6.57
+        }
+      ]
+    },
+    "solucion-revelada": {
+      "fallosTexto": [],
+      "componentes": [
+        {
+          "el": "textarea#enunciado[textarea]",
+          "bordeVsFondoPadre": 6.29,
+          "bordeVsCampo": 6.29
+        },
+        {
+          "el": "textarea#codigo[textarea]",
+          "bordeVsFondoPadre": 6.29,
+          "bordeVsCampo": 6.29
+        },
+        {
+          "el": "select#tipo[select-one]",
+          "bordeVsFondoPadre": 6.29,
+          "bordeVsCampo": 6.29
+        },
+        {
+          "el": "input[text]",
+          "bordeVsFondoPadre": 6.29,
+          "bordeVsCampo": 6.29
+        },
+        {
+          "el": "input[checkbox]",
+          "sinBorde": true
+        },
+        {
+          "el": "input[text]",
+          "bordeVsFondoPadre": 6.29,
+          "bordeVsCampo": 6.29
+        },
+        {
+          "el": "input[checkbox]",
+          "sinBorde": true
+        },
+        {
+          "el": "input[text]",
+          "bordeVsFondoPadre": 6.29,
+          "bordeVsCampo": 6.29
+        },
+        {
+          "el": "input[checkbox]",
+          "sinBorde": true
+        },
+        {
+          "el": "input[text]",
+          "bordeVsFondoPadre": 6.29,
+          "bordeVsCampo": 6.29
+        },
+        {
+          "el": "input[checkbox]",
+          "sinBorde": true
+        },
+        {
+          "el": "textarea#explicacion[textarea]",
+          "bordeVsFondoPadre": 6.29,
+          "bordeVsCampo": 6.29
+        },
+        {
+          "el": "input#duracion-0[radio]",
+          "sinBorde": true
+        },
+        {
+          "el": "input#q-abiertas[checkbox]",
+          "sinBorde": true
+        },
+        {
+          "el": "input#q-premod[checkbox]",
+          "sinBorde": true
+        }
+      ],
+      "botones": [
+        {
+          "el": "button#btn-salir",
+          "texto": "Cerrar sesión",
+          "fondoVsPadre": 5.31,
+          "bordeVsPadre": 1.31
+        },
+        {
+          "el": "button#btn-retirar",
+          "texto": "Retirar de las pantallas",
+          "fondoVsPadre": 1,
+          "bordeVsPadre": 6.97
+        },
+        {
+          "el": "button",
+          "texto": "×",
+          "fondoVsPadre": 1,
+          "bordeVsPadre": 6.97
+        },
+        {
+          "el": "button",
+          "texto": "×",
+          "fondoVsPadre": 1,
+          "bordeVsPadre": 6.97
+        },
+        {
+          "el": "button",
+          "texto": "×",
+          "fondoVsPadre": 1,
+          "bordeVsPadre": 6.97
+        },
+        {
+          "el": "button",
+          "texto": "×",
+          "fondoVsPadre": 1,
+          "bordeVsPadre": 6.97
+        },
+        {
+          "el": "button#btn-mas",
+          "texto": "+ Opción",
+          "fondoVsPadre": 1,
+          "bordeVsPadre": 6.97
+        },
+        {
+          "el": "button#btn-abrir-nueva",
+          "texto": "Abrir votación ahora",
+          "fondoVsPadre": 5.31,
+          "bordeVsPadre": 5.31
+        },
+        {
+          "el": "button#btn-guardar",
+          "texto": "Guardar para después",
+          "fondoVsPadre": 1,
+          "bordeVsPadre": 6.97
+        },
+        {
+          "el": "button#btn-volver",
+          "texto": "← Otras salas",
+          "fondoVsPadre": 1,
+          "bordeVsPadre": 6.97
+        },
+        {
+          "el": "button#btn-copiar",
+          "texto": "Copiar enlace",
+          "fondoVsPadre": 1,
+          "bordeVsPadre": 6.97
+        },
+        {
+          "el": "button#btn-clave",
+          "texto": "Copiar clave de presentador",
+          "fondoVsPadre": 1,
+          "bordeVsPadre": 6.97
+        },
+        {
+          "el": "button#btn-revocar",
+          "texto": "Revocar claves de presentado",
+          "fondoVsPadre": 1,
+          "bordeVsPadre": 6.97
+        },
+        {
+          "el": "button#btn-finalizar",
+          "texto": "Finalizar sesión",
+          "fondoVsPadre": 6.57,
+          "bordeVsPadre": 6.57
+        }
+      ]
+    },
+    "pregunta-pendiente": {
+      "fallosTexto": [],
+      "componentes": [
+        {
+          "el": "textarea#enunciado[textarea]",
+          "bordeVsFondoPadre": 6.29,
+          "bordeVsCampo": 6.29
+        },
+        {
+          "el": "textarea#codigo[textarea]",
+          "bordeVsFondoPadre": 6.29,
+          "bordeVsCampo": 6.29
+        },
+        {
+          "el": "select#tipo[select-one]",
+          "bordeVsFondoPadre": 6.29,
+          "bordeVsCampo": 6.29
+        },
+        {
+          "el": "input[text]",
+          "bordeVsFondoPadre": 6.29,
+          "bordeVsCampo": 6.29
+        },
+        {
+          "el": "input[checkbox]",
+          "sinBorde": true
+        },
+        {
+          "el": "input[text]",
+          "bordeVsFondoPadre": 6.29,
+          "bordeVsCampo": 6.29
+        },
+        {
+          "el": "input[checkbox]",
+          "sinBorde": true
+        },
+        {
+          "el": "input[text]",
+          "bordeVsFondoPadre": 6.29,
+          "bordeVsCampo": 6.29
+        },
+        {
+          "el": "input[checkbox]",
+          "sinBorde": true
+        },
+        {
+          "el": "input[text]",
+          "bordeVsFondoPadre": 6.29,
+          "bordeVsCampo": 6.29
+        },
+        {
+          "el": "input[checkbox]",
+          "sinBorde": true
+        },
+        {
+          "el": "textarea#explicacion[textarea]",
+          "bordeVsFondoPadre": 6.29,
+          "bordeVsCampo": 6.29
+        },
+        {
+          "el": "input#duracion-0[radio]",
+          "sinBorde": true
+        },
+        {
+          "el": "input#q-abiertas[checkbox]",
+          "sinBorde": true
+        },
+        {
+          "el": "input#q-premod[checkbox]",
+          "sinBorde": true
+        }
+      ],
+      "botones": [
+        {
+          "el": "button#btn-salir",
+          "texto": "Cerrar sesión",
+          "fondoVsPadre": 5.31,
+          "bordeVsPadre": 1.31
+        },
+        {
+          "el": "button",
+          "texto": "Leer",
+          "fondoVsPadre": 1,
+          "bordeVsPadre": 6.97
+        },
+        {
+          "el": "button",
+          "texto": "Aprobar",
+          "fondoVsPadre": 5.31,
+          "bordeVsPadre": 5.31
+        },
+        {
+          "el": "button",
+          "texto": "Proyectar en la presentación",
+          "fondoVsPadre": 5.31,
+          "bordeVsPadre": 5.31
+        },
+        {
+          "el": "button",
+          "texto": "Marcar respondida",
+          "fondoVsPadre": 1,
+          "bordeVsPadre": 6.97
+        },
+        {
+          "el": "button",
+          "texto": "Ocultar",
+          "fondoVsPadre": 1,
+          "bordeVsPadre": 6.97
+        },
+        {
+          "el": "button",
+          "texto": "Bloquear autor",
+          "fondoVsPadre": 6.57,
+          "bordeVsPadre": 6.57
+        },
+        {
+          "el": "button",
+          "texto": "×",
+          "fondoVsPadre": 1,
+          "bordeVsPadre": 6.97
+        },
+        {
+          "el": "button",
+          "texto": "×",
+          "fondoVsPadre": 1,
+          "bordeVsPadre": 6.97
+        },
+        {
+          "el": "button",
+          "texto": "×",
+          "fondoVsPadre": 1,
+          "bordeVsPadre": 6.97
+        },
+        {
+          "el": "button",
+          "texto": "×",
+          "fondoVsPadre": 1,
+          "bordeVsPadre": 6.97
+        },
+        {
+          "el": "button#btn-mas",
+          "texto": "+ Opción",
+          "fondoVsPadre": 1,
+          "bordeVsPadre": 6.97
+        },
+        {
+          "el": "button#btn-abrir-nueva",
+          "texto": "Abrir votación ahora",
+          "fondoVsPadre": 5.31,
+          "bordeVsPadre": 5.31
+        },
+        {
+          "el": "button#btn-guardar",
+          "texto": "Guardar para después",
+          "fondoVsPadre": 1,
+          "bordeVsPadre": 6.97
+        },
+        {
+          "el": "button#btn-volver",
+          "texto": "← Otras salas",
+          "fondoVsPadre": 1,
+          "bordeVsPadre": 6.97
+        },
+        {
+          "el": "button#btn-copiar",
+          "texto": "Copiar enlace",
+          "fondoVsPadre": 1,
+          "bordeVsPadre": 6.97
+        },
+        {
+          "el": "button#btn-clave",
+          "texto": "Copiar clave de presentador",
+          "fondoVsPadre": 1,
+          "bordeVsPadre": 6.97
+        },
+        {
+          "el": "button#btn-revocar",
+          "texto": "Revocar claves de presentado",
+          "fondoVsPadre": 1,
+          "bordeVsPadre": 6.97
+        },
+        {
+          "el": "button#btn-finalizar",
+          "texto": "Finalizar sesión",
+          "fondoVsPadre": 6.57,
+          "bordeVsPadre": 6.57
+        }
+      ]
+    }
+  },
+  "reflujo": {
+    "390": {
+      "anchoVentana": 390,
+      "scrollWidth": 390,
+      "desborde": false,
+      "elementosFuera": [],
+      "objetivosMenoresA24": [
+        "input 22×22",
+        "input 22×22",
+        "input 22×22",
+        "input 22×22",
+        "duracion-0 13×13",
+        "q-abiertas 22×22",
+        "q-premod 22×22"
+      ],
+      "cintaPegajosa": {
+        "alto": 185,
+        "proporcionViewport": 0.22,
+        "position": "sticky"
+      }
+    },
+    "768": {
+      "anchoVentana": 768,
+      "scrollWidth": 768,
+      "desborde": false,
+      "elementosFuera": [],
+      "objetivosMenoresA24": [
+        "input 22×22",
+        "input 22×22",
+        "input 22×22",
+        "input 22×22",
+        "enlace 220×19",
+        "duracion-0 13×13",
+        "q-abiertas 22×22",
+        "q-premod 22×22"
+      ],
+      "cintaPegajosa": {
+        "alto": 154,
+        "proporcionViewport": 0.15,
+        "position": "sticky"
+      }
+    },
+    "1024": {
+      "anchoVentana": 1024,
+      "scrollWidth": 1024,
+      "desborde": false,
+      "elementosFuera": [],
+      "objetivosMenoresA24": [
+        "input 22×22",
+        "input 22×22",
+        "input 22×22",
+        "input 22×22",
+        "enlace 220×19",
+        "duracion-0 13×13",
+        "q-abiertas 22×22",
+        "q-premod 22×22"
+      ],
+      "cintaPegajosa": {
+        "alto": 108,
+        "proporcionViewport": 0.14,
+        "position": "sticky"
+      }
+    },
+    "1440": {
+      "anchoVentana": 1440,
+      "scrollWidth": 1440,
+      "desborde": false,
+      "elementosFuera": [],
+      "objetivosMenoresA24": [
+        "input 22×22",
+        "input 22×22",
+        "input 22×22",
+        "input 22×22",
+        "enlace 220×19",
+        "duracion-0 13×13",
+        "q-abiertas 22×22",
+        "q-premod 22×22"
+      ],
+      "cintaPegajosa": {
+        "alto": 108,
+        "proporcionViewport": 0.12,
+        "position": "sticky"
+      }
+    },
+    "320 (zoom 400 %)": {
+      "anchoVentana": 320,
+      "scrollWidth": 320,
+      "desborde": false,
+      "elementosFuera": [
+        "ul#historial 33→851"
+      ],
+      "objetivosMenoresA24": [
+        "input 22×22",
+        "input 22×22",
+        "input 22×22",
+        "input 22×22",
+        "duracion-0 13×13",
+        "q-abiertas 22×22",
+        "q-premod 22×22"
+      ],
+      "cintaPegajosa": {
+        "alto": 206,
+        "proporcionViewport": 0.81,
+        "position": "static"
+      }
+    },
+    "640 (zoom 200 %)": {
+      "anchoVentana": 640,
+      "scrollWidth": 640,
+      "desborde": false,
+      "elementosFuera": [],
+      "objetivosMenoresA24": [
+        "input 22×22",
+        "input 22×22",
+        "input 22×22",
+        "input 22×22",
+        "enlace 220×19",
+        "duracion-0 13×13",
+        "q-abiertas 22×22",
+        "q-premod 22×22"
+      ],
+      "cintaPegajosa": {
+        "alto": 154,
+        "proporcionViewport": 0.3,
+        "position": "sticky"
+      }
+    }
+  },
+  "teclado": {
+    "pasos": 20,
+    "volvioAlInicio": true,
+    "primeros": [
+      "a:Saltar al contenido",
+      "btn-salir",
+      "a:Encuesta",
+      "a:Preguntas 0",
+      "a:Compartir",
+      "a:Cierre"
+    ],
+    "sinIndicadorDeFoco": [],
+    "elementos": [
+      "a:Saltar al contenido",
+      "btn-salir",
+      "a:Encuesta",
+      "a:Preguntas 0",
+      "a:Compartir",
+      "a:Cierre",
+      "summary:Explicación preparada (s",
+      "btn-cerrar",
+      "btn-extender",
+      "btn-retirar",
+      "summary:Crear pregunta improvisa",
+      "summary:Preguntas de esta sesión",
+      "btn-volver",
+      "enlace",
+      "btn-copiar",
+      "btn-clave",
+      "summary:Configuración de la sesi",
+      "btn-revocar",
+      "btn-finalizar",
+      "body"
+    ]
+  },
+  "regiones": {
+    "panel": {
+      "regiones": [
+        "conexion:polite",
+        "error-login:alert",
+        "aviso-salas:status",
+        "aviso-sala:status",
+        "panel-activa:polite",
+        "error-encuesta:alert",
+        "aviso-enlace:status",
+        "aviso-clave:status"
+      ],
+      "mutacionesTrasTresVotos": 6,
+      "porRegion": {
+        "panel-activa": 6
+      },
+      "liveEnPanelActiva": "polite"
+    }
+  },
+  "hipotesis": {
+    "errorLogin": {
+      "texto": "Contraseña incorrecta.",
+      "rol": "alert",
+      "foco": "password",
+      "describedby": "error-login"
+    },
+    "salirAListaConservaSala": 1,
+    "resultadosSinSolucionTrasPublicar": {
+      "botonRevelarDisponible": true
+    },
+    "retiro": {
+      "botonesAntes": [
+        "Retirar de las pantallas"
+      ],
+      "confirmaciones": 0,
+      "botonesDespues": [],
+      "historial": "Votación finalizada¿Qué método une un socket a una sala en Socket.IO?R1: 4 resp., 75% acierto · R2: 4 resp., 75% acierto"
+    },
+    "preguntaPendiente": {
+      "velada": true,
+      "textoEnDom": true,
+      "filtro": "blur(5px)",
+      "color": "rgb(32, 38, 61)",
+      "ariaHidden": null,
+      "botonLeer": true,
+      "visibleParaOtroEstudiante": false
+    },
+    "logoutEntrePestanas": {
+      "estadoInmediatoB": "sigue_autenticada_en_pantalla",
+      "metricaAntes": "5",
+      "metricaDespues": "6",
+      "sigueRecibiendoEstado": true,
+      "vistaB_trasAccion": "vista-login"
+    },
+    "sesionVencidaInactiva": {
+      "metricaAntes": "0",
+      "metricaDespues": "1",
+      "sigueRecibiendoEstado": true,
+      "vistaVisible": "vista-sala"
+    },
+    "tokenLocal": {
+      "clavesAntes": [
+        "oclive:XWEPY4",
+        "oclive:P3BWPB"
+      ],
+      "clavesTrasFinalizar": [
+        "oclive:XWEPY4"
+      ],
+      "contenidoTrasFinalizar": {
+        "oclive:XWEPY4": [
+          "token"
+        ]
+      },
+      "vistaEstudiante": "La sesión terminó",
+      "estudianteDesconectado": {
+        "claveConservada": true,
+        "contenido": [
+          "token"
+        ],
+        "claveTrasVolverASalaFinalizada": false
+      }
+    }
+  },
+  "reflujoEstudiante": {
+    "390": {
+      "anchoVentana": 390,
+      "scrollWidth": 390,
+      "desborde": false,
+      "elementosFuera": [],
+      "objetivosMenoresA24": [
+        "input 22×22",
+        "input 22×22"
+      ],
+      "cintaPegajosa": null
+    },
+    "768": {
+      "anchoVentana": 768,
+      "scrollWidth": 768,
+      "desborde": false,
+      "elementosFuera": [],
+      "objetivosMenoresA24": [
+        "input 22×22",
+        "input 22×22"
+      ],
+      "cintaPegajosa": null
+    },
+    "1440": {
+      "anchoVentana": 1440,
+      "scrollWidth": 1440,
+      "desborde": false,
+      "elementosFuera": [],
+      "objetivosMenoresA24": [
+        "input 22×22",
+        "input 22×22"
+      ],
+      "cintaPegajosa": null
+    },
+    "320 (zoom 400 %)": {
+      "anchoVentana": 320,
+      "scrollWidth": 320,
+      "desborde": false,
+      "elementosFuera": [],
+      "objetivosMenoresA24": [
+        "input 22×22",
+        "input 22×22"
+      ],
+      "cintaPegajosa": null
+    },
+    "640 (zoom 200 %)": {
+      "anchoVentana": 640,
+      "scrollWidth": 640,
+      "desborde": false,
+      "elementosFuera": [],
+      "objetivosMenoresA24": [
+        "input 22×22",
+        "input 22×22"
+      ],
+      "cintaPegajosa": null
+    }
+  },
+  "ordenLectura": [
+    "vista-login@0,0",
+    "vista-salas@0,0",
+    "vista-sala@24,132",
+    "encuesta@24,218",
+    "preguntas@24,1062",
+    "composer@24,1259",
+    "bloque-historial@24,1389",
+    "compartir@916,132",
+    "configuracion@916,1106",
+    "cierre@916,1245"
+  ],
+  "erroresConsolaPanel": []
+}

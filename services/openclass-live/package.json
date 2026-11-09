@@ -1,8 +1,8 @@
 {
   "name": "openclass-live",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "private": true,
-  "description": "OpenClass Live: participación en tiempo real (encuestas y preguntas) para clases presentadas localmente con OpenClass Reveal.js",
+  "description": "Interact by WillEdTech: participación en tiempo real (encuestas y preguntas) para clases presentadas localmente con OpenClass Reveal.js",
   "author": "William Herrera",
   "license": "MIT",
   "type": "module",
@@ -26,6 +26,7 @@
     "socket.io": "4.8.4"
   },
   "devDependencies": {
-    "socket.io-client": "4.8.4"
+    "socket.io-client": "4.8.4",
+    "yaml": "2.9.1"
   }
 }

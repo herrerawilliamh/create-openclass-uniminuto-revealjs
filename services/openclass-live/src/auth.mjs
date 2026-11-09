@@ -58,7 +58,10 @@ export function crearFirmador(secreto) {
 /** Sesiones docentes vivas: permite cerrar sesión (revocar) antes del vencimiento del token. */
 export function crearSesiones() {
   const vivas = new Map();
+  const oyentes = [];
   return {
+    /** Avisa (sid) cuando una sesión se revoca explícitamente; el vencimiento lo detecta el barrido de sockets. */
+    alRevocar: (fn) => { oyentes.push(fn); },
     crear(segundos) {
       const sid = b64(randomBytes(18));
       vivas.set(sid, Date.now() + segundos * 1000);
@@ -70,7 +73,11 @@ export function crearSesiones() {
       if (vence <= Date.now()) { vivas.delete(sid); return false; }
       return true;
     },
-    revocar: (sid) => vivas.delete(sid),
+    revocar(sid) {
+      const existia = vivas.delete(sid);
+      if (existia) for (const fn of oyentes) fn(sid);
+      return existia;
+    },
     purgar() { for (const [sid, vence] of vivas) if (vence <= Date.now()) vivas.delete(sid); },
   };
 }
@@ -89,4 +96,15 @@ export function leerCookies(cabecera) {
 export function cookieDocente(valor, { segura, segundos }) {
   return [`${COOKIE_DOCENTE}=${valor}`, 'Path=/', 'HttpOnly', 'SameSite=Strict', `Max-Age=${segundos}`,
     ...(segura ? ['Secure'] : [])].join('; ');
+}
+
+/**
+ * H02: vigencia efectiva del panel docente. Exige a la vez un SID vivo y el `exp` de la cookie firmada
+ * (segundos, verificado por el firmador) todavía en el futuro. Ambos vencimientos son independientes:
+ * la cookie puede vencer antes que el SID, y entonces el panel deja de ser válido.
+ * `datos` debe venir de `sesionDesdeCookie` (o de `socket.data` ya validado en el handshake).
+ */
+export function panelVigente(datos, sesiones) {
+  const { sid, exp } = datos ?? {};
+  return typeof sid === 'string' && Number.isFinite(exp) && Date.now() < exp * 1000 && sesiones.valida(sid);
 }

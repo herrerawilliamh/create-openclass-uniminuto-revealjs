@@ -5,17 +5,22 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="referrer" content="no-referrer">
   <meta name="robots" content="noindex, nofollow">
-  <title>OpenClass Live</title>
+  <title>Interact by WillEdTech</title>
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/assets/marca/willedtech.css">
+  <link rel="stylesheet" href="/assets/marca/fuentes.css">
   <link rel="stylesheet" href="/assets/estilos.css">
   <script src="/socket.io/socket.io.min.js" defer></script>
   <script type="module" src="/assets/estudiante.mjs"></script>
 </head>
 <body>
   <header class="barra">
-    <div>
-      <h1>OpenClass Live</h1>
-      <div class="sub" id="titulo-sala">Participación en clase</div>
+    <div class="marca">
+      <img src="/assets/marca/interact-marca-negativo.svg" alt="" width="32" height="32">
+      <div>
+        <h1>Interact by WillEdTech</h1>
+        <div class="sub" id="titulo-sala">Participación en clase</div>
+      </div>
     </div>
     <span class="estado-conexion" id="conexion" aria-live="polite"></span>
   </header>
@@ -36,17 +41,21 @@
 
     <section id="vista-sala" class="oculto">
       <div id="aviso-sala" class="aviso oculto" role="status"></div>
-      <nav class="pestanas" role="tablist" aria-label="Secciones">
-        <button type="button" role="tab" id="tab-encuesta" aria-selected="true" aria-controls="panel-encuesta">Encuesta</button>
-        <button type="button" role="tab" id="tab-preguntas" aria-selected="false" aria-controls="panel-preguntas">Preguntas</button>
-      </nav>
-      <section class="tarjeta" id="panel-encuesta" role="tabpanel" aria-labelledby="tab-encuesta" aria-live="polite"></section>
+      <div class="pestanas" role="tablist" aria-label="Secciones">
+        <button type="button" role="tab" id="tab-encuesta" aria-selected="true" aria-controls="panel-encuesta" tabindex="0">Encuesta</button>
+        <button type="button" role="tab" id="tab-preguntas" aria-selected="false" aria-controls="panel-preguntas" tabindex="-1">Preguntas</button>
+      </div>
+      <section class="tarjeta" id="panel-encuesta" role="tabpanel" aria-labelledby="tab-encuesta" aria-live="polite" tabindex="0"></section>
       <section class="tarjeta oculto" id="panel-preguntas" role="tabpanel" aria-labelledby="tab-preguntas">
         <form id="form-pregunta" autocomplete="off">
           <label for="texto-pregunta">Escriba su pregunta</label>
           <textarea id="texto-pregunta" maxlength="280" minlength="3" required></textarea>
           <div class="fila"><span class="suave crece" id="cuenta-pregunta">0 / 280</span><button type="submit" id="btn-preguntar">Enviar pregunta</button></div>
           <div id="aviso-pregunta" class="aviso oculto" role="status"></div>
+          <div id="recuperacion-pregunta" class="fila oculto">
+            <button type="button" class="mini secundario" id="btn-revisar-pregunta">Revisar si se registró</button>
+            <button type="button" class="mini secundario" id="btn-descartar-pregunta">Descartar borrador</button>
+          </div>
         </form>
         <h3>Preguntas de la clase</h3>
         <ul class="preguntas" id="lista-preguntas"></ul>

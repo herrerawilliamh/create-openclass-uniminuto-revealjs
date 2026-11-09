@@ -1,0 +1,19 @@
+# Fuentes autoalojadas: avisos y licencias
+
+Las cinco fuentes WOFF2 de esta carpeta se distribuyen **sin modificar**, tal como las publica Fontsource
+(subconjunto `latin`), bajo la SIL Open Font License 1.1. Cada licencia completa está en el archivo `OFL-*.txt`
+indicado; el texto es el que acompaña a cada paquete de origen.
+
+| Familia | Archivos | Origen | Aviso de copyright (texto de la licencia original) | Nombre reservado |
+|---|---|---|---|---|
+| Atkinson Hyperlegible | `atkinson-hyperlegible-latin-400-normal.woff2`, `…-700-normal.woff2` | `@fontsource/atkinson-hyperlegible` 5.2.5 | Copyright 2020 Braille Institute of America, Inc. | ninguno declarado en el aviso |
+| Merriweather Sans | `merriweather-sans-latin-800-normal.woff2` | `@fontsource/merriweather-sans` 5.2.5 | Copyright 2019 The Merriweather Project Authors (https://github.com/SorkinType/Merriweather-Sans) | ninguno declarado en el aviso |
+| OpenDyslexic | `opendyslexic-latin-400-normal.woff2`, `…-700-normal.woff2` | `@fontsource/opendyslexic` 5.3.0 | Copyright (c) 2019-07-29, Abbie Gonzalez (https://abbiecod.es), con Reserved Font Name OpenDyslexic | «OpenDyslexic» |
+
+Notas:
+- Los avisos de Atkinson Hyperlegible y Merriweather Sans proceden de la licencia de `@fontsource` 5.3.0 de cada
+  familia; la 5.2.5 (versión de los binarios) solo trae «Google Inc.», que no nombra a los titulares reales.
+- Los binarios coinciden byte a byte con los de los paquetes `@fontsource` indicados (se verificó con `cmp`).
+- Las fuentes no se renombran ni se modifican, de modo que el nombre reservado de OpenDyslexic se conserva
+  conforme a la cláusula 3 de la OFL. Las fuentes no se venden por separado.
+- Estas licencias no cubren el resto del repositorio (MIT) ni los recursos de marca de `assets/marca/`.
