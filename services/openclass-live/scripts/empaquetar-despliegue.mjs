@@ -1,7 +1,7 @@
 /**
  * Prepara el paquete que se copia a /home/openclass-live/ en la VPS (sin .env ni secretos):
  *   docker-compose.yml, Dockerfile, .dockerignore, .env.example, package.json, package-lock.json, src/, public/,
- *   scripts/hash-password.mjs (para generar el hash de la contraseña dentro de la VPS)
+ *   scripts/hash-password.mjs, init-superusuario.mjs y respaldar.mjs (operación dentro de la VPS)
  * Salida: despliegue/openclass-live-<versión>.tar.gz + SHA256SUMS (carpeta ignorada por git).
  * Formato canónico y reproducible: ver scripts/tar-determinista.mjs.
  * Se niega a empaquetar si encuentra archivos que no pertenecen al servicio.
@@ -22,8 +22,8 @@ if (lock.version !== version || lock.packages[''].version !== version
 const nombre = `openclass-live-${version}`;
 const salida = path.join(raiz, 'despliegue');
 const carpeta = path.join(salida, nombre);
-const ARCHIVOS = ['docker-compose.yml', 'Dockerfile', '.dockerignore', '.env.example', 'package.json', 'package-lock.json', 'src', 'public', 'scripts/hash-password.mjs'];
-const PERMITIDAS = /\.(mjs|html|css|svg|json|yml|example|woff2|txt)$|^(Dockerfile|\.dockerignore)$/;
+const ARCHIVOS = ['docker-compose.yml', 'Dockerfile', '.dockerignore', '.env.example', 'package.json', 'package-lock.json', 'src', 'public', 'scripts/hash-password.mjs', 'scripts/init-superusuario.mjs', 'scripts/respaldar.mjs'];
+const PERMITIDAS = /\.(mjs|html|css|svg|json|yml|example|woff2|txt|sql)$|^(Dockerfile|\.dockerignore)$/;
 
 rmSync(carpeta, { recursive: true, force: true });
 mkdirSync(carpeta, { recursive: true });

@@ -5,3 +5,5 @@
 !src/**
 !public/**
 !scripts/hash-password.mjs
+!scripts/init-superusuario.mjs
+!scripts/respaldar.mjs

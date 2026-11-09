@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="referrer" content="no-referrer">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Interact by WillEdTech · Su cuenta</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/assets/marca/willedtech.css">
+  <link rel="stylesheet" href="/assets/marca/fuentes.css">
+  <link rel="stylesheet" href="/assets/estilos.css">
+  <link rel="stylesheet" href="/assets/docente.css">
+  <link rel="stylesheet" href="/assets/cuenta.css">
+  <script type="module" src="/assets/cuenta.mjs"></script>
+</head>
+<body class="docente">
+  <a class="salto" href="#contenido">Saltar al contenido</a>
+  <header class="cinta">
+    <div class="cinta-fila">
+      <div class="marca-cinta">
+        <img src="/assets/marca/interact-marca-negativo.svg" alt="" width="32" height="32">
+        <div><h1>Interact by WillEdTech <span class="marca-rol">Su cuenta</span></h1></div>
+      </div>
+    </div>
+  </header>
+  <main class="cuenta-pagina" id="contenido" tabindex="-1">
+    <div id="aviso" class="aviso oculto" role="status" aria-live="polite"></div>
+
+    <section class="acceso oculto" id="v-invitacion" aria-labelledby="t-inv">
+      <h2 id="t-inv">Cree su cuenta</h2>
+      <p class="suave" id="inv-para"></p>
+      <form id="f-invitacion" autocomplete="on">
+        <label for="i-nombre">Nombre</label>
+        <input type="text" id="i-nombre" autocomplete="name" maxlength="80" required>
+        <label for="i-pass">Contraseña <span class="suave">(mínimo 12 caracteres)</span></label>
+        <input type="password" id="i-pass" autocomplete="new-password" minlength="12" maxlength="256" required>
+        <label for="i-pass2">Repita la contraseña</label>
+        <input type="password" id="i-pass2" autocomplete="new-password" minlength="12" maxlength="256" required>
+        <div id="e-inv" class="aviso error oculto" role="alert"></div>
+        <button type="submit">Crear cuenta</button>
+      </form>
+      <p class="suave">Después le enviaremos un correo para confirmar que la dirección es suya.</p>
+    </section>
+
+    <section class="acceso oculto" id="v-verificar" aria-labelledby="t-ver">
+      <h2 id="t-ver">Confirmando su correo…</h2>
+      <p id="p-verificar" class="suave"></p>
+      <p><a class="enlace-boton" href="/docente/">Ir al panel docente</a></p>
+    </section>
+
+    <section class="acceso oculto" id="v-pendiente" aria-labelledby="t-pen">
+      <h2 id="t-pen">Revise su correo</h2>
+      <p id="p-pendiente"></p>
+      <p class="suave">Si no llega en unos minutos, revise la carpeta de correo no deseado o <a href="#reenviar" id="a-reenviar">pida otro enlace</a>.</p>
+    </section>
+
+    <section class="acceso oculto" id="v-olvide" aria-labelledby="t-olv">
+      <h2 id="t-olv">Recuperar el acceso</h2>
+      <form id="f-olvide">
+        <label for="o-email">Correo electrónico</label>
+        <input type="email" id="o-email" autocomplete="username" required maxlength="254">
+        <button type="submit">Enviar enlace</button>
+      </form>
+      <p class="suave">Por seguridad, la respuesta es la misma exista o no una cuenta con esa dirección.</p>
+      <p><a href="/docente/">Volver al acceso</a></p>
+    </section>
+
+    <section class="acceso oculto" id="v-restablecer" aria-labelledby="t-res">
+      <h2 id="t-res">Nueva contraseña</h2>
+      <form id="f-restablecer">
+        <label for="r-pass">Contraseña nueva <span class="suave">(mínimo 12 caracteres)</span></label>
+        <input type="password" id="r-pass" autocomplete="new-password" minlength="12" maxlength="256" required>
+        <label for="r-pass2">Repita la contraseña</label>
+        <input type="password" id="r-pass2" autocomplete="new-password" minlength="12" maxlength="256" required>
+        <div id="e-res" class="aviso error oculto" role="alert"></div>
+        <button type="submit">Guardar contraseña</button>
+      </form>
+      <p class="suave">Al cambiarla se cierran todas sus sesiones abiertas.</p>
+    </section>
+
+    <section class="acceso oculto" id="v-fin" aria-labelledby="t-fin">
+      <h2 id="t-fin"></h2>
+      <p id="p-fin"></p>
+      <p><a class="enlace-boton" href="/docente/">Ir al panel docente</a></p>
+    </section>
+  </main>
+</body>
+</html>

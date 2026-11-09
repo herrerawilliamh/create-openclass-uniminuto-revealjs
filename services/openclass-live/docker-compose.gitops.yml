@@ -9,10 +9,10 @@ services:
       context: .
       dockerfile: Dockerfile
       labels:
-        org.opencontainers.image.version: "0.3.0"
+        org.opencontainers.image.version: "0.4.0"
         org.opencontainers.image.revision: ${LIVE_REVISION:?Full approved Git SHA required}
         org.opencontainers.image.source: https://github.com/herrerawilliamh/create-openclass-uniminuto-revealjs
-    image: openclass-live:0.3.0-${LIVE_REVISION:?Full approved Git SHA required}
+    image: openclass-live:0.4.0-${LIVE_REVISION:?Full approved Git SHA required}
     pull_policy: never
     container_name: openclass-live
     restart: unless-stopped
@@ -22,7 +22,7 @@ services:
       TZ: ${TZ:-America/Bogota}
       APP_URL: ${APP_URL:?APP_URL is required}
       SESSION_SECRET: ${SESSION_SECRET:?SESSION_SECRET is required}
-      # Opcional (acceso heredado 0.3.0). Vacío = solo cuentas personales.
+      # Opcional (acceso heredado de 0.3.0). Vacío = solo cuentas personales.
       ADMIN_PASSWORD_HASH: ${ADMIN_PASSWORD_HASH:-}
       DATA_DIR: /data
       MAIL_TRANSPORT: ${MAIL_TRANSPORT:-desactivado}

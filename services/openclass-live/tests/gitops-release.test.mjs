@@ -6,6 +6,7 @@ import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { esBinario } from '../scripts/huella.mjs';
+const VERSION = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8')).version; // releases/0.3.0.json y 0.2.0.json quedan como historia inmutable
 
 test('gate GitOps admite checkout LF y rechaza payload, Compose o SHA divergentes', () => {
   const dir = mkdtempSync(path.join(tmpdir(), 'oclive-gitops-'));
@@ -16,7 +17,7 @@ test('gate GitOps admite checkout LF y rechaza payload, Compose o SHA divergente
     }
     const run = (revision = 'a'.repeat(40)) => spawnSync(process.execPath,
       ['scripts/verificar-gitops.mjs'], { cwd: dir, encoding: 'utf8', env: { ...process.env, LIVE_REVISION: revision } });
-    const manifest = JSON.parse(readFileSync(path.join(dir, 'releases/0.3.0.json')));
+    const manifest = JSON.parse(readFileSync(path.join(dir, `releases/${VERSION}.json`)));
     for (const { path: f } of manifest.files) {
       if (esBinario(f)) continue; // los binarios nunca se reescriben como texto
       const p = path.join(dir, f);
@@ -43,7 +44,7 @@ test('binarios: los cinco WOFF2 coinciden con sus bytes y un byte alterado hace 
       '.dockerignore', '.env.example', 'docker-compose.yml', 'docker-compose.gitops.yml', 'scripts', 'releases']) {
       cpSync(new URL(`../${f}`, import.meta.url), path.join(dir, f), { recursive: true });
     }
-    const manifest = JSON.parse(readFileSync(path.join(dir, 'releases/0.3.0.json')));
+    const manifest = JSON.parse(readFileSync(path.join(dir, `releases/${VERSION}.json`)));
     const fuentes = manifest.files.filter((f) => f.path.endsWith('.woff2'));
     assert.equal(fuentes.length, 5);
     for (const f of fuentes) {

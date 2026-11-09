@@ -42,7 +42,9 @@ test('Dockhand Git stack accepts explicit environment without requiring an env_f
   assert.match(compose, /context: \./);
   assert.match(compose, /dockerfile: Dockerfile/);
   assert.match(compose, /SESSION_SECRET: \$\{SESSION_SECRET:\?/);
-  assert.match(compose, /ADMIN_PASSWORD_HASH: \$\{ADMIN_PASSWORD_HASH:\?/);
+  assert.match(compose, /ADMIN_PASSWORD_HASH: \$\{ADMIN_PASSWORD_HASH:-\}/);
+  assert.match(compose, /DATA_DIR: \/data/);
+  assert.match(compose, /interact-data:\/data/);
   assert.match(compose, /APP_URL: \$\{APP_URL:\?/);
   assert.match(compose, /Host\(`\$\{APP_HOST\}`\)/);
   assert.match(compose, /certresolver=myresolver/);

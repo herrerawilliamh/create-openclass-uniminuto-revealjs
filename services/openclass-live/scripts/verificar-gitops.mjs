@@ -38,7 +38,7 @@ function walk(rel) {
   }
 }
 for (const rel of ['docker-compose.yml', 'Dockerfile', '.dockerignore', '.env.example',
-  'package.json', 'package-lock.json', 'src', 'public', 'scripts/hash-password.mjs']) walk(rel);
+  'package.json', 'package-lock.json', 'src', 'public', 'scripts/hash-password.mjs', 'scripts/init-superusuario.mjs', 'scripts/respaldar.mjs']) walk(rel);
 const sorted = (a) => [...a].sort((a, b) => a.path.localeCompare(b.path, 'en'));
 assert.deepEqual(sorted(actual), sorted(release.files.map(({ path, gitSha256 }) => ({ path, gitSha256 }))),
   'El payload Git (LF, según .gitattributes) difiere del artefacto aprobado');

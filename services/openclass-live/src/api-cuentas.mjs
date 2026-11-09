@@ -193,7 +193,7 @@ export function crearApiCuentas({ config, firmador, sesiones, cuentas, historial
         const segundos = config.sesionDocenteHoras * 3600;
         const sid = sesiones.crear(segundos, r.usuario.id);
         log('login_ok', { cuenta: true });
-        return enviar(res, 200, { autenticado: true, csrf: firmador.csrf(sid), usuario: { nombre: r.usuario.nombre, email: r.usuario.email, rol: r.usuario.rol } }, undefined,
+        return enviar(res, 200, { autenticado: true, csrf: firmador.csrf(sid), usuario: { id: r.usuario.id, nombre: r.usuario.nombre, email: r.usuario.email, rol: r.usuario.rol } }, undefined,
           { 'Set-Cookie': util.cookieSesion(firmador.firmar({ t: 'docente', sid }, segundos), segundos) }), true;
       }
       if (ruta === '/api/auth/invitacion/validar') {
@@ -216,7 +216,7 @@ export function crearApiCuentas({ config, firmador, sesiones, cuentas, historial
         if (limitadorCuenta.permitir(clave)) {
           const esVerif = ruta.endsWith('reenviar');
           const t = esVerif ? cuentas.reemitirVerificacion(email) : cuentas.solicitarRecuperacion(email);
-          if (t) await mandar(esVerif ? 'verificacion' : 'recuperacion', t.email, t.token);
+          if (t) mandar(esVerif ? 'verificacion' : 'recuperacion', t.email, t.token); // sin await: la latencia SMTP no revela si la cuenta existe
         }
         // Respuesta idéntica exista o no la cuenta (y también si se limitó): no revela cuentas.
         return enviar(res, 202, { ok: true, mensaje: 'Si la dirección corresponde a una cuenta, recibirá un correo con las instrucciones.' }), true;

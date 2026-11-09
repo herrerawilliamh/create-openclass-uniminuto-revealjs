@@ -11,6 +11,7 @@
   <link rel="stylesheet" href="/assets/marca/fuentes.css">
   <link rel="stylesheet" href="/assets/estilos.css">
   <link rel="stylesheet" href="/assets/docente.css">
+  <link rel="stylesheet" href="/assets/cuenta.css">
   <script src="/socket.io/socket.io.min.js" defer></script>
   <script type="module" src="/assets/docente.mjs"></script>
 </head>
@@ -28,9 +29,15 @@
       <p class="cinta-codigo oculto" id="cinta-codigo-caja"><span>Código de la sala</span> <strong id="cinta-codigo"></strong></p>
       <div class="fila">
         <span class="estado-conexion" id="conexion" role="status" aria-live="polite"></span>
+        <span class="chip-usuario oculto" id="chip-usuario"></span>
         <button type="button" class="mini secundario oculto" id="btn-salir">Cerrar sesión</button>
       </div>
     </div>
+    <nav class="vistas oculto" id="nav-vistas" aria-label="Áreas del panel">
+      <button type="button" class="mini secundario" id="ir-salas" aria-current="page">Salas</button>
+      <button type="button" class="mini secundario" id="ir-historial">Mis sesiones</button>
+      <button type="button" class="mini secundario oculto" id="ir-admin">Administración</button>
+    </nav>
     <nav class="secciones oculto" id="nav-secciones" aria-label="Secciones de la sala">
       <a href="#encuesta">Encuesta</a>
       <a href="#preguntas">Preguntas <span class="contador oculto" id="cuenta-pendientes"></span></a>
@@ -42,13 +49,15 @@
     <section class="acceso oculto" id="vista-login" aria-labelledby="t-login">
       <h2 id="t-login">Entrar al panel docente</h2>
       <form id="form-login" autocomplete="on">
+        <label for="email">Correo electrónico <span class="suave" id="nota-email"></span></label>
+        <input type="email" id="email" name="email" autocomplete="username" aria-describedby="error-login">
         <label for="password">Contraseña</label>
         <input type="password" id="password" name="password" autocomplete="current-password" required aria-describedby="error-login">
         <div id="error-login" class="aviso error oculto" role="alert"></div>
         <div class="fila"><button type="submit" id="btn-login">Entrar</button>
           <button type="button" class="secundario oculto" id="btn-reintentar">Reintentar conexión</button></div>
       </form>
-      <p class="suave">¿Sin contraseña? Pídala a quien administra el servicio.</p>
+      <p class="suave"><a href="/cuenta/#olvide">¿Olvidó su contraseña?</a> · Si aún no tiene cuenta, solicite una invitación a quien administra el servicio.</p>
       <p class="suave">El enlace o QR de los estudiantes nunca concede acceso a este panel.</p>
     </section>
 
@@ -63,6 +72,7 @@
             <label for="titulo-sala">Título visible para los estudiantes <span class="suave">(opcional)</span></label>
             <input type="text" id="titulo-sala" maxlength="80" placeholder="Ej.: Plataformas de desarrollo · Semana 3">
             <label class="fila casilla"><input type="checkbox" id="premoderacion" checked> Revisar las preguntas antes de publicarlas</label>
+            <label class="fila casilla"><input type="checkbox" id="conservar" checked> Conservar los resultados agregados en «Mis sesiones»</label>
             <button type="submit">Crear sala</button>
           </form>
         </div>
@@ -71,6 +81,73 @@
           <ul id="lista-salas" class="preguntas"></ul>
         </div>
       </div>
+    </section>
+
+    <section id="vista-historial" class="oculto" aria-labelledby="t-historial">
+      <h2 id="t-historial" class="titulo-vista">Mis sesiones</h2>
+      <p class="suave" id="alcance-historial"></p>
+      <form id="form-filtros" class="filtros hoja" autocomplete="off">
+        <div class="campo"><label for="f-q">Título contiene</label><input type="search" id="f-q" maxlength="80"></div>
+        <div class="campo oculto" id="campo-usuario"><label for="f-usuario">Docente (nombre o correo)</label><input type="search" id="f-usuario" maxlength="80"></div>
+        <div class="campo"><label for="f-estado">Estado</label>
+          <select id="f-estado"><option value="">Todos</option><option value="activa">Activa</option><option value="finalizada">Finalizada</option><option value="vencida">Vencida</option><option value="interrumpida">Interrumpida</option></select></div>
+        <div class="campo"><label for="f-desde">Desde</label><input type="date" id="f-desde"></div>
+        <div class="campo"><label for="f-hasta">Hasta</label><input type="date" id="f-hasta"></div>
+        <div class="fila"><button type="submit">Buscar</button>
+          <button type="button" class="secundario" id="btn-csv">Exportar CSV</button></div>
+      </form>
+      <div id="aviso-historial" class="aviso oculto" role="status"></div>
+      <div class="hoja"><div class="tabla-responsive">
+        <table class="salidas" id="tabla-historial"><caption class="solo-lector">Sesiones guardadas</caption>
+          <thead><tr><th scope="col">Sesión</th><th scope="col" class="col-docente oculto">Docente</th><th scope="col">Estado</th><th scope="col">Fecha</th><th scope="col">Participantes</th><th scope="col">Actividades</th><th scope="col"><span class="solo-lector">Acciones</span></th></tr></thead>
+          <tbody></tbody></table></div>
+        <div class="fila"><button type="button" class="mini secundario" id="hist-anterior">← Anteriores</button><span class="suave" id="hist-pagina"></span><button type="button" class="mini secundario" id="hist-siguiente">Siguientes →</button></div>
+      </div>
+      <section class="hoja oculto" id="detalle-historial" aria-labelledby="t-detalle" tabindex="-1">
+        <div class="fila entre"><h3 id="t-detalle">Detalle</h3><button type="button" class="mini secundario" id="cerrar-detalle">Cerrar detalle</button></div>
+        <div id="cuerpo-detalle"></div>
+      </section>
+      <details class="hoja plegable"><summary><b>Qué se conserva y por cuánto tiempo</b></summary>
+        <ul class="suave">
+          <li>Se guarda: título, fechas, estado, número de participantes y de preguntas, y por actividad el enunciado, las opciones y los recuentos por ronda.</li>
+          <li>No se guarda: alias, respuestas individuales, textos de preguntas de estudiantes, notas privadas, soluciones sin revelar ni diapositivas.</li>
+          <li>Si crea la sala sin «Conservar resultados», solo quedan título, fechas y recuentos generales.</li>
+          <li>El historial se elimina automáticamente transcurrido el plazo de conservación del servicio; usted puede eliminar cualquiera de sus sesiones cerradas en cualquier momento.</li>
+        </ul></details>
+    </section>
+
+    <section id="vista-admin" class="oculto" aria-labelledby="t-admin">
+      <h2 id="t-admin" class="titulo-vista">Administración</h2>
+      <div id="aviso-admin" class="aviso oculto" role="status"></div>
+      <div class="salas-composicion">
+        <div class="hoja">
+          <h3>Invitar a una persona</h3>
+          <p class="suave" id="estado-correo"></p>
+          <form id="form-invitar" autocomplete="off">
+            <label for="inv-email">Correo electrónico</label>
+            <input type="email" id="inv-email" required maxlength="254">
+            <label for="inv-rol">Rol</label>
+            <select id="inv-rol"><option value="docente">Docente</option><option value="superusuario">Superusuario</option></select>
+            <button type="submit">Crear y enviar invitación</button>
+          </form>
+          <div id="enlace-manual" class="oculto"><label for="inv-enlace">Enlace de invitación (entréguelo por otro medio; vale una sola vez)</label>
+            <input type="text" id="inv-enlace" readonly></div>
+        </div>
+        <div class="hoja">
+          <h3>Invitaciones</h3>
+          <ul id="lista-invitaciones" class="preguntas"></ul>
+        </div>
+      </div>
+      <div class="hoja"><h3>Usuarios</h3><div class="tabla-responsive">
+        <table class="salidas"><caption class="solo-lector">Usuarios</caption>
+          <thead><tr><th scope="col">Nombre</th><th scope="col">Correo</th><th scope="col">Rol</th><th scope="col">Estado</th><th scope="col"><span class="solo-lector">Acciones</span></th></tr></thead>
+          <tbody id="tabla-usuarios"></tbody></table></div></div>
+      <details class="hoja plegable"><summary><b>Auditoría</b> <span class="suave">· operaciones administrativas sensibles</span></summary>
+        <div class="tabla-responsive"><table class="salidas"><caption class="solo-lector">Auditoría</caption>
+          <thead><tr><th scope="col">Fecha</th><th scope="col">Actor</th><th scope="col">Acción</th><th scope="col">Objetivo</th></tr></thead>
+          <tbody id="tabla-auditoria"></tbody></table></div>
+        <div class="fila"><button type="button" class="secundario" id="btn-retencion">Aplicar política de conservación ahora</button></div>
+      </details>
     </section>
 
     <section id="vista-sala" class="oculto">
@@ -170,10 +247,10 @@
               <tbody>
                 <tr><th scope="row">Otras salas</th><td>Sigue abierta</td><td>Se borran</td></tr>
                 <tr><th scope="row">Cerrar sesión</th><td>Sigue abierta</td><td>Se borran</td></tr>
-                <tr><th scope="row">Finalizar sesión</th><td>Se elimina</td><td>Se borran</td></tr>
+                <tr><th scope="row">Finalizar sesión</th><td>Se cierra; queda el resumen agregado</td><td>Se borran</td></tr>
               </tbody>
             </table>
-            <p class="suave">Finalizar elimina del servidor encuestas, respuestas y preguntas de esta sala, y desconecta a todos.</p>
+            <p class="suave">Finalizar elimina del servidor las respuestas, preguntas y alias de esta sala y desconecta a todos. En «Mis sesiones» quedan solo los datos agregados (recuentos por opción), salvo que haya desactivado su conservación.</p>
             <div class="fila">
               <button type="button" class="secundario" id="btn-revocar">Revocar claves de presentador</button>
               <button type="button" class="peligro" id="btn-finalizar">Finalizar sesión</button>
