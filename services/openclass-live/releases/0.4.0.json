@@ -22,7 +22,7 @@
     },
     {
       "path": "docker-compose.yml",
-      "sha256": "f3268975891cfd750a30bbf75da47ea45be44fe6b2dfe3f8c538611fdc060d3b",
+      "sha256": "63745c87634f00b0d88fee9e218d0d0cc9ea54408e0b5a97fde5ee1497a07915",
       "gitSha256": "63745c87634f00b0d88fee9e218d0d0cc9ea54408e0b5a97fde5ee1497a07915"
     },
     {
@@ -212,7 +212,7 @@
     },
     {
       "path": "scripts/preparar-roles.mjs",
-      "sha256": "3a2963aa9f54919367fa3797a8ff465f81737c47912f99c0e800d1f89ab6c10a",
+      "sha256": "3478c26842a1d0e4169d7891160de6a192d94a925f45ab999b961f320268db9d",
       "gitSha256": "3478c26842a1d0e4169d7891160de6a192d94a925f45ab999b961f320268db9d"
     },
     {
