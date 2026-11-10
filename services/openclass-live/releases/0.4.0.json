@@ -2,7 +2,7 @@
   "version": "0.4.0",
   "protocol": 2,
   "archive": "openclass-live-0.4.0.tar.gz",
-  "archiveSha256": "459a322d94523450553f3da8f4e14320a2735e62b6374e1ade2db09da7cdb2fa",
+  "archiveSha256": "8c86504253f8e84f1d29cb1063533bf9bd278d3e6b78ef3969bb61d7ba879941",
   "sourceBase": "79e06b5b497b19b7a097040066d1e85d63c0ef77",
   "files": [
     {
@@ -212,8 +212,8 @@
     },
     {
       "path": "scripts/preparar-roles.mjs",
-      "sha256": "3478c26842a1d0e4169d7891160de6a192d94a925f45ab999b961f320268db9d",
-      "gitSha256": "3478c26842a1d0e4169d7891160de6a192d94a925f45ab999b961f320268db9d"
+      "sha256": "f1c7b411b77ae47c077acc3c3b241cc3614d276a2dbac9edc6df6b4c885c4206",
+      "gitSha256": "f1c7b411b77ae47c077acc3c3b241cc3614d276a2dbac9edc6df6b4c885c4206"
     },
     {
       "path": "scripts/respaldar.mjs",
