@@ -15,7 +15,7 @@ import test, { after, before } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import { randomBytes } from 'node:crypto';
-import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { chmodSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -55,12 +55,17 @@ const ok = (r, ctx) => assert.equal(r.status, 0, `${ctx}\n${r.stdout}\n${r.stder
 const salida = (r) => `${r.stdout}\n${r.stderr}`;
 
 // Cliente efímero con la imagen del servicio: ejecuta JavaScript dentro de una red concreta.
+// En Linux (CI) el usuario del contenedor (uid 1000) no coincide con el del ejecutor: la carpeta de prueba se abre a
+// todos y, tras cada respaldo, un contenedor efímero (root) devuelve el acceso de lectura/borrado al ejecutor.
+// Solo afecta a la carpeta temporal sintética de la prueba; el despliegue real exige 700 y propietario uid 1000.
+const abrirRespaldos = () => { if (process.platform === 'linux') chmodSync(respaldos, 0o777); };
+const liberarRespaldos = () => { if (process.platform === 'linux') docker(['run', '--rm', '--user', '0', '-v', `${respaldos}:/r`, '--entrypoint', 'chmod', 'openclass-live:0.4.0', '-R', 'a+rwX', '/r']); };
 const enRed = (red, js, extra = []) => docker(['run', '--rm', '--network', red, ...extra, '--entrypoint', 'node', 'openclass-live:0.4.0', '-e', js]);
 
 before(() => {
   if (omitir) return;
   for (const n of fijas) assert.ok(!docker(['ps', '-a', '--filter', `name=^${n}$`, '--format', '{{.Names}}']).stdout.trim(), `ya existe un contenedor «${n}»: no se toca; deténgalo manualmente o use otra máquina`);
-  mkdirSync(respaldos, { recursive: true }); mkdirSync(certs, { recursive: true });
+  mkdirSync(respaldos, { recursive: true }); mkdirSync(certs, { recursive: true }); abrirRespaldos();
   const build = compose(['build', 'openclass-live', 'interact-respaldo']);
   ok(build, 'construcción de imágenes');
 });
@@ -70,6 +75,7 @@ after(() => {
   compose(['down', '--volumes', '--remove-orphans'], { COMPOSE_PROFILES: 'postgres-dedicado,postgres-administrado,respaldo-dedicado,respaldo-administrado' });
   docker(['rm', '-f', `${P}-db-externo`]);
   docker(['network', 'rm', `${P}_interact-db`, `${P}_interact-salida`]);
+  liberarRespaldos();
   rmSync(tmp, { recursive: true, force: true });
 });
 
@@ -123,6 +129,7 @@ test('modo A (dedicado): preparar → migrar → base solo en red interna, sin p
 
 test('modo A (dedicado): respaldo con la credencial de solo lectura', { skip: omitir, timeout: 300_000 }, () => {
   const r = compose(['run', '--rm', 'interact-respaldo'], { COMPOSE_PROFILES: 'postgres-dedicado,respaldo-dedicado' });
+  liberarRespaldos();
   ok(r, 'respaldo dedicado');
   const copias = readdirSync(respaldos).filter((f) => f.endsWith('.dump'));
   assert.equal(copias.length, 1);
@@ -207,6 +214,7 @@ test('modo B: validación del certificado TLS — sin CA, nombre distinto y sin 
 
 test('modo B (administrado): respaldo de la base externa con verify-full', { skip: omitir, timeout: 300_000 }, () => {
   const r = compose(['run', '--rm', 'interact-respaldo-administrado'], entornoB(), ARCHIVOS_B);
+  liberarRespaldos();
   ok(r, 'respaldo administrado');
   const copias = readdirSync(respaldos).filter((f) => f.endsWith('.dump'));
   assert.equal(copias.length, 1);

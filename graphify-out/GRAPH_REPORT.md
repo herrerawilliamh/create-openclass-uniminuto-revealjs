@@ -1,17 +1,17 @@
 # Graph Report - create-openclass-uniminuto-revealjs  (2026-11-10)
 
 ## Corpus Check
-- 193 files · ~213,194 words
+- 193 files · ~213,368 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 27 file(s) not represented in the graph (top: .css 12, (none) 10, .example 1)
 
 ## Summary
-- 2426 nodes · 4310 edges · 149 communities (141 shown, 8 thin omitted)
+- 2428 nodes · 4313 edges · 147 communities (139 shown, 8 thin omitted)
 - Extraction: 97% EXTRACTED · 3% INFERRED · 0% AMBIGUOUS · INFERRED: 129 edges (avg confidence: 0.9)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `e2d9b595`
+- Built from commit: `a905b6b4`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -27,7 +27,7 @@
 - vite.config.mjs
 - Guía del docente — Crear OpenClass UNIMINUTO Reveal.js
 - TEMÁTICA DE PRUEBA
-- cuentas.mjs
+- db.mjs
 - Internet de las cosas
 - pages.yml
 - Laboratorio interactivo de OpenClass
@@ -57,7 +57,7 @@
 - jobs
 - buildtech.mjs
 - build-site.mjs
-- respaldo-restauracion.test.mjs
+- pintarActiva
 - docente.mjs
 - openclass-live/package.json
 - app.js
@@ -69,7 +69,7 @@
 - main.jsx
 - openclass-live
 - index.mjs
-- pintarActiva
+- comun.mjs
 - ref_node_assert
 - crearAlmacen
 - Adaptación a WillEdTech Brand v3 (OpenClass Live 0.3.0)
@@ -78,7 +78,7 @@
 - healthcheck
 - OpenClass Suite — Documento maestro de producto, requisitos y evolución
 - options
-- db.mjs
+- I6-C — Verificación de las hipótesis H01–H08
 - notas.mjs
 - correo.mjs
 - verificar-gitops.mjs
@@ -114,19 +114,19 @@
 - env
 - publicar.mjs
 - options
-- postgresql.test.mjs
+- envio.mjs
 - stable-startup
 - checks
 - p2-auditoria.test.mjs
 - Evidencias de cierre — Interact 0.4.0
 - VNEXT-FUTURO.md
-- ref_node_crypto
+- vinculo-presentacion-navegador.test.mjs
 - build
 - render-demo-video.mjs
 - approval
 - interact-respaldo
 - procedencia-autosync.mjs
-- protocolo-navegador.test.mjs
+- Interact 0.4.0 · Cierre de la migración a PostgreSQL (para auditoría Codex)
 - Marca: clasificación y condición de publicación (OpenClass Live 0.3.0)
 - Manual del creador de OpenClass UNIMINUTO Reveal.js
 - interact-migrar
@@ -145,7 +145,6 @@
 - postgres
 - autoPaginar.mjs
 - Hotfix v0.1 — sin filtración del acierto antes de revelar
-- ref_node_assert
 - interact-db
 - environment
 - interact-db
@@ -154,7 +153,6 @@
 - Interact · Respaldo, restauración, RPO/RTO y PITR
 - publicacion-seguridad.test.mjs
 - docker-redes.test.mjs
-- docker-proxy.test.mjs
 - interact-db-preparar-administrado
 - interact-migrar-administrado
 - interact-db-preparar-administrado
@@ -190,7 +188,7 @@
 ## Import Cycles
 - None detected.
 
-## Communities (149 total, 8 thin omitted)
+## Communities (147 total, 8 thin omitted)
 
 ### Community 0 - "generar-desde-config.mjs"
 Cohesion: 0.11
@@ -236,9 +234,9 @@ Nodes (22): 10. Actualizar el curso, 11. Problemas frecuentes, 12. Futuras funci
 Cohesion: 0.08
 Nodes (24): Actividad mediante iframe, Actividad práctica, Código desplazable (scroll), Código fuente, Código paginado, Diagrama Mermaid, Dos columnas, Dos títulos (+16 more)
 
-### Community 11 - "cuentas.mjs"
-Cohesion: 0.12
-Nodes (18): email, crearCuentas(), consumir(), emitirToken(), inspeccionar(), EMAIL_HEREDADO, ErrorCuenta, falla() (+10 more)
+### Community 11 - "db.mjs"
+Cohesion: 0.05
+Nodes (70): pg, pg@8.23.1, firmarCopia(), generarClaves(), huellaClave(), sha256Archivo(), verificarAutenticidad(), verificarSuma() (+62 more)
 
 ### Community 12 - "Internet de las cosas"
 Cohesion: 0.13
@@ -298,11 +296,11 @@ Nodes (22): configurar(), DURACIONES_CLASE, duracionValida(), fase(), formatoRel
 
 ### Community 28 - "integracion.test.mjs"
 Cohesion: 0.13
-Nodes (25): esperar(), evento(), HASH, iniciar(), nuevoEsquema(), ORIGEN, pedir(), PRESENTADOR (+17 more)
+Nodes (22): esperar(), evento(), iniciar(), pedir(), PRESENTADOR, rechazo(), V2, ADMIN (+14 more)
 
 ### Community 29 - "estudiante.mjs"
-Cohesion: 0.13
-Nodes (30): buscarPregunta(), enviar(), mismas(), MS_ACUSE, ordenadas(), resolverVoto(), aviso(), borrar() (+22 more)
+Cohesion: 0.18
+Nodes (22): aviso(), borrar(), CLAVE(), conexion(), cuenta, descartarPregunta(), enlazar(), enviarVoto() (+14 more)
 
 ### Community 31 - "Presentacion.jsx"
 Cohesion: 0.17
@@ -321,8 +319,8 @@ Cohesion: 0.23
 Nodes (19): Build Tech and PDF export (template, branch feat/openclass-live-teacher-ux-v0.2, uncommitted), OpenClassBuildTech(), abrirBuildTech(), abrirSelector(), alMensaje(), alternarRelojPublico(), cerrarSelector(), ejecutar() (+11 more)
 
 ### Community 37 - "OpenClassLive"
-Cohesion: 0.07
-Nodes (73): Decisiones que requieren autorización adicional, H01 — Regiones ARIA durante una votación, H02 — Sesión vencida y revocación entre pestañas, H03 — Privacidad de preguntas pendientes, H04 — Reflow a 320 CSS px y zoom al 400 %, H05 — Contraste de componentes, H06 — Espacios disponibles para el QR en Reveal.js, H07 — Retiro accidental de resultados (+65 more)
+Cohesion: 0.09
+Nodes (64): OpenClass Live (in development, not in the npm package), extraerEncuesta(), firmaEncuesta(), normal(), separarSolucion(), textoDe(), DURACIONES, el() (+56 more)
 
 ### Community 38 - "portal-academico.test.mjs"
 Cohesion: 0.09
@@ -344,13 +342,13 @@ Nodes (17): el(), enlaceImprimible(), iframesImprimibles(), letra(), modoImpresi
 Cohesion: 0.09
 Nodes (25): cfg, cfgRuta, curso, datos, esc(), html, pkg, raiz (+17 more)
 
-### Community 43 - "respaldo-restauracion.test.mjs"
-Cohesion: 0.29
-Nodes (14): binario(), ejecutar(), entornoPg(), versionMayor(), existe(), limpiar(), respaldar(), DESTINO_SEGURO (+6 more)
+### Community 43 - "pintarActiva"
+Cohesion: 0.24
+Nodes (13): I4 — Trazabilidad Graphify del panel docente (cierre documental), Limitaciones reales, Qué indexa realmente Graphify, Tabla de trazabilidad (pantalla → HTML → CSS → JS → pruebas), formatoTiempo(), textoDuracion(), pintar(), pintarActiva() (+5 more)
 
 ### Community 44 - "docente.mjs"
-Cohesion: 0.14
-Nodes (37): OpenClass Live (in development, not in the npm package), I2 — Recuperación y confiabilidad del panel (OC-A01, OC-A06, OC-A10, O-01, O-09), Relación encuesta → navegación → preguntas → compartir → cierre, esTransitorio(), accion(), api(), aviso(), avisoSala() (+29 more)
+Cohesion: 0.15
+Nodes (35): Relación encuesta → navegación → preguntas → compartir → cierre, accion(), api(), aviso(), avisoSala(), conectar(), configurarLogin(), cuenta (+27 more)
 
 ### Community 45 - "openclass-live/package.json"
 Cohesion: 0.06
@@ -373,12 +371,12 @@ Cohesion: 0.23
 Nodes (15): avisar(), apiYoutube(), crearMultimedia(), describir(), ejecutar(), enlazar(), enlazarHtml5(), enlazarYoutube() (+7 more)
 
 ### Community 50 - "ref_node_test"
-Cohesion: 0.09
-Nodes (17): capturas, miniaturas, raiz, enviar(), servir(), TIPOS, ADMIN, npm() (+9 more)
+Cohesion: 0.08
+Nodes (21): capturas, miniaturas, raiz, enviar(), servir(), TIPOS, clave, docker() (+13 more)
 
 ### Community 51 - "ref_node_child_process"
-Cohesion: 0.12
-Nodes (18): ejecutar(), evaluarTap(), raiz, SUITES, raiz, compilar(), crearCurso(), DIAPOSITIVAS (+10 more)
+Cohesion: 0.13
+Nodes (14): compilar(), crearCurso(), DIAPOSITIVAS, npm(), RAIZ, recompilar(), YOUTUBE_ID, NOTAS_PRIVADAS (+6 more)
 
 ### Community 52 - "main.jsx"
 Cohesion: 0.25
@@ -392,13 +390,13 @@ Nodes (22): context, dockerfile, build, cap_drop, container_name, cpus, expose, 
 Cohesion: 0.12
 Nodes (14): OpenClassCodigo(), puedeMover(), TECLAS, cargarFase2(), FASE2, LIVE, cargarCss(), cargarPlugins() (+6 more)
 
-### Community 55 - "pintarActiva"
-Cohesion: 0.18
-Nodes (24): Tabla de trazabilidad (pantalla → HTML → CSS → JS → pruebas), barras(), comparar(), crearCuenta(), el(), enfocable(), ESTADOS, formatoTiempo() (+16 more)
+### Community 55 - "comun.mjs"
+Cohesion: 0.21
+Nodes (12): I2 — Recuperación y confiabilidad del panel (OC-A01, OC-A06, OC-A10, O-01, O-09), barras(), comparar(), crearCuenta(), ESTADOS, esTransitorio(), letra(), MENSAJES_ERROR (+4 more)
 
 ### Community 56 - "ref_node_assert"
-Cohesion: 0.12
-Nodes (28): socket.io-client, abrirNavegador(), CANDIDATOS, rutaChrome(), b64(), hashPassword(), memoria(), SCRYPT (+20 more)
+Cohesion: 0.13
+Nodes (31): socket.io-client, abrirNavegador(), CANDIDATOS, rutaChrome(), b64(), hashPassword(), memoria(), SCRYPT (+23 more)
 
 ### Community 57 - "crearAlmacen"
 Cohesion: 0.24
@@ -428,9 +426,9 @@ Nodes (24): 0.1 Niveles de certeza, 0.2 Terminología, 0. Propósito y visión, 
 Cohesion: 0.17
 Nodes (16): logging, logging, logging, logging, logging, driver, options, logging (+8 more)
 
-### Community 64 - "db.mjs"
-Cohesion: 0.22
-Nodes (19): ejecutarMigraciones(), abrirBase(), compararHistorial(), configurarPool(), crearBase(), crearEsquemaSiFalta(), envolver(), ErrorBase (+11 more)
+### Community 64 - "I6-C — Verificación de las hipótesis H01–H08"
+Cohesion: 0.18
+Nodes (10): Decisiones que requieren autorización adicional, H01 — Regiones ARIA durante una votación, H02 — Sesión vencida y revocación entre pestañas, H03 — Privacidad de preguntas pendientes, H04 — Reflow a 320 CSS px y zoom al 400 %, H05 — Contraste de componentes, H06 — Espacios disponibles para el QR en Reveal.js, H07 — Retiro accidental de resultados (+2 more)
 
 ### Community 65 - "notas.mjs"
 Cohesion: 0.43
@@ -465,12 +463,12 @@ Cohesion: 0.20
 Nodes (4): OpenClass Live — preparación para una futura Zoom App, Principios que deben mantenerse, Qué faltaría, Qué se puede reutilizar
 
 ### Community 73 - "ref_node_fs"
-Cohesion: 0.07
-Nodes (23): args, dist, r, raiz, claves, plantilla, raiz, salida (+15 more)
+Cohesion: 0.05
+Nodes (33): args, dist, r, raiz, ejecutar(), evaluarTap(), raiz, SUITES (+25 more)
 
 ### Community 74 - "el"
-Cohesion: 0.24
-Nodes (12): mensajeHttp(), crearPanelCuenta(), cambiarEstado(), cargarAdmin(), cargarHistorial(), consulta(), eliminar(), revocar() (+4 more)
+Cohesion: 0.27
+Nodes (13): el(), mensajeHttp(), crearPanelCuenta(), cambiarEstado(), cargarAdmin(), cargarHistorial(), consulta(), eliminar() (+5 more)
 
 ### Community 75 - "I6-E — Aceptación pedagógica: guion para una persona docente sin conocimientos técnicos"
 Cohesion: 0.25
@@ -568,9 +566,9 @@ Nodes (5): CONTENIDO, ESPERADO, OPENCLASS_EVIDENCIA, SALIDA, env
 Cohesion: 0.17
 Nodes (16): logging, logging, logging, logging, logging, driver, options, logging (+8 more)
 
-### Community 100 - "postgresql.test.mjs"
-Cohesion: 0.23
-Nodes (13): pg, pg@8.23.1, conectar(), opcionesDesdeEntorno(), prepararRoles(), leerSsl(), borrarEsquema(), conCliente() (+5 more)
+### Community 100 - "envio.mjs"
+Cohesion: 0.33
+Nodes (7): buscarPregunta(), enviar(), mismas(), MS_ACUSE, ordenadas(), resolverVoto(), resolverIncertidumbre()
 
 ### Community 101 - "stable-startup"
 Cohesion: 0.50
@@ -581,16 +579,16 @@ Cohesion: 0.20
 Nodes (10): env, name, outputs, runs-on, timeout-minutes, INTERACT_TEST_DATABASE_URL, INTERACT_TEST_REQUIRE_PG_TOOLS, PG_BIN (+2 more)
 
 ### Community 103 - "p2-auditoria.test.mjs"
-Cohesion: 0.23
-Nodes (9): Fuera de alcance (deliberado), Interact 0.4.0 · Cierre de la migración a PostgreSQL (para auditoría Codex), Pruebas ejecutadas en esta entrega (PostgreSQL 16.10 real), Qué cambió, Revalidación de los P2 del dictamen anterior, crearConfianzaProxy(), ipCliente(), normalizarIp() (+1 more)
+Cohesion: 0.46
+Nodes (5): Revalidación de los P2 del dictamen anterior, crearConfianzaProxy(), ipCliente(), normalizarIp(), BASE
 
 ### Community 104 - "Evidencias de cierre — Interact 0.4.0"
 Cohesion: 0.33
 Nodes (5): Evidencias de cierre — Interact 0.4.0, Limitaciones conocidas / pendiente, Pruebas ejecutadas (Node 22.23.1, Windows, Chrome real), Revisión visual (Chrome, capturas en `INTERACT_CAPTURAS`), Seguridad: qué cubren las pruebas
 
-### Community 106 - "ref_node_crypto"
-Cohesion: 0.42
-Nodes (8): firmarCopia(), generarClaves(), huellaClave(), sha256Archivo(), verificarAutenticidad(), verificarSuma(), escenario(), sha()
+### Community 106 - "vinculo-presentacion-navegador.test.mjs"
+Cohesion: 0.40
+Nodes (4): ADMIN, npm(), prepararCurso(), RAIZ
 
 ### Community 107 - "build"
 Cohesion: 0.12
@@ -612,9 +610,9 @@ Nodes (44): context, dockerfile, target, BACKUP_DIR, BACKUP_KEEP, DATABASE_BACKU
 Cohesion: 0.35
 Nodes (11): composePorDigest(), digest(), imageRepository, repository, validarLock(), verificarAutoridad(), verificarOci(), base (+3 more)
 
-### Community 112 - "protocolo-navegador.test.mjs"
-Cohesion: 0.33
-Nodes (4): compilarCurso(), npm(), RAIZ, SERVICIO
+### Community 112 - "Interact 0.4.0 · Cierre de la migración a PostgreSQL (para auditoría Codex)"
+Cohesion: 0.40
+Nodes (4): Fuera de alcance (deliberado), Interact 0.4.0 · Cierre de la migración a PostgreSQL (para auditoría Codex), Pruebas ejecutadas en esta entrega (PostgreSQL 16.10 real), Qué cambió
 
 ### Community 113 - "Marca: clasificación y condición de publicación (OpenClass Live 0.3.0)"
 Cohesion: 0.33
@@ -638,7 +636,7 @@ Nodes (17): interact-db-preparar, condition, cap_drop, command, depends_on, imag
 
 ### Community 118 - "Notas de decisión técnica — Teacher Experience VNext"
 Cohesion: 0.18
-Nodes (10): I0 — `preparacion-release.test.mjs:29` (commit 8b02f6e), I1 — OC-A02 atomicidad de encuestas (commit eebdc33), I3 — Foco, navegación y accesibilidad (OC-A03, OC-A04, OC-A07, O-02), I4 — Teacher Experience VNext (rediseño visual y de experiencia del panel docente), I4 — Trazabilidad Graphify del panel docente (cierre documental), I5 — Experiencia del estudiante (acuses, pestañas, selección), I6 — Cierre: guía docente, capturas, hipótesis, accesibilidad y aceptación, Limitaciones reales (+2 more)
+Nodes (10): I0 — `preparacion-release.test.mjs:29` (commit 8b02f6e), I1 — OC-A02 atomicidad de encuestas (commit eebdc33), I3 — Foco, navegación y accesibilidad (OC-A03, OC-A04, OC-A07, O-02), I4 — Teacher Experience VNext (rediseño visual y de experiencia del panel docente), I5 — Experiencia del estudiante (acuses, pestañas, selección), I6 — Cierre: guía docente, capturas, hipótesis, accesibilidad y aceptación, Notas de decisión técnica — Teacher Experience VNext, enfocable() (+2 more)
 
 ### Community 119 - "interact-db"
 Cohesion: 0.10
@@ -688,10 +686,6 @@ Nodes (6): coste(), paginarMarkdown(), paginasCodigo(), paginasTexto(), separarD
 Cohesion: 0.33
 Nodes (5): Aplicación (cuando se autorice), Defecto, Hotfix v0.1 — sin filtración del acierto antes de revelar, Parche, Verificación hecha (2026-10-26)
 
-### Community 132 - "ref_node_assert"
-Cohesion: 0.20
-Nodes (4): BASE, raiz, raiz, raiz
-
 ### Community 133 - "interact-db"
 Cohesion: 0.18
 Nodes (11): interact-db, interact-migrar, interact-migrar-administrado, condition, depends_on, required, condition, required (+3 more)
@@ -721,12 +715,8 @@ Cohesion: 0.15
 Nodes (8): evidencia(), artefactos, bin, id, listar(), M, root, SOLUCIONARIOS
 
 ### Community 140 - "docker-redes.test.mjs"
-Cohesion: 0.15
-Nodes (19): ARCHIVOS_B, certs, claveAdmin, claves, compose(), crearCertificados(), docker(), enRed() (+11 more)
-
-### Community 141 - "docker-proxy.test.mjs"
-Cohesion: 0.40
-Nodes (4): clave, docker(), IP, rafaga()
+Cohesion: 0.13
+Nodes (20): ARCHIVOS_B, certs, claveAdmin, claves, compose(), crearCertificados(), docker(), enRed() (+12 more)
 
 ### Community 142 - "interact-db-preparar-administrado"
 Cohesion: 0.13
@@ -758,22 +748,22 @@ Nodes (6): Evidencia, Interact · Confianza de proxy y red de entrada dedicada, 
 
 ## Knowledge Gaps
 - **2 isolated node(s):** `RFC-5322`, `RFC-5321`
-  These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 1277 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
+  These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 1278 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
 - **8 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
 - **Why does `main()` connect `publicacion-ci.mjs` to `Procedencia GitOps de Live: decisión y contrato de promoción`, `vite.config.mjs`, `Guía del docente — Crear OpenClass UNIMINUTO Reveal.js`, `procedencia-autosync.mjs`, `Manual del creador de OpenClass UNIMINUTO Reveal.js`, `Promoción manual de OpenClass Live 0.2.0`, `OpenClass master: minimal AI context`, `OpenClass Suite — Documento maestro de producto, requisitos y evolución`?**
-  _High betweenness centrality (0.041) - this node is a cross-community bridge._
+  _High betweenness centrality (0.035) - this node is a cross-community bridge._
 - **Are the 2 inferred relationships involving `montarBuildTech()` (e.g. with `sincronizarPrevias()` and `tictac()`) actually correct?**
   _`montarBuildTech()` has 2 INFERRED edges - model-reasoned connections that need verification._
 - **What connects `RFC-5322`, `RFC-5321` to the rest of the system?**
   _2 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `generar-desde-config.mjs` be split into smaller, more focused modules?**
   _Cohesion score 0.10526315789473684 - nodes in this community are weakly interconnected._
-- **Why does `clave()` connect `Pagina` to `postgresql.test.mjs`?**
-  _High betweenness centrality (0.025) - this node is a cross-community bridge._
+- **Why does `clave()` connect `Pagina` to `db.mjs`?**
+  _High betweenness centrality (0.028) - this node is a cross-community bridge._
 - **Should `create-openclass-uniminuto-revealjs.mjs` be split into smaller, more focused modules?**
   _Cohesion score 0.1038961038961039 - nodes in this community are weakly interconnected._
 - **Should `Pagina` be split into smaller, more focused modules?**
