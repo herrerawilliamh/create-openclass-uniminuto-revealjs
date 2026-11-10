@@ -9,6 +9,7 @@
  */
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import pg from 'pg';
 import { randomBytes } from 'node:crypto';
 import { mkdtempSync, readdirSync, rmSync, writeFileSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -98,31 +99,45 @@ test('restauración operativa completa: cuentas, contraseñas, roles, invitacion
   assert.ok(readFileSync(`${r.copia}.sha256`, 'utf8').startsWith(r.sha256));
   assert.ok(!readFileSync(r.copia).includes(Buffer.from('clave-docente-larga-1')), 'la copia no contiene contraseñas en claro');
 
+  // Claves EFÍMERAS sintéticas (nunca en Git ni en imágenes); la pública se entrega aparte, como en producción.
+  const claves = { privada: path.join(dir, 'ext-privada.pem'), publica: path.join(dir, 'ext-publica.pem') };
+  generarClaves(claves);
+  const sinFirmar = path.join(dir, 'sin-firma.dump');
+  writeFileSync(sinFirmar, readFileSync(r.copia));
+  writeFileSync(`${sinFirmar}.sha256`, readFileSync(`${r.copia}.sha256`, 'utf8').replace(path.basename(r.copia), 'sin-firma.dump'));
+  firmarCopia({ copia: r.copia, clavePrivada: claves.privada });
+  const clavePublica = claves.publica;
+
   // ---------- 3. Salvaguardas antes de restaurar ----------
   // Nombre de producción («interact»): se rechaza ANTES de conectar, sin confirmación humana explícita.
   const vivo = (() => { const u = new URL(urlPrueba()); u.pathname = '/interact'; return u.toString(); })();
-  await assert.rejects(restaurar({ url: vivo, copia: r.copia, esquema }), /no es de prueba\/restauración/, 'nunca sobre la base viva sin confirmación');
+  await assert.rejects(restaurar({ url: vivo, copia: r.copia, esquema, clavePublica }), /no es de prueba\/restauración/, 'nunca sobre la base viva sin confirmación');
   // Y una base de prueba con datos (la de origen) tampoco: la restauración no mezcla ni sobrescribe.
-  await assert.rejects(restaurar({ url: urlPrueba(), copia: r.copia, esquema }), /ya contiene tablas/);
+  await assert.rejects(restaurar({ url: urlPrueba(), copia: r.copia, esquema, clavePublica }), /ya contiene tablas/);
   await conCliente(null, (c) => c.query(`CREATE DATABASE ${destinoBase}`));
   const alterada = path.join(dir, 'alterada.dump');
   writeFileSync(alterada, Buffer.concat([readFileSync(r.copia), Buffer.from('x')]));
   writeFileSync(`${alterada}.sha256`, readFileSync(`${r.copia}.sha256`, 'utf8').replace(path.basename(r.copia), 'alterada.dump'));
-  await assert.rejects(restaurar({ url: urlDestino, copia: alterada, esquema }), /SHA-256/);
+  await assert.rejects(restaurar({ url: urlDestino, copia: alterada, esquema, clavePublica }), /SHA-256/);
+  // Sin firma (ni clave de confianza) una base *_restauracion NO se restaura: el nombre no rebaja la autenticidad.
+  await assert.rejects(restaurar({ url: urlDestino, copia: r.copia, esquema }), /autenticidad/);
+  await assert.rejects(restaurar({ url: urlDestino, copia: sinFirmar, esquema, clavePublica }), /manifiesto firmado/);
+  // Y el destino sigue vacío: pg_restore no llegó a ejecutarse.
+  // (conCliente recibe un SCHEMA, no una base: se conecta a la base destino real.)
+  const cd = new pg.Client({ connectionString: urlDestino });
+  await cd.connect();
+  try { assert.equal((await cd.query('SELECT count(*)::int AS n FROM information_schema.tables WHERE table_schema = $1', [esquema])).rows[0].n, 0); } finally { await cd.end(); }
 
   // ---------- 4. Restauración en base vacía y verificación ----------
-  const res = await restaurar({ url: urlDestino, copia: r.copia, esquema });
+  const res = await restaurar({ url: urlDestino, copia: r.copia, esquema, clavePublica });
   assert.equal(res.integra, true);
-  assert.equal(res.autenticidad, 'no-verificada');
-  assert.equal(res.confiable, false, 'sin firma verificada la restauración NO es de producción confiable');
+  assert.equal(res.autenticidad, 'verificada');
+  assert.equal(res.confiable, true);
   assert.equal(res.version, 1);
   assert.deepEqual(res.recuentos, antes, 'mismas filas en todas las tablas');
-  await assert.rejects(restaurar({ url: urlDestino, copia: r.copia, esquema }), /ya contiene tablas/, 'nunca mezcla datos');
+  await assert.rejects(restaurar({ url: urlDestino, copia: r.copia, esquema, clavePublica }), /ya contiene tablas/, 'nunca mezcla datos');
 
   // ---------- 4b. Restauración AUTÉNTICA: manifiesto firmado con una clave cuya parte pública se entrega aparte ----------
-  const claves = { privada: path.join(dir, 'ext-privada.pem'), publica: path.join(dir, 'ext-publica.pem') };
-  generarClaves(claves);
-  firmarCopia({ copia: r.copia, clavePrivada: claves.privada });
   const destino2 = destinoBase.replace('_restauracion', 'b_restauracion');
   const urlDestino2 = (() => { const u = new URL(urlDestino); u.pathname = `/${destino2}`; return u.toString(); })();
   await conCliente(null, (c) => c.query(`CREATE DATABASE ${destino2}`));

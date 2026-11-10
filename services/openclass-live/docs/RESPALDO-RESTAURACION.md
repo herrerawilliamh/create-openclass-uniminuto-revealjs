@@ -48,8 +48,10 @@ Salvaguardas de `scripts/restaurar.mjs`:
 2. Rechaza una base que ya contenga tablas de Interact: no mezcla ni sobrescribe datos.
 3. **Integridad**: el comprobante `.sha256` es obligatorio. Su ausencia, un formato inválido (`<sha256>  <nombre>`), un
    comprobante de otro archivo o una suma discordante provocan un rechazo explícito, también en bases de ensayo.
-4. **Autenticidad** (manifiesto firmado, ver más abajo): obligatoria para toda base que no sea `*_restauracion`/`_prueba`/`_test`.
-   Sin `--clave-publica` una restauración de ensayo se informa con `autenticidad:"no-verificada"` y `confiable:false`.
+4. **Autenticidad** (manifiesto firmado, ver más abajo): **obligatoria para TODA base, sin excepciones ni banderas**.
+   Sin `--clave-publica` (o con firma ausente/ajena/discordante) la restauración se rechaza **antes de invocar
+   `pg_restore`**. El nombre de la base solo determina las restricciones de destino (punto 1), nunca el nivel de
+   autenticidad. Las pruebas generan claves efímeras sintéticas y firman sus propias copias.
    Restaura en una sola transacción (`--single-transaction --exit-on-error`).
 5. Verifica migraciones conocidas e íntegras, integridad referencial y restricciones validadas, y devuelve
    recuentos por tabla.
@@ -83,7 +85,7 @@ node scripts/restaurar.mjs --copia … --clave-publica interact-respaldo.pub --n
 **Gate operativo PENDIENTE (no cerrado):** hoy el job de respaldo no firma (correctamente: no tiene la clave). Falta
 decidir y desplegar dónde vive la clave privada (equipo del operador, HSM o gestor de secretos), el proceso que firma
 cada copia replicada y el almacén de la clave pública. Hasta entonces, una restauración de producción **no puede
-declararse confiable**: la herramienta lo impide para bases fuera de ensayo. Probado localmente (claves de prueba
+declararse confiable**: la herramienta no restaura ninguna copia sin firma verificada. Probado localmente (claves de prueba
 generadas en cada ensayo); no hay prueba contra infraestructura de firma real.
 
 **Recuperación real** (procedimiento, sin automatizar): restaurar en `interact_restauracion`, validar, detener

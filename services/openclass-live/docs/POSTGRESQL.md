@@ -70,6 +70,11 @@ llega al proveedor por su red `web` (que ya tiene salida). Para una CA privada d
 `DB_CA_HOST_FILE=/ruta/ca.pem` y use `DB_SSL_CA_FILE=/etc/interact/db-ca.pem` (se **añade** a la validación; no la
 desactiva). Restrinja por IP en el proveedor al host del servicio y prefiera su PITR (ver `RESPALDO-RESTAURACION.md`).
 
+**Gate Docker obligatorio en CI:** el job `checks` ejecuta `scripts/exigir-docker.mjs`, que corre en secuencia
+`tests/docker-redes.test.mjs` y `tests/docker-proxy.test.mjs` con `INTERACT_TEST_DOCKER=1` e
+`INTERACT_TEST_REQUIRE_DOCKER=1`; falla si Docker no está, si se omite cualquier prueba o si cae una aserción
+(`build` depende de `checks`). Solo recursos sintéticos con prefijo aleatorio propio; no toca nada preexistente.
+
 **Alcance de la prueba del modo B** (`tests/docker-redes.test.mjs`, `INTERACT_TEST_DOCKER=1`): topología de ENSAYO con un
 contenedor PostgreSQL 16 con TLS y CA propia, fuera de las redes del stack. Demuestra red, DNS, salida, TLS verificado
 (rechazo por CA desconocida, por nombre distinto y por falta de TLS), migración, preparación de roles y respaldo. **No

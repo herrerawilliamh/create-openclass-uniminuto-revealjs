@@ -26,7 +26,7 @@ jobs:
   checks:
     name: Live release checks
     runs-on: ubuntu-24.04
-    timeout-minutes: 40
+    timeout-minutes: 70
     permissions:
       contents: read
     outputs:
@@ -83,6 +83,11 @@ jobs:
           "$PG_BIN/pg_isready" -h 127.0.0.1 -p 5432 -U interact_ci -d interact_ci_test
       - name: Pruebas unitarias, integración, PostgreSQL, respaldo/restauración y preparación
         run: npm --prefix services/openclass-live test
+      # Gate OBLIGATORIO de Interact (PR): redes/PostgreSQL dedicado y administrado simulado (DNS+TLS), migración y
+      # respaldo en ambos modos, cabeceras falsificadas, límites por IP y ausencia de puertos publicados. En secuencia;
+      # falla si Docker no está, si se omite una prueba o si cae una aserción. Recursos sintéticos con prefijo propio.
+      - name: Integración Docker obligatoria (redes, PostgreSQL administrado simulado, proxy y límites por IP)
+        run: node services/openclass-live/scripts/exigir-docker.mjs
       - name: Instalar y comprobar extractor PDF
         shell: bash
         run: |

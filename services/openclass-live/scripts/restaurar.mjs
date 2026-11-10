@@ -6,9 +6,10 @@
  *   `--confirmar-destino <nombre-exacto>` (decisión humana explícita, p. ej. una recuperación real planificada).
  * - La base destino debe estar VACÍA de tablas de Interact: no mezcla ni sobrescribe datos.
  * - El comprobante «.sha256» es OBLIGATORIO (ausente, mal formado, de otro archivo o discordante → rechazo).
- * - Autenticidad: con --clave-publica (o INTERACT_BACKUP_PUBLIC_KEY_FILE) se exige manifiesto firmado válido
- *   (scripts/autenticidad-respaldo.mjs). Es OBLIGATORIA para toda base que no sea *_restauracion/_prueba/_test;
- *   sin ella una restauración de ensayo se informa con autenticidad:"no-verificada" y confiable:false.
+ * - Autenticidad OBLIGATORIA para TODA base, sin excepciones ni banderas: manifiesto firmado Ed25519 válido contra
+ *   la clave pública de confianza (--clave-publica / INTERACT_BACKUP_PUBLIC_KEY_FILE, canal independiente).
+ *   El nombre de la base solo decide las restricciones de destino, nunca el nivel de autenticidad.
+ *   Todo falla ANTES de invocar pg_restore.
  * - Restaura en una sola transacción (todo o nada).
  * - Después verifica: esquema al día (migraciones e sumas), integridad referencial y recuentos por tabla.
  * Salida: JSON { destino, version, integra, recuentos }. Nunca imprime la URL ni la contraseña.
@@ -31,11 +32,11 @@ export async function restaurar({ url, copia, esquema = null, confirmarDestino =
   if (!DESTINO_SEGURO.test(destino) && confirmarDestino !== destino) {
     throw new Error(`La base destino «${destino}» no es de prueba/restauración. Use una base *_restauracion o confirme con --confirmar-destino ${destino}.`);
   }
-  const esEnsayo = DESTINO_SEGURO.test(destino);
+  // Autenticidad OBLIGATORIA e independiente del nombre de la base: suma, manifiesto firmado y clave de confianza.
   verificarSuma(copia);
-  let autenticidad = 'no-verificada';
-  if (clavePublica) { verificarAutenticidad({ copia, clavePublica, noAnteriorA }); autenticidad = 'verificada'; }
-  else if (!esEnsayo) throw new Error('Una restauración sobre una base que no es de ensayo exige verificar la autenticidad: indique --clave-publica (manifiesto firmado).');
+  if (!clavePublica) throw new Error('La restauración exige verificar la autenticidad: indique --clave-publica (o INTERACT_BACKUP_PUBLIC_KEY_FILE) con la clave de confianza.');
+  verificarAutenticidad({ copia, clavePublica, noAnteriorA });
+  const autenticidad = 'verificada';
 
   // Destino vacío: ninguna tabla de Interact en el esquema de destino (ni en ningún esquema si no se indicó).
   const previa = await abrirBase({ url, esquema: null, max: 1, migraciones: 'ninguna', esperaMs: 15_000, aplicacion: 'interact-restaurar' });

@@ -96,3 +96,42 @@ test('restaurar: una base que no es de ensayo exige autenticidad; destinos no au
   await assert.rejects(restaurar({ url: URL_PROD, copia, confirmarDestino: 'interact', clavePublica: ajena.publica }), /firma del manifiesto no es válida/);
   await assert.rejects(restaurar({ url: URL_ENSAYO, copia, clavePublica: ajena.publica }), /firma del manifiesto no es válida/, 'si se aporta clave, también en ensayo debe valer');
 });
+
+// Sin bypass: el nombre de la base (_test, _prueba, _restauracion, producción) JAMÁS rebaja la autenticidad.
+// La URL apunta a un puerto cerrado y PG_BIN a un directorio inexistente: si el flujo pasara de la verificación,
+// el error sería de conexión/pg_restore, no de autenticidad; por tanto el rechazo ocurre antes de pg_restore.
+test('restaurar: ningún nombre de base permite omitir la firma (sin clave, sin manifiesto, clave ajena)', async (t) => {
+  const { copia, confiable, ajena } = escenario(t);
+  const env = { ...process.env, PG_BIN: path.join(tmpdir(), 'no-existe-pg-bin') };
+  const nombres = ['interact_test', 'interact_prueba', 'interact_restauracion', 'interact_produccion_test', 'interact_produccion_restauracion', 'interact'];
+  for (const nombre of nombres) {
+    const url = `postgres://u:p@127.0.0.1:1/${nombre}`;
+    const base = { url, copia, confirmarDestino: nombre, env };
+    await assert.rejects(restaurar(base), /exige verificar la autenticidad/, `${nombre}: sin clave pública`);
+    await assert.rejects(restaurar({ ...base, clavePublica: confiable.publica }), /Faltan el manifiesto firmado/, `${nombre}: sin manifiesto firmado`);
+  }
+  firmarCopia({ copia, clavePrivada: confiable.privada });
+  for (const nombre of nombres) {
+    const base = { url: `postgres://u:p@127.0.0.1:1/${nombre}`, copia, confirmarDestino: nombre, env };
+    await assert.rejects(restaurar({ ...base, clavePublica: ajena.publica }), /firma del manifiesto no es válida/, `${nombre}: clave de otro emisor`);
+    await assert.rejects(restaurar({ ...base, clavePublica: path.join(path.dirname(copia), 'no-existe.pub') }), /Falta la clave pública/, `${nombre}: clave inexistente`);
+  }
+  // Con firma válida el flujo SÍ avanza más allá de la autenticidad (falla después, al no haber servidor).
+  await assert.rejects(restaurar({ url: 'postgres://u:p@127.0.0.1:1/interact_test', copia, clavePublica: confiable.publica, env }),
+    (e) => !/autenticidad|firma|manifiesto/i.test(e.message));
+});
+
+test('restaurar: el código no contiene excepciones por nombre de base ni banderas que desactiven la autenticidad', () => {
+  const fuente = readFileSync(new URL('../scripts/restaurar.mjs', import.meta.url), 'utf8');
+  assert.ok(!/esEnsayo|no-verificada|INSEGURO|SIN_FIRMA|omitir-firma/i.test(fuente));
+});
+
+test('gate Docker: omitir pruebas, fallar o ejecutar menos de lo esperado es un rechazo', async () => {
+  const { evaluarTap } = await import('../scripts/exigir-docker.mjs');
+  const tap = (p, f, s) => `# tests ${p + f + s}\n# pass ${p}\n# fail ${f}\n# cancelled 0\n# skipped ${s}\n# todo 0\n`;
+  assert.deepEqual(evaluarTap(tap(7, 0, 0), 7).problemas, []);
+  assert.ok(evaluarTap(tap(6, 0, 1), 7).problemas.some((x) => /omitidas/.test(x)));
+  assert.ok(evaluarTap(tap(6, 1, 0), 7).problemas.some((x) => /fallidas/.test(x)));
+  assert.ok(evaluarTap(tap(3, 0, 0), 7).problemas.some((x) => /mínimo/.test(x)));
+  assert.ok(evaluarTap('sin resumen', 1).problemas.length);
+});

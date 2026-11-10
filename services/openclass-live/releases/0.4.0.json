@@ -2,7 +2,7 @@
   "version": "0.4.0",
   "protocol": 2,
   "archive": "openclass-live-0.4.0.tar.gz",
-  "archiveSha256": "f43158f4d396ff94003098f7b7e7de07c0d058d844391e4ff4c6801eac5ae996",
+  "archiveSha256": "ce4940ecc50cf6e3675e5e45b84ce1283d21ab7e46571ec6720aae86256c2b2e",
   "sourceBase": "79e06b5b497b19b7a097040066d1e85d63c0ef77",
   "files": [
     {
@@ -222,8 +222,8 @@
     },
     {
       "path": "scripts/restaurar.mjs",
-      "sha256": "e8b76cc2423648268d9631d941cb7686d1d93bad41fabae20de5f0991ed10d95",
-      "gitSha256": "e8b76cc2423648268d9631d941cb7686d1d93bad41fabae20de5f0991ed10d95"
+      "sha256": "e213ff3313e2f58518eace89873b24abf44e88b09a25be473eeff560fc397edc",
+      "gitSha256": "e213ff3313e2f58518eace89873b24abf44e88b09a25be473eeff560fc397edc"
     },
     {
       "path": "src/api-cuentas.mjs",
