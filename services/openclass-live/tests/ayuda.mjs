@@ -1,5 +1,11 @@
-/** OpenClass Live: utilidades de prueba (servidor real en un puerto libre + clientes Socket.IO). */
+/**
+ * OpenClass Live: utilidades de prueba (servidor real en un puerto libre + clientes Socket.IO + PostgreSQL REAL).
+ * Cada `iniciar()` usa un esquema propio (t_<pid>_<azar>) en el servidor de INTERACT_TEST_DATABASE_URL y lo borra
+ * al cerrar: las pruebas no comparten datos ni dependen del orden. No hay base simulada ni en memoria.
+ */
+import { randomBytes } from 'node:crypto';
 import http from 'node:http';
+import pg from 'pg';
 import { io as cliente } from 'socket.io-client';
 import { crearApp } from '../src/app.mjs';
 import { hashPassword } from '../src/auth.mjs';
@@ -13,13 +19,45 @@ export const PRESENTADOR = 'http://localhost:8613';
 export const V2 = { protocolo: PROTOCOLO.version, capacidades: [...PROTOCOLO.capacidades] };
 const HASH = hashPassword(PASSWORD);
 
-export async function iniciar({ env = {}, ahora, barridoMs } = {}) {
+/** URL del PostgreSQL de pruebas (servicio aislado: Compose de pruebas o servicio de CI). */
+export function urlPrueba() {
+  const url = process.env.INTERACT_TEST_DATABASE_URL;
+  if (!url) throw new Error('Las pruebas usan PostgreSQL real: defina INTERACT_TEST_DATABASE_URL (ver docs/POSTGRESQL.md, «Pruebas»).');
+  return url;
+}
+export const nuevoEsquema = () => `t_${process.pid}_${randomBytes(5).toString('hex')}`;
+/** Cliente directo (fuera de la aplicación) para inspeccionar o preparar un esquema de prueba. */
+export async function conCliente(esquema, fn) {
+  const c = new pg.Client({ connectionString: urlPrueba(), options: esquema ? `-c search_path=${esquema}` : undefined });
+  await c.connect();
+  try { return await fn(c); } finally { await c.end(); }
+}
+export const borrarEsquema = (esquema) => conCliente(null, (c) => c.query(`DROP SCHEMA IF EXISTS ${esquema} CASCADE`));
+
+/** Variables de entorno de base para pruebas que montan su propia configuración (e2e): un esquema nuevo cada vez. */
+export const entornoPg = () => ({ DATABASE_URL: urlPrueba(), DB_SCHEMA: nuevoEsquema(), DB_POOL_MAX: '5' });
+/** crearApp + borrado de su esquema al cerrar. */
+export async function crearAppPrueba(config, opciones) {
+  const app = await crearApp(config, opciones);
+  const cerrar = app.cerrar;
+  app.cerrar = async () => { await cerrar(); if (config.db.esquema) await borrarEsquema(config.db.esquema); };
+  return app;
+}
+
+export async function iniciar({ env = {}, ahora, barridoMs, esquema = nuevoEsquema(), conservarEsquema = false } = {}) {
   const lineas = [];
   const config = leerConfig({
     APP_URL: ORIGEN, SESSION_SECRET: 'p'.repeat(24) + Math.random().toString(36).repeat(3), ADMIN_PASSWORD_HASH: HASH,
-    PRESENTER_ORIGINS: PRESENTADOR, TRUST_PROXY: 'true', MAX_ROOM_PARTICIPANTS: '200', ...env,
+    PRESENTER_ORIGINS: PRESENTADOR, TRUST_PROXY: 'true', MAX_ROOM_PARTICIPANTS: '200',
+    DATABASE_URL: urlPrueba(), DB_SCHEMA: esquema, DB_POOL_MAX: '5', ...env,
   });
-  const app = crearApp(config, { log: (evento, datos = {}) => lineas.push(JSON.stringify({ evento, ...datos })), ahora, intervaloSesionesMs: barridoMs });
+  let app;
+  try {
+    app = await crearApp(config, { log: (evento, datos = {}) => lineas.push(JSON.stringify({ evento, ...datos })), ahora, intervaloSesionesMs: barridoMs });
+  } catch (error) {
+    if (!conservarEsquema) await borrarEsquema(esquema).catch(() => {});
+    throw error;
+  }
   const { port } = await app.escuchar(0, '127.0.0.1');
   const base = `http://127.0.0.1:${port}`;
   const abiertos = new Set();
@@ -35,7 +73,7 @@ export async function iniciar({ env = {}, ahora, barridoMs } = {}) {
   };
 
   return {
-    app, base, config, lineas,
+    app, base, config, lineas, esquema,
     peticion: (ruta, o) => peticion(`${base}${ruta}`, o),
     async login() {
       const r = await peticion(`${base}/api/docente/login`, { metodo: 'POST', cuerpo: { password: PASSWORD } });
@@ -58,7 +96,11 @@ export async function iniciar({ env = {}, ahora, barridoMs } = {}) {
       return { s, sesion };
     },
     conectar,
-    async cerrar() { for (const s of abiertos) s.disconnect(); await app.cerrar(); },
+    async cerrar() {
+      for (const s of abiertos) s.disconnect();
+      await app.cerrar();
+      if (!conservarEsquema) await borrarEsquema(esquema);
+    },
   };
 }
 

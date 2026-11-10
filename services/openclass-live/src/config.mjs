@@ -2,6 +2,7 @@
  * OpenClass Live: configuración leída del entorno (.env en el despliegue).
  * Falla al arrancar si faltan secretos o si son débiles: nunca hay valores por defecto para ellos.
  */
+import { crearConfianzaProxy } from './limites.mjs';
 const entero = (valor, defecto, min, max) => {
   if (valor === undefined || valor === '') return defecto;
   const n = Number(valor);
@@ -10,6 +11,36 @@ const entero = (valor, defecto, min, max) => {
 };
 
 const lista = (valor) => String(valor ?? '').split(',').map((s) => s.trim()).filter(Boolean);
+
+/** Redes donde puede estar Traefik por omisión (Docker usa rangos privados). En producción conviene la subred exacta de «web». */
+export const REDES_PRIVADAS = '127.0.0.0/8,::1/128,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,fc00::/7';
+
+/**
+ * PostgreSQL. DATABASE_URL es obligatoria en todos los modos (no hay base en memoria) y nunca se registra.
+ * Producción: el servicio no migra (DB_MIGRATIONS=verificar por defecto) y la URL debe ser la de la credencial
+ * de la APLICACIÓN (sin DDL); las migraciones usan DATABASE_MIGRATION_URL en scripts/migrar.mjs.
+ */
+export function leerBase(env, produccion = env.NODE_ENV === 'production', variable = 'DATABASE_URL') {
+  const url = String(env[variable] ?? '');
+  if (!url) throw new Error(`${variable} es obligatoria (postgres://usuario:clave@host:5432/base). No la incluya en Git.`);
+  let u;
+  try { u = new URL(url); } catch { throw new Error(`${variable} no es una URL válida.`); }
+  if (!['postgres:', 'postgresql:'].includes(u.protocol) || !u.hostname || u.pathname.length < 2) throw new Error(`${variable} debe tener la forma postgres://usuario:clave@host:5432/base.`);
+  if (produccion && /CAMBIAR/i.test(decodeURIComponent(u.password))) throw new Error(`${variable} contiene una contraseña de ejemplo.`);
+  const esquema = env.DB_SCHEMA ? String(env.DB_SCHEMA) : null;
+  if (esquema && !/^[a-z_][a-z0-9_]{0,62}$/.test(esquema)) throw new Error('DB_SCHEMA debe ser un identificador en minúsculas.');
+  const migraciones = String(env.DB_MIGRATIONS ?? (produccion ? 'verificar' : 'auto'));
+  if (!['auto', 'verificar'].includes(migraciones)) throw new Error('DB_MIGRATIONS debe ser auto o verificar.');
+  const modoSsl = String(env.DB_SSL ?? 'desactivado');
+  const ssl = { desactivado: false, requerido: { rejectUnauthorized: false }, verificado: { rejectUnauthorized: true } }[modoSsl];
+  if (ssl === undefined) throw new Error('DB_SSL debe ser desactivado, requerido o verificado.');
+  return Object.freeze({
+    url, esquema, migraciones, ssl, modoSsl,
+    poolMax: entero(env.DB_POOL_MAX, 10, 1, 50),
+    esperaMs: entero(env.DB_CONNECT_WAIT_SECONDS, produccion ? 60 : 15, 0, 300) * 1000,
+    statementTimeoutMs: entero(env.DB_STATEMENT_TIMEOUT_MS, 10_000, 1000, 120_000),
+  });
+}
 
 export function leerConfig(env = process.env) {
   const appUrl = String(env.APP_URL ?? '').replace(/\/+$/, '');
@@ -24,9 +55,7 @@ export function leerConfig(env = process.env) {
     throw new Error('ADMIN_PASSWORD_HASH con formato inválido (usar npm run hash-password) o déjelo vacío.');
   }
   const produccion = env.NODE_ENV === 'production';
-  // Fuera de producción, sin DATA_DIR la base vive en memoria (desarrollo y pruebas): no persiste.
-  const dataDir = env.DATA_DIR === undefined && !produccion ? null : String(env.DATA_DIR ?? '');
-  if (dataDir === '') throw new Error('DATA_DIR es obligatorio en producción (volumen persistente fuera del contenedor, p. ej. /data).');
+  const db = leerBase(env, produccion);
 
   const transporte = String(env.MAIL_TRANSPORT ?? (env.SMTP_HOST ? 'smtp' : produccion ? 'desactivado' : 'desarrollo'));
   if (!['smtp', 'desarrollo', 'desactivado'].includes(transporte)) throw new Error('MAIL_TRANSPORT debe ser smtp, desarrollo o desactivado.');
@@ -45,8 +74,7 @@ export function leerConfig(env = process.env) {
     appUrl,
     secreto,
     hashDocente: hash,
-    dataDir,
-    dbRuta: env.DB_PATH ? String(env.DB_PATH) : null,
+    db,
     correo: Object.freeze({
       transporte, host: env.SMTP_HOST ?? '', puerto: puertoSmtp, seguro: puertoSmtp === 465 || String(env.SMTP_SECURE ?? '') === 'true',
       usuario: env.SMTP_USER ?? '', clave: env.SMTP_PASSWORD ?? '', de: env.MAIL_FROM ?? '',
@@ -59,7 +87,9 @@ export function leerConfig(env = process.env) {
     auditoriaDias: entero(env.AUDIT_RETENTION_DAYS, 730, 30, 3650),
     respaldosConservar: entero(env.BACKUP_KEEP, 7, 1, 90),
     cookieSegura: appUrl.startsWith('https://'),
-    confiarProxy: String(env.TRUST_PROXY ?? 'true') === 'true',
+    // P2 «confianza en proxy»: las cabeceras de reenvío solo cuentan si el par TCP está en TRUSTED_PROXY_CIDRS.
+    confiarProxy: String(env.TRUST_PROXY ?? (produccion ? 'true' : 'false')) === 'true'
+      ? crearConfianzaProxy(lista(env.TRUSTED_PROXY_CIDRS ?? REDES_PRIVADAS)) : false,
     origenesPresentador: Object.freeze(presentadores),
     sesionDocenteHoras: entero(env.TEACHER_SESSION_HOURS, 8, 1, 24),
     salaTtlMin: entero(env.ROOM_TTL_MINUTES, 180, 5, 720),

@@ -57,15 +57,20 @@ export function verificarOci(lock, readBlob) {
   return { image: validarLock(lock), imageId: lock.configDigest };
 }
 
-/** Parte del Compose base aprobado; preserva íntegros secretos, Traefik e identidad. */
+/**
+ * Parte del Compose base aprobado; preserva íntegros secretos, Traefik e identidad.
+ * Desde 0.4.0 la misma imagen del servicio ejecuta también la preparación de roles y las migraciones de
+ * PostgreSQL: TODAS sus referencias pasan al mismo digest (1 a 3 usos), y el único build desaparece.
+ */
 export function composePorDigest(base, lock) {
   const image = validarLock(lock);
   const build = '    build:\n      context: .\n      dockerfile: Dockerfile\n';
   const oldImage = `    image: openclass-live:${lock.version}\n`;
   base = base.replace(/\r\n/g, '\n');
   assert.equal(base.split(build).length, 2, 'Build base inesperado');
-  assert.equal(base.split(oldImage).length, 2, 'Imagen base inesperada');
-  const result = base.replace(build, '').replace(oldImage,
+  const usos = base.split(oldImage).length - 1;
+  assert.ok(usos >= 1 && usos <= 3, 'Imagen base inesperada');
+  const result = base.replace(build, '').split(oldImage).join(
     `    image: ${image}\n    platform: ${lock.platform}\n    pull_policy: always\n`);
   assert.ok(!/\bbuild:|LIVE_REVISION|\$\{.*(?:IMAGE|REVISION)/.test(result));
   return result;

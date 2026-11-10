@@ -343,7 +343,7 @@ test('auth: scrypt, tokens firmados con tipo y vencimiento, sesiones revocables'
 });
 
 test('config: rechaza secretos ausentes, de ejemplo o débiles', () => {
-  const base = { APP_URL: 'https://x.example', SESSION_SECRET: 'k'.repeat(48), ADMIN_PASSWORD_HASH: hashPassword('clave-docente-larga') };
+  const base = { APP_URL: 'https://x.example', SESSION_SECRET: 'k'.repeat(48), ADMIN_PASSWORD_HASH: hashPassword('clave-docente-larga'), DATABASE_URL: 'postgres://u:clave-sintetica@db.invalid:5432/interact' };
   assert.equal(leerConfig(base).puerto, 3000);
   assert.throws(() => leerConfig({ ...base, SESSION_SECRET: 'CAMBIAR_SECRET' }), /SESSION_SECRET/);
   assert.throws(() => leerConfig({ ...base, SESSION_SECRET: 'corto' }), /SESSION_SECRET/);

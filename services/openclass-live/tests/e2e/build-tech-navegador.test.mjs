@@ -24,7 +24,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { abrirNavegador, Pagina } from '../../../../scripts/lib/chrome.mjs';
 import { servir } from '../../../../scripts/lib/servidor.mjs';
-import { crearApp } from '../../src/app.mjs';
+import { crearAppPrueba, entornoPg } from '../ayuda.mjs';
 import { hashPassword } from '../../src/auth.mjs';
 import { leerConfig } from '../../src/config.mjs';
 import { crearCurso } from './build-tech-curso.mjs';
@@ -87,7 +87,7 @@ async function adjuntarNueva(cdp, filtro, conocidas, { timeout = 20000 } = {}) {
 test('Build Tech en Chrome: cabina privada, notas, relojes, multimedia, En vivo y PDF', { timeout: 900_000 }, async (t) => {
   let port = Number(process.env.OPENCLASS_BT_DIST && puertoCompilado(process.env.OPENCLASS_BT_DIST));
   if (!port) {
-    const sondeo = crearApp(leerConfig({ APP_URL: 'http://127.0.0.1:1', SESSION_SECRET: 'x'.repeat(48), ADMIN_PASSWORD_HASH: hashPassword(PASSWORD) }), { log: () => {} });
+    const sondeo = await crearAppPrueba(leerConfig({ ...entornoPg(),  APP_URL: 'http://127.0.0.1:1', SESSION_SECRET: 'x'.repeat(48), ADMIN_PASSWORD_HASH: hashPassword(PASSWORD) }), { log: () => {} });
     ({ port } = await sondeo.escuchar(0, '127.0.0.1'));
     await sondeo.cerrar();
   }
@@ -99,7 +99,7 @@ test('Build Tech en Chrome: cabina privada, notas, relojes, multimedia, En vivo 
   const DECK = new URL(estatico.url).origin;
 
   const registro = [];
-  const app = crearApp(leerConfig({
+  const app = await crearAppPrueba(leerConfig({ ...entornoPg(), 
     APP_URL: APP, SESSION_SECRET: 'bt-e2e'.repeat(10), ADMIN_PASSWORD_HASH: hashPassword(PASSWORD), PRESENTER_ORIGINS: DECK, TRUST_PROXY: 'false',
   }), { log: (e, d = {}) => registro.push(JSON.stringify({ e, ...d })) });
   await app.escuchar(port, '127.0.0.1');

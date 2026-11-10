@@ -15,8 +15,14 @@ if (existsSync(destino)) { process.stderr.write(`Ya existe ${destino}: no se sob
 
 
 const plantilla = readFileSync(path.join(raiz, '.env.example'), 'utf8');
+// Una contraseña por credencial de PostgreSQL, idéntica en su variable *_PASSWORD y en su URL.
+const claves = new Map();
 const salida = plantilla
-  .replace(/^SESSION_SECRET=.*$/m, () => `SESSION_SECRET=${randomBytes(48).toString('base64url')}`);
+  .replace(/^SESSION_SECRET=.*$/m, () => `SESSION_SECRET=${randomBytes(48).toString('base64url')}`)
+  .replace(/CAMBIAR_PG_[A-Z]+/g, (marca) => {
+    if (!claves.has(marca)) claves.set(marca, randomBytes(32).toString('base64url'));
+    return claves.get(marca);
+  });
 writeFileSync(destino, salida, { mode: 0o600 });
 try { chmodSync(destino, 0o600); } catch { /* Windows */ }
 process.stderr.write(`Creado ${destino} (permisos 600). Revise APP_HOST/APP_URL antes de desplegar.\n`);

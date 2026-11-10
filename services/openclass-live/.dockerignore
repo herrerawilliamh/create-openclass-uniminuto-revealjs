@@ -1,4 +1,4 @@
-# Solo entran package*.json, src/ y public/ (lista blanca).
+# Solo entran package*.json, src/ y public/ y los scripts de operación (lista blanca).
 *
 !package.json
 !package-lock.json
@@ -6,4 +6,8 @@
 !public/**
 !scripts/hash-password.mjs
 !scripts/init-superusuario.mjs
+!scripts/migrar.mjs
+!scripts/preparar-roles.mjs
 !scripts/respaldar.mjs
+!scripts/restaurar.mjs
+!scripts/pg-herramientas.mjs

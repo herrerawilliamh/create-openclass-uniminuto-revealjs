@@ -12,7 +12,7 @@ test('gate GitOps admite checkout LF y rechaza payload, Compose o SHA divergente
   const dir = mkdtempSync(path.join(tmpdir(), 'oclive-gitops-'));
   try {
     for (const f of ['package.json', 'package-lock.json', 'src', 'public', 'Dockerfile',
-      '.dockerignore', '.env.example', 'docker-compose.yml', 'docker-compose.gitops.yml', 'scripts', 'releases']) {
+      '.dockerignore', '.env.example', 'docker-compose.yml', 'docker-compose.respaldo.yml', 'docker-compose.gitops.yml', 'scripts', 'releases']) {
       cpSync(new URL(`../${f}`, import.meta.url), path.join(dir, f), { recursive: true });
     }
     const run = (revision = 'a'.repeat(40)) => spawnSync(process.execPath,
@@ -41,7 +41,7 @@ test('binarios: los cinco WOFF2 coinciden con sus bytes y un byte alterado hace 
   const dir = mkdtempSync(path.join(tmpdir(), 'oclive-bin-'));
   try {
     for (const f of ['package.json', 'package-lock.json', 'src', 'public', 'Dockerfile',
-      '.dockerignore', '.env.example', 'docker-compose.yml', 'docker-compose.gitops.yml', 'scripts', 'releases']) {
+      '.dockerignore', '.env.example', 'docker-compose.yml', 'docker-compose.respaldo.yml', 'docker-compose.gitops.yml', 'scripts', 'releases']) {
       cpSync(new URL(`../${f}`, import.meta.url), path.join(dir, f), { recursive: true });
     }
     const manifest = JSON.parse(readFileSync(path.join(dir, `releases/${VERSION}.json`)));

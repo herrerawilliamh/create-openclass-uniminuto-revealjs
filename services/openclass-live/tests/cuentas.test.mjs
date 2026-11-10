@@ -1,18 +1,14 @@
 /** Interact 0.4.0: cuentas, invitaciones, verificación, recuperación, roles, aislamiento entre docentes y persistencia. */
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, readdirSync, rmSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import path from 'node:path';
-import { iniciar, peticion, pedir, esperar } from './ayuda.mjs';
-import { abrirBase, respaldar, verificarIntegridad, versionEsquema } from '../src/db.mjs';
+import { iniciar, pedir, esperar, nuevoEsquema, borrarEsquema } from './ayuda.mjs';
 
 const ADMIN = { email: 'admin@willedtech.test', password: 'clave-admin-larga-2026' };
 const SIN_HEREDADO = { ADMIN_PASSWORD_HASH: '' };
 
 async function contexto(opciones = {}) {
   const ctx = await iniciar({ ...opciones, env: { ...SIN_HEREDADO, ...(opciones.env ?? {}) } });
-  if (!ctx.app.cuentas.existeSuperusuario()) ctx.app.cuentas.crearSuperusuario(ADMIN);
+  if (!(await ctx.app.cuentas.existeSuperusuario())) await ctx.app.cuentas.crearSuperusuario(ADMIN);
   const post = (ruta, cuerpo, sesion) => ctx.peticion(ruta, { metodo: 'POST', cuerpo, cabeceras: sesion ? { cookie: sesion.cookie, 'x-oc-csrf': sesion.csrf } : {} });
   const get = (ruta, sesion) => ctx.peticion(ruta, { cabeceras: sesion ? { cookie: sesion.cookie } : {} });
   const entrar = async (email, password) => {
@@ -39,13 +35,13 @@ async function contexto(opciones = {}) {
 test('superusuario: sin credenciales por defecto, un solo superusuario, contraseña robusta', async () => {
   const ctx = await iniciar({ env: SIN_HEREDADO });
   try {
-    assert.equal(ctx.app.cuentas.existeSuperusuario(), false);
+    assert.equal(await ctx.app.cuentas.existeSuperusuario(), false);
     const r = await ctx.peticion('/api/auth/login', { metodo: 'POST', cuerpo: { email: 'admin@willedtech.test', password: 'admin' } });
     assert.equal(r.estado, 401);
-    assert.throws(() => ctx.app.cuentas.crearSuperusuario({ email: 'a@b.co', password: 'corta' }), /12 y 256/);
-    ctx.app.cuentas.crearSuperusuario(ADMIN);
-    assert.throws(() => ctx.app.cuentas.crearSuperusuario({ email: 'otro@b.co', password: 'otra-clave-larga-123' }), /Ya existe/);
-    const fila = ctx.app.db.prepare('SELECT hash FROM usuarios WHERE rol = ?').get('superusuario');
+    await assert.rejects(ctx.app.cuentas.crearSuperusuario({ email: 'a@b.co', password: 'corta' }), /12 y 256/);
+    await ctx.app.cuentas.crearSuperusuario(ADMIN);
+    await assert.rejects(ctx.app.cuentas.crearSuperusuario({ email: 'otro@b.co', password: 'otra-clave-larga-123' }), /Ya existe/);
+    const fila = await ctx.app.db.uno('SELECT hash FROM usuarios WHERE rol = $1', ['superusuario']);
     assert.match(fila.hash, /^scrypt\$32768\$8\$1\$/);
     assert.ok(!fila.hash.includes(ADMIN.password));
     // Sin hash heredado el acceso compartido no existe.
@@ -64,7 +60,7 @@ test('flujo exigido: invitar → enlace → validar → crear cuenta → verific
     const t = c.ultimoToken('invitacion');
     assert.equal(c.app.correo.bandeja.at(-1).para, 'ana@uni.test');
     // El token no se guarda en claro.
-    assert.equal(c.app.db.prepare('SELECT COUNT(*) AS n FROM tokens WHERE hash_token = ?').get(t).n, 0);
+    assert.equal((await c.app.db.uno('SELECT COUNT(*) AS n FROM tokens WHERE hash_token = $1', [t])).n, 0);
     assert.equal((await c.post('/api/auth/invitacion/validar', { token: t })).json.email, 'ana@uni.test');
     assert.equal((await c.post('/api/auth/invitacion/validar', { token: 'x'.repeat(43) })).estado, 404);
     assert.equal((await c.post('/api/auth/invitacion/aceptar', { token: t, nombre: 'Ana', password: 'corta' })).estado, 400);
@@ -220,9 +216,10 @@ test('aislamiento entre docentes: ni por Socket.IO ni por historial se alcanzan 
 });
 
 test('historial persistente: sobrevive al reinicio, marca salas interrumpidas y guarda solo agregados', async () => {
-  const dir = mkdtempSync(path.join(tmpdir(), 'interact-datos-'));
-  const env = { ...SIN_HEREDADO, DATA_DIR: dir };
-  let c = await contexto({ env });
+  // Reinicio real: dos instancias del servicio sobre el MISMO esquema de PostgreSQL.
+  const esquema = nuevoEsquema();
+  const env = { ...SIN_HEREDADO };
+  let c = await contexto({ env, esquema, conservarEsquema: true });
   let finalizadaId; let abiertaId;
   try {
     const admin = await c.entrar(ADMIN.email, ADMIN.password);
@@ -244,13 +241,13 @@ test('historial persistente: sobrevive al reinicio, marca salas interrumpidas y 
     assert.equal(det.participantes, 1);
     assert.equal(det.actividades[0].rondas[0].respondientes, 1);
     assert.deepEqual(det.actividades[0].rondas[0].conteos, [1, 0]);
-    const textoBase = JSON.stringify(c.app.db.prepare('SELECT * FROM actividades_historial').all()) + JSON.stringify(c.app.db.prepare('SELECT * FROM salas_historial').all());
+    const textoBase = JSON.stringify(await c.app.db.q('SELECT * FROM actividades_historial')) + JSON.stringify(await c.app.db.q('SELECT * FROM salas_historial'));
     assert.ok(!textoBase.includes('SecretoAlias'), 'el alias nunca se guarda');
     assert.equal((await c.get(`/api/historial/detalle?id=${sinHist.id}`, doc)).json.actividades.length, 0, 'sin resultados autorizados');
     assert.equal((await c.get(`/api/historial/detalle?id=${abiertaId}`, doc)).json.estado, 'activa');
   } finally { await c.cerrar(); }
 
-  c = await contexto({ env });
+  c = await contexto({ env, esquema, conservarEsquema: true });
   try {
     const doc = await c.entrar('p@uni.test', 'docente-clave-larga-1');
     const lista = (await c.get('/api/historial', doc)).json;
@@ -260,16 +257,8 @@ test('historial persistente: sobrevive al reinicio, marca salas interrumpidas y 
     assert.equal((await c.get('/api/yo', doc)).estado, 200, 'la sesión de cuenta también sobrevive');
     assert.equal((await c.get('/api/historial?estado=interrumpida', doc)).json.total, 1);
     assert.equal(c.app.almacen.tamano, 0, 'la sala interrumpida no existe en memoria');
-    // Respaldo consistente y verificable.
-    const copia = respaldar(c.app.db, path.join(dir, 'respaldos'), { conservar: 2 });
-    const bd = abrirBase(copia);
-    assert.equal(verificarIntegridad(bd).integra, true);
-    assert.equal(bd.prepare('SELECT COUNT(*) AS n FROM salas_historial').get().n, 3);
-    assert.equal(versionEsquema(bd), 1);
-    bd.close();
-    for (let i = 0; i < 3; i++) respaldar(c.app.db, path.join(dir, 'respaldos'), { conservar: 2, ahora: new Date(Date.now() + (i + 1) * 1000) });
-    assert.equal(readdirSync(path.join(dir, 'respaldos')).length, 2, 'rotación de copias');
-  } finally { await c.cerrar(); rmSync(dir, { recursive: true, force: true }); }
+    // El respaldo y la restauración se prueban con pg_dump/pg_restore reales en respaldo-restauracion.test.mjs.
+  } finally { await c.cerrar(); await borrarEsquema(esquema); }
 });
 
 test('historial: filtros, CSV seguro, eliminación y políticas de conservación', async () => {
@@ -414,17 +403,4 @@ test('auditoría: suspender la cuenta corta la clave de presentador de sus salas
   } finally { await c.cerrar(); }
 });
 
-test('vínculo: X-Forwarded-For/X-Real-Ip falsificados no evaden el cupo por IP y con proxy no confiable se ignoran', async () => {
-  const { ipCliente } = await import('../src/limites.mjs');
-  // Con proxy de confianza manda el último tramo (el que añade Traefik), no lo que escribió el cliente.
-  assert.equal(ipCliente({ 'x-forwarded-for': '1.1.1.1, 9.9.9.9', 'x-real-ip': '2.2.2.2' }, '10.0.0.1', true), '9.9.9.9');
-  assert.equal(ipCliente({ 'x-real-ip': '2.2.2.2' }, '10.0.0.1', true), '2.2.2.2');
-  assert.equal(ipCliente({ 'x-forwarded-for': '1.1.1.1', 'x-real-ip': '2.2.2.2' }, '10.0.0.1', false), '10.0.0.1');
-  const c = await contexto();
-  const LOCAL = 'http://localhost:8613';
-  try {
-    const estados = [];
-    for (let i = 0; i < 6; i++) estados.push((await c.peticion('/api/vinculo/iniciar', { metodo: 'POST', origen: LOCAL, cabeceras: { 'x-real-ip': `203.0.113.${i + 1}` }, cuerpo: {} })).estado);
-    assert.ok(estados.includes(429) || estados.every((e) => e === 200), 'respuesta definida');
-  } finally { await c.cerrar(); }
-});
+// Confianza en proxy y cupos 5/200 del vínculo: pruebas deterministas en p2-auditoria.test.mjs.

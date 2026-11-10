@@ -1,7 +1,7 @@
 /**
  * Prepara el paquete que se copia a /home/openclass-live/ en la VPS (sin .env ni secretos):
- *   docker-compose.yml, Dockerfile, .dockerignore, .env.example, package.json, package-lock.json, src/, public/,
- *   scripts/hash-password.mjs, init-superusuario.mjs y respaldar.mjs (operación dentro de la VPS)
+ *   la lista PAYLOAD de compose-gitops.mjs: Compose (servicio + respaldo), Dockerfile, .env.example, package*.json,
+ *   src/, public/ y los scripts de operación (superusuario, roles, migraciones, respaldo y restauración de PostgreSQL)
  * Salida: despliegue/openclass-live-<versión>.tar.gz + SHA256SUMS (carpeta ignorada por git).
  * Formato canónico y reproducible: ver scripts/tar-determinista.mjs.
  * Se niega a empaquetar si encuentra archivos que no pertenecen al servicio.
@@ -10,6 +10,7 @@ import { createHash } from 'node:crypto';
 import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync, lstatSync, chmodSync, utimesSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { construirTar, comprimirDeterminista } from './tar-determinista.mjs';
+import { PAYLOAD } from './compose-gitops.mjs';
 import { fileURLToPath } from 'node:url';
 
 const raiz = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -22,7 +23,7 @@ if (lock.version !== version || lock.packages[''].version !== version
 const nombre = `openclass-live-${version}`;
 const salida = path.join(raiz, 'despliegue');
 const carpeta = path.join(salida, nombre);
-const ARCHIVOS = ['docker-compose.yml', 'Dockerfile', '.dockerignore', '.env.example', 'package.json', 'package-lock.json', 'src', 'public', 'scripts/hash-password.mjs', 'scripts/init-superusuario.mjs', 'scripts/respaldar.mjs'];
+const ARCHIVOS = PAYLOAD; // lista única compartida con verificar-gitops.mjs
 const PERMITIDAS = /\.(mjs|html|css|svg|json|yml|example|woff2|txt|sql)$|^(Dockerfile|\.dockerignore)$/;
 
 rmSync(carpeta, { recursive: true, force: true });

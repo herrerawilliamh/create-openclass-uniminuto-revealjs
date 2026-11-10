@@ -31,8 +31,8 @@ export function crearApiCuentas({ config, firmador, sesiones, cuentas, historial
     } catch { return 'fallido'; }
   }
   /** Cuenta que firma la petición: cookie + CSRF para POST. Devuelve { usuario, sid } o responde el error y devuelve null. */
-  function requerirSesion(req, res, { csrf = false, rol = null } = {}) {
-    const s = sesionDesdeCookie(req.headers.cookie);
+  async function requerirSesion(req, res, { csrf = false, rol = null } = {}) {
+    const s = await sesionDesdeCookie(req.headers.cookie);
     if (!s?.usuario) { enviar(res, 401, { error: 'no_autenticado' }); return null; }
     if (csrf && req.headers['x-oc-csrf'] !== firmador.csrf(s.sid)) { enviar(res, 403, { error: 'csrf' }); return null; }
     if (rol && s.usuario.rol !== rol) { enviar(res, 403, { error: 'prohibido' }); return null; }
@@ -62,10 +62,10 @@ export function crearApiCuentas({ config, firmador, sesiones, cuentas, historial
   /** Red aproximada del solicitante (último tramo oculto): contexto orientativo, no identidad. */
   const enmascarar = (ip) => String(ip ?? '').replace(/(\d+\.\d+)\.\d+\.\d+$/, '$1.x.x').replace(/(:[0-9a-f]*){2,}$/i, ':…');
   function purgarVinculos() { const t = Date.now(); for (const [id, v] of vinculos) if (v.vence <= t) vinculos.delete(id); }
-  function bearer(req) {
+  async function bearer(req) {
     const m = /^Bearer (.{20,400})$/.exec(String(req.headers.authorization ?? ''));
     const d = m && firmador.verificar(m[1], 'vinculo');
-    const u = d && sesiones.usuario(d.sid);
+    const u = d && await sesiones.usuario(d.sid);
     return u ? { usuario: u, sid: d.sid } : null;
   }
 
@@ -82,36 +82,36 @@ export function crearApiCuentas({ config, firmador, sesiones, cuentas, historial
     // ===== Lecturas con sesión =====
     if (m === 'GET') {
       if (ruta === '/api/yo') {
-        const s = requerirSesion(req, res); if (!s) return true;
+        const s = await requerirSesion(req, res); if (!s) return true;
         enviar(res, 200, { usuario: s.usuario, csrf: firmador.csrf(s.sid) });
         return true;
       }
       if (ruta === '/api/historial' || ruta === '/api/historial.csv') {
-        const s = requerirSesion(req, res); if (!s) return true;
+        const s = await requerirSesion(req, res); if (!s) return true;
         const admin = s.usuario.rol === 'superusuario';
         const filtros = { propietarioId: admin ? undefined : s.usuario.id, q: textoCorto(consulta.get('q'), 80), estado: textoCorto(consulta.get('estado'), 20),
           desde: fecha(consulta.get('desde')), hasta: fecha(consulta.get('hasta')), ...(admin ? { usuario: textoCorto(consulta.get('usuario'), 80) } : {}) };
         if (ruta === '/api/historial.csv') {
-          cuentas.auditar(s.usuario.id, 'historial_exportado', admin ? 'global' : 'propio');
-          enviar(res, 200, historial.csv(filtros), 'text/csv; charset=utf-8', { 'Content-Disposition': 'attachment; filename="interact-sesiones.csv"' });
+          await cuentas.auditar(s.usuario.id, 'historial_exportado', admin ? 'global' : 'propio');
+          enviar(res, 200, await historial.csv(filtros), 'text/csv; charset=utf-8', { 'Content-Disposition': 'attachment; filename="interact-sesiones.csv"' });
           return true;
         }
         const pagina = Math.max(0, Number.parseInt(consulta.get('desplazamiento') ?? '0', 10) || 0);
-        enviar(res, 200, { ...historial.listar({ ...filtros, limite: 50, desplazamiento: pagina }), ambito: admin ? 'global' : 'propio' });
+        enviar(res, 200, { ...(await historial.listar({ ...filtros, limite: 50, desplazamiento: pagina })), ambito: admin ? 'global' : 'propio' });
         return true;
       }
       if (ruta === '/api/historial/detalle') {
-        const s = requerirSesion(req, res); if (!s) return true;
+        const s = await requerirSesion(req, res); if (!s) return true;
         // Un docente solo ve lo propio: la consulta incluye el propietario, no depende del identificador.
-        const d = historial.detalle(textoCorto(consulta.get('id'), 64), { propietarioId: s.usuario.rol === 'superusuario' ? null : s.usuario.id });
+        const d = await historial.detalle(textoCorto(consulta.get('id'), 64), { propietarioId: s.usuario.rol === 'superusuario' ? null : s.usuario.id });
         enviar(res, d ? 200 : 404, d ?? { error: 'no_encontrado' });
         return true;
       }
       if (ruta.startsWith('/api/admin/')) {
-        const s = requerirSesion(req, res, { rol: 'superusuario' }); if (!s) return true;
-        if (ruta === '/api/admin/usuarios') enviar(res, 200, { usuarios: cuentas.listarUsuarios() });
-        else if (ruta === '/api/admin/invitaciones') enviar(res, 200, { invitaciones: cuentas.listarInvitaciones(), correo: { transporte: correo.transporte, real: correo.real } });
-        else if (ruta === '/api/admin/auditoria') enviar(res, 200, { eventos: cuentas.listarAuditoria() });
+        const s = await requerirSesion(req, res, { rol: 'superusuario' }); if (!s) return true;
+        if (ruta === '/api/admin/usuarios') enviar(res, 200, { usuarios: await cuentas.listarUsuarios() });
+        else if (ruta === '/api/admin/invitaciones') enviar(res, 200, { invitaciones: await cuentas.listarInvitaciones(), correo: { transporte: correo.transporte, real: correo.real } });
+        else if (ruta === '/api/admin/auditoria') enviar(res, 200, { eventos: await cuentas.listarAuditoria() });
         else enviar(res, 404, { error: 'no_encontrado' });
         return true;
       }
@@ -148,20 +148,23 @@ export function crearApiCuentas({ config, firmador, sesiones, cuentas, historial
         if (v.vence <= Date.now()) { vinculos.delete(cuerpo.id); return out(410, { error: 'vencido' }), true; }
         if (!v.usuarioId) return out(200, { estado: 'pendiente' }), true;
         vinculos.delete(cuerpo.id); // se entrega una sola vez
-        const u = cuentas.usuario(v.usuarioId);
-        const sid = sesiones.crear(SESION_VINCULO_H * 3600, v.usuarioId, 'vinculo');
-        cuentas.auditar(v.usuarioId, 'vinculo_local_creado');
+        const u = await cuentas.usuario(v.usuarioId);
+        // Una cuenta suspendida entre la aprobación y el sondeo no recibe credencial.
+        if (!u || u.estado !== 'activo') return out(403, { error: 'prohibido' }), true;
+        const sid = await sesiones.crear(SESION_VINCULO_H * 3600, v.usuarioId, 'vinculo');
+        await cuentas.auditar(v.usuarioId, 'vinculo_local_creado');
         out(200, { estado: 'aprobado', credencial: firmador.firmar({ t: 'vinculo', sid }, SESION_VINCULO_H * 3600), usuario: { nombre: u.nombre, email: u.email, rol: u.rol } });
         return true;
       }
-      const b = bearer(req);
+      const b = await bearer(req);
       if (!b) return out(401, { error: 'no_autenticado' }), true;
-      if (ruta === '/api/vinculo/salir') { sesiones.revocar(b.sid); out(200, { ok: true }); return true; }
+      if (ruta === '/api/vinculo/salir') { await sesiones.revocar(b.sid); out(200, { ok: true }); return true; }
       // «Iniciar clase»: acción explícita, separada de «Iniciar sesión». Nunca ocurre sola.
       try {
         const datos = V.crearSala({ titulo: cuerpo.titulo, preModeracion: cuerpo.preModeracion, conservarResultados: cuerpo.conservarResultados });
         const sala = almacen.crearSala({ ...datos, propietarioId: b.usuario.id });
-        historial.abrir(almacen.resumenPersistible(sala.id));
+        // Sin bloquear la clase: si la base falla, el punto de control periódico registra la sala después.
+        await historial.abrir(almacen.resumenPersistible(sala.id)).catch((error) => log('historial_alta_fallida', { tipo: error.name }));
         const clave = firmador.firmar({ t: 'presentador', s: sala.id, v: sala.versionPresentador }, Math.max(60, Math.floor((sala.vence - Date.now()) / 1000)));
         log('sala_creada', { sala: sala.id.slice(0, 6), via: 'vinculo' });
         out(200, { sala, enlace: `${config.appUrl}/join/${sala.codigo}`, qr: `${config.appUrl}/qr/${sala.codigo}.svg`, clave });
@@ -186,7 +189,7 @@ export function crearApiCuentas({ config, firmador, sesiones, cuentas, historial
         const email = textoCorto(c.email);
         const clave = claveCuenta('login', email); // variantes con espacios o mayúsculas comparten cubeta; olvide/reenviar no la gastan
         if (!limitadorCuenta.permitir(clave)) { log('login_limitado'); return enviar(res, 429, { error: 'demasiados_intentos' }, undefined, { 'Retry-After': '60' }), true; }
-        const r = cuentas.autenticar(email, c.password);
+        const r = await cuentas.autenticar(email, c.password);
         if (r.error === 'credenciales' || r.error === 'suspendido') {
           log('login_fallido');
           // Mismo mensaje para cuenta inexistente, contraseña errónea o cuenta suspendida.
@@ -195,49 +198,49 @@ export function crearApiCuentas({ config, firmador, sesiones, cuentas, historial
         if (r.error === 'no_verificado') return enviar(res, 403, { error: 'no_verificado' }), true;
         limitadorCuenta.olvidar(clave);
         const segundos = config.sesionDocenteHoras * 3600;
-        const sid = sesiones.crear(segundos, r.usuario.id);
+        const sid = await sesiones.crear(segundos, r.usuario.id);
         log('login_ok', { cuenta: true });
         return enviar(res, 200, { autenticado: true, csrf: firmador.csrf(sid), usuario: { id: r.usuario.id, nombre: r.usuario.nombre, email: r.usuario.email, rol: r.usuario.rol } }, undefined,
           { 'Set-Cookie': util.cookieSesion(firmador.firmar({ t: 'docente', sid }, segundos), segundos) }), true;
       }
       if (ruta === '/api/auth/invitacion/validar') {
-        const i = cuentas.validarInvitacion(c.token);
+        const i = await cuentas.validarInvitacion(c.token);
         return enviar(res, i ? 200 : 404, i ? { email: i.email, rol: i.rol } : { error: 'token_invalido' }), true;
       }
       if (ruta === '/api/auth/invitacion/aceptar') {
         try {
-          const r = cuentas.aceptarInvitacion(c.token, { nombre: c.nombre, password: c.password });
+          const r = await cuentas.aceptarInvitacion(c.token, { nombre: c.nombre, password: c.password });
           const estado = await mandar('verificacion', r.usuario.email, r.tokenVerificacion);
           return enviar(res, 200, { ok: true, correo: estado, email: r.usuario.email }), true;
         } catch (e) { return errorCuenta(res, e), true; }
       }
       if (ruta === '/api/auth/verificar') {
-        try { cuentas.verificarCorreo(c.token); return enviar(res, 200, { ok: true }), true; } catch (e) { return errorCuenta(res, e), true; }
+        try { await cuentas.verificarCorreo(c.token); return enviar(res, 200, { ok: true }), true; } catch (e) { return errorCuenta(res, e), true; }
       }
       if (ruta === '/api/auth/verificacion/reenviar' || ruta === '/api/auth/olvide') {
         const email = textoCorto(c.email);
         const clave = claveCuenta(ruta.endsWith('reenviar') ? 'reenviar' : 'olvide', email);
         if (limitadorCuenta.permitir(clave)) {
           const esVerif = ruta.endsWith('reenviar');
-          const t = esVerif ? cuentas.reemitirVerificacion(email) : cuentas.solicitarRecuperacion(email);
+          const t = await (esVerif ? cuentas.reemitirVerificacion(email) : cuentas.solicitarRecuperacion(email));
           if (t) mandar(esVerif ? 'verificacion' : 'recuperacion', t.email, t.token); // sin await: la latencia SMTP no revela si la cuenta existe
         }
         // Respuesta idéntica exista o no la cuenta (y también si se limitó): no revela cuentas.
         return enviar(res, 202, { ok: true, mensaje: 'Si la dirección corresponde a una cuenta, recibirá un correo con las instrucciones.' }), true;
       }
       if (ruta === '/api/auth/restablecer/validar') {
-        const ok = cuentas.validarRecuperacion(c.token);
+        const ok = await cuentas.validarRecuperacion(c.token);
         return enviar(res, ok ? 200 : 404, ok ? { ok: true } : { error: 'token_invalido' }), true;
       }
       if (ruta === '/api/auth/restablecer') {
-        try { cuentas.restablecerPassword(c.token, c.password); return enviar(res, 200, { ok: true }), true; } catch (e) { return errorCuenta(res, e), true; }
+        try { await cuentas.restablecerPassword(c.token, c.password); return enviar(res, 200, { ok: true }), true; } catch (e) { return errorCuenta(res, e), true; }
       }
       return enviar(res, 404, { error: 'no_encontrado' }), true;
     }
 
     // ----- Con sesión + CSRF -----
     if (ruta === '/api/vinculo/aprobar') {
-      const s = requerirSesion(req, res, { csrf: true }); if (!s) return true;
+      const s = await requerirSesion(req, res, { csrf: true }); if (!s) return true;
       if (!limitarIp(req, res)) return true;
       const c = await leerJson(req);
       const codigo = textoCorto(c.codigo, 12).replace(/[^A-Za-z0-9]/g, '').toUpperCase();
@@ -251,33 +254,33 @@ export function crearApiCuentas({ config, firmador, sesiones, cuentas, historial
         return enviar(res, 200, { pendiente: true, contexto: { origen: v.origen, hace: Math.max(0, Math.round((Date.now() - v.creado) / 1000)), red: enmascarar(v.ip), verificado: false } }), true;
       }
       v.usuarioId = s.usuario.id;
-      cuentas.auditar(s.usuario.id, 'vinculo_local_aprobado', `origen=${v.origen}`);
+      await cuentas.auditar(s.usuario.id, 'vinculo_local_aprobado', `origen=${v.origen}`);
       return enviar(res, 200, { ok: true }), true;
     }
     if (ruta === '/api/historial/eliminar') {
-      const s = requerirSesion(req, res, { csrf: true }); if (!s) return true;
+      const s = await requerirSesion(req, res, { csrf: true }); if (!s) return true;
       const c = await leerJson(req);
-      const ok = historial.eliminar(textoCorto(c.id, 64), { propietarioId: s.usuario.rol === 'superusuario' ? null : s.usuario.id });
-      if (ok) cuentas.auditar(s.usuario.id, 'historial_eliminado', textoCorto(c.id, 64));
+      const ok = await historial.eliminar(textoCorto(c.id, 64), { propietarioId: s.usuario.rol === 'superusuario' ? null : s.usuario.id });
+      if (ok) await cuentas.auditar(s.usuario.id, 'historial_eliminado', textoCorto(c.id, 64));
       return enviar(res, ok ? 200 : 404, ok ? { ok: true } : { error: 'no_encontrado' }), true;
     }
     if (ruta.startsWith('/api/admin/')) {
-      const s = requerirSesion(req, res, { csrf: true, rol: 'superusuario' }); if (!s) return true;
+      const s = await requerirSesion(req, res, { csrf: true, rol: 'superusuario' }); if (!s) return true;
       const c = await leerJson(req);
       try {
         if (ruta === '/api/admin/invitaciones') {
-          const i = cuentas.invitar({ actorId: s.usuario.id, email: c.email, rol: c.rol ?? 'docente' });
+          const i = await cuentas.invitar({ actorId: s.usuario.id, email: c.email, rol: c.rol ?? 'docente' });
           const estado = await mandar('invitacion', i.email, i.token, { rol: i.rol });
           // Si el correo no salió de verdad, el administrador recibe el enlace para entregarlo por otro medio.
           const manual = estado === 'enviado' ? {} : { enlaceManual: url.invitacion(i.token) };
           return enviar(res, 201, { id: i.id, email: i.email, rol: i.rol, vence: i.vence, correo: estado, ...manual }), true;
         }
-        if (ruta === '/api/admin/invitaciones/revocar') { cuentas.revocarInvitacion(textoCorto(c.id, 40), s.usuario.id); return enviar(res, 200, { ok: true }), true; }
-        if (ruta === '/api/admin/usuarios/estado') { return enviar(res, 200, { usuario: cuentas.cambiarEstado(textoCorto(c.id, 40), c.estado, s.usuario.id) }), true; }
+        if (ruta === '/api/admin/invitaciones/revocar') { await cuentas.revocarInvitacion(textoCorto(c.id, 40), s.usuario.id); return enviar(res, 200, { ok: true }), true; }
+        if (ruta === '/api/admin/usuarios/estado') { return enviar(res, 200, { usuario: await cuentas.cambiarEstado(textoCorto(c.id, 40), c.estado, s.usuario.id) }), true; }
         if (ruta === '/api/admin/retencion') {
-          const h = historial.purgar(config.historialDias);
-          const k = cuentas.purgar({ auditoriaDias: config.auditoriaDias });
-          cuentas.auditar(s.usuario.id, 'retencion_aplicada', '', `historial=${h}`);
+          const h = await historial.purgar(config.historialDias);
+          const k = await cuentas.purgar({ auditoriaDias: config.auditoriaDias });
+          await cuentas.auditar(s.usuario.id, 'retencion_aplicada', '', `historial=${h}`);
           return enviar(res, 200, { historial: h, ...k }), true;
         }
       } catch (e) { return errorCuenta(res, e), true; }

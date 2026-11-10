@@ -5,7 +5,7 @@ despliegue 0.3.0, que mantiene salas en memoria, una contraseña docente por ent
 
 | Bloque | Qué aportaría | Dependencias / decisiones previas |
 |---|---|---|
-| Base de datos | Historial persistente de salas, encuestas y preguntas | Elegir motor (p. ej. SQLite en volumen o PostgreSQL), migraciones, volumen con respaldo, política de retención y datos personales (Ley 1581) |
+| Base de datos | Historial persistente de salas, encuestas y preguntas | **Decidido en 0.4.0: PostgreSQL 16** (docs/ADR-0001-POSTGRESQL.md), con migraciones versionadas, respaldo verificado y retención. Pendiente: PITR con archivado WAL y estado de salas distribuido |
 | Cuentas y administrador | Varios docentes, rol administrador, auditoría | Modelo de usuario, sesión servidor, CSRF ya existente; sustituye `ADMIN_PASSWORD_HASH` único |
 | Correo | Verificación y avisos | Proveedor SMTP, SPF/DKIM, secretos fuera de Git |
 | Recuperación de contraseña | Restablecer acceso docente | Requiere correo y cuentas; tokens de un solo uso con caducidad |

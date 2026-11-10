@@ -1,8 +1,9 @@
 /**
  * Interact: ensamblaje de la aplicación (HTTP + Socket.IO + almacén en memoria + base persistente).
- * Capas: salas.mjs (sesiones y votaciones, memoria), db.mjs/cuentas.mjs/historial.mjs (identidad e historial, SQLite),
+ * Capas: salas.mjs (sesiones y votaciones, memoria), db.mjs/cuentas.mjs/historial.mjs (identidad e historial, PostgreSQL),
  * correo.mjs (SMTP/desarrollo), auth.mjs (hash y tokens firmados), http.mjs y sockets.mjs (API), public/ (interfaces).
  * El adaptador Reveal.js vive en la plantilla del generador (template/src/plugins/live.mjs).
+ * Las copias de seguridad NO viven en este proceso: las hace pg_dump fuera del contenedor (docs/RESPALDO-RESTAURACION.md).
  */
 import { createServer } from 'node:http';
 import path from 'node:path';
@@ -10,7 +11,7 @@ import { fileURLToPath } from 'node:url';
 import { crearFirmador } from './auth.mjs';
 import { crearCorreo } from './correo.mjs';
 import { crearCuentas, crearSesionesDb } from './cuentas.mjs';
-import { abrirBase, respaldar } from './db.mjs';
+import { abrirBase } from './db.mjs';
 import { crearHistorial } from './historial.mjs';
 import { cargarEstaticos, crearManejadorHttp } from './http.mjs';
 import { crearLimitador } from './limites.mjs';
@@ -24,20 +25,34 @@ export function crearLog(salida = (linea) => process.stdout.write(`${linea}\n`))
   return (evento, datos = {}) => salida(JSON.stringify({ t: new Date().toISOString(), evento, ...datos }));
 }
 
-export function crearApp(config, { log = crearLog(), ahora, intervaloSesionesMs, db: dbExterna } = {}) {
+/** Opciones del pool a partir de la configuración validada (config.mjs). */
+export const opcionesBase = (config, log) => ({
+  url: config.db.url, esquema: config.db.esquema, max: config.db.poolMax, ssl: config.db.ssl,
+  migraciones: config.db.migraciones, esperaMs: config.db.esperaMs, statementTimeoutMs: config.db.statementTimeoutMs,
+  aplicacion: 'interact', alError: (e) => log('base_cliente_error', { codigo: String(e?.code ?? '').slice(0, 8) }),
+});
+
+export async function crearApp(config, { log = crearLog(), ahora, intervaloSesionesMs, db: dbExterna } = {}) {
   const firmador = crearFirmador(config.secreto);
-  const db = dbExterna ?? abrirBase(config.dbRuta ?? (config.dataDir ? path.join(config.dataDir, 'interact.sqlite') : ':memory:'));
+  const db = dbExterna ?? await abrirBase(opcionesBase(config, log));
   const reloj = ahora ?? Date.now;
   const cuentas = crearCuentas(db, { ahora: reloj, ttl: { invitacionHoras: config.invitacionHoras, verificacionHoras: config.verificacionHoras, recuperacionMin: config.recuperacionMin } });
   const sesiones = crearSesionesDb(db, { ahora: reloj });
   const historial = crearHistorial(db, { ahora: reloj });
   const correo = crearCorreo(config, { log });
-  const interrumpidas = historial.marcarInterrumpidas();
+  const interrumpidas = await historial.marcarInterrumpidas();
   if (interrumpidas) log('historial_interrumpidas', { salas: interrumpidas });
 
+  // Escrituras de cierre en curso: el cierre ordenado del servicio las espera antes de cerrar el pool.
+  const pendientes = new Set();
+  const persistir = (promesa) => {
+    const p = promesa.catch((error) => log('historial_cierre_fallido', { tipo: error.name })).finally(() => pendientes.delete(p));
+    pendientes.add(p);
+    return p;
+  };
   const almacen = crearAlmacen({
     ttlMin: config.salaTtlMin, maxParticipantes: config.maxParticipantes, maxSalas: config.maxSalas, ahora,
-    alCerrar: (resumen, motivo) => { if (resumen.propietarioId) historial.cerrar(resumen, motivo); },
+    alCerrar: (resumen, motivo) => { if (resumen.propietarioId) persistir(historial.cerrar(resumen, motivo)); },
   });
   const manejar = crearManejadorHttp({
     config, estaticos: cargarEstaticos(PUBLICO), firmador, sesiones, log, cuentas, historial, correo, almacen, db,
@@ -50,13 +65,12 @@ export function crearApp(config, { log = crearLog(), ahora, intervaloSesionesMs,
   servidor.keepAliveTimeout = 65_000;
   const sockets = crearSockets(servidor, { config, almacen, firmador, sesiones, log, cuentas, historial, ...(ahora ? { ahora } : {}), ...(intervaloSesionesMs ? { intervaloSesionesMs } : {}) });
 
-  // Mantenimiento: retención y copia de seguridad diaria (solo con base en disco).
-  const mantenimiento = () => {
+  // Mantenimiento diario: política de conservación (historial, auditoría, tokens y sesiones vencidas).
+  const mantenimiento = async () => {
     try {
-      const h = historial.purgar(config.historialDias);
-      const c = cuentas.purgar({ auditoriaDias: config.auditoriaDias });
+      const h = await historial.purgar(config.historialDias);
+      const c = await cuentas.purgar({ auditoriaDias: config.auditoriaDias });
       if (h || c.auditoria) log('retencion_aplicada', { historial: h, auditoria: c.auditoria });
-      if (config.dataDir) respaldar(db, path.join(config.dataDir, 'respaldos'), { conservar: config.respaldosConservar });
     } catch (error) { log('mantenimiento_fallido', { tipo: error.name }); }
   };
   const diario = setInterval(mantenimiento, 24 * 3600_000);
@@ -64,12 +78,15 @@ export function crearApp(config, { log = crearLog(), ahora, intervaloSesionesMs,
 
   return {
     servidor, almacen, sockets, firmador, sesiones, cuentas, historial, correo, db, mantenimiento,
+    /** Espera a que terminen las escrituras de historial ya iniciadas (cierres de sala). */
+    persistido: () => Promise.allSettled([...pendientes]),
     escuchar: (puerto = config.puerto, host = '0.0.0.0') => new Promise((r) => servidor.listen(puerto, host, () => { setTimeout(mantenimiento, 5000).unref(); r(servidor.address()); })),
     cerrar: async () => {
       clearInterval(diario);
       await sockets.cerrar();
       await new Promise((r) => servidor.close(() => r()));
-      if (!dbExterna) { try { db.close(); } catch { /* ya cerrada */ } }
+      await Promise.allSettled([...pendientes]);
+      if (!dbExterna) { try { await db.cerrar(); } catch { /* ya cerrada */ } }
     },
   };
 }

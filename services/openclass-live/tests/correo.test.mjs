@@ -2,16 +2,16 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import net from 'node:net';
-import { mkdtempSync, rmSync, existsSync } from 'node:fs';
-import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { crearCorreo, construirMensaje } from '../src/correo.mjs';
 import { leerConfig } from '../src/config.mjs';
+import { borrarEsquema, conCliente, nuevoEsquema, urlPrueba } from './ayuda.mjs';
 
 const raiz = fileURLToPath(new URL('../', import.meta.url));
-const BASE = { APP_URL: 'https://interact.test', SESSION_SECRET: 'z'.repeat(40) };
+// La configuración no abre conexiones: una URL sintáctica basta para estas pruebas.
+const BASE = { APP_URL: 'https://interact.test', SESSION_SECRET: 'z'.repeat(40), DATABASE_URL: 'postgres://interact_app:clave-sintetica@db.invalid:5432/interact' };
 
 /** Servidor SMTP mínimo: guarda lo que recibe y responde como uno real (sin STARTTLS: solo bucle local). */
 function servidorSmtp({ rechazarRcpt = false } = {}) {
@@ -41,13 +41,11 @@ function servidorSmtp({ rechazarRcpt = false } = {}) {
 }
 
 test('configuración de correo: producción exige transporte explícito y no admite el de desarrollo', () => {
-  const prod = { ...BASE, NODE_ENV: 'production', DATA_DIR: '/data' };
+  const prod = { ...BASE, NODE_ENV: 'production' };
   assert.equal(leerConfig(prod).correo.transporte, 'desactivado');
   assert.throws(() => leerConfig({ ...prod, MAIL_TRANSPORT: 'desarrollo' }), /producción/);
   assert.throws(() => leerConfig({ ...prod, MAIL_TRANSPORT: 'smtp' }), /SMTP_HOST/);
-  assert.throws(() => leerConfig({ ...BASE, NODE_ENV: 'production' }), /DATA_DIR/);
   assert.equal(leerConfig(BASE).correo.transporte, 'desarrollo');
-  assert.equal(leerConfig(BASE).dataDir, null);
 });
 
 test('transportes sin entrega real no afirman haber enviado', async () => {
@@ -91,20 +89,46 @@ test('mensaje: las cabeceras no admiten inyección de saltos de línea', () => {
   assert.ok(!/^Bcc:/m.test(m));
 });
 
-test('script init-superusuario: crea una sola vez, sin eco de la contraseña y sin valores por defecto', () => {
-  const dir = mkdtempSync(path.join(tmpdir(), 'interact-init-'));
-  const correr = (extra = []) => spawnSync(process.execPath, ['--no-warnings', path.join(raiz, 'scripts/init-superusuario.mjs'), '--email', 'root@uni.test', ...extra],
-    { input: 'clave-super-larga-2026\n', encoding: 'utf8', env: { ...process.env, DATA_DIR: dir } });
+test('configuración PostgreSQL: URL obligatoria, sin valores de ejemplo, producción no migra', () => {
+  const { DATABASE_URL: _u, ...sinUrl } = BASE;
+  assert.throws(() => leerConfig(sinUrl), /DATABASE_URL es obligatoria/);
+  assert.throws(() => leerConfig({ ...BASE, DATABASE_URL: 'mysql://a:b@h/x' }), /forma postgres:\/\//);
+  assert.throws(() => leerConfig({ ...BASE, DATABASE_URL: 'postgres://u:CAMBIAR@h:5432/x', NODE_ENV: 'production' }), /ejemplo/);
+  assert.throws(() => leerConfig({ ...BASE, DB_SCHEMA: 'Mal-Esquema' }), /DB_SCHEMA/);
+  assert.throws(() => leerConfig({ ...BASE, DB_SSL: 'quizas' }), /DB_SSL/);
+  assert.throws(() => leerConfig({ ...BASE, DB_POOL_MAX: '500' }), /fuera de rango/);
+  const prod = leerConfig({ ...BASE, NODE_ENV: 'production' }).db;
+  assert.equal(prod.migraciones, 'verificar', 'en producción el servicio solo verifica el esquema');
+  assert.equal(prod.poolMax, 10);
+  assert.equal(leerConfig(BASE).db.migraciones, 'auto');
+  assert.deepEqual(leerConfig({ ...BASE, DB_SSL: 'verificado' }).db.ssl, { rejectUnauthorized: true });
+  // Los mensajes de error nunca repiten la contraseña de la URL.
+  try { leerConfig({ ...BASE, DATABASE_URL: 'postgres://u:CAMBIAR-secreto@h:5432/x', NODE_ENV: 'production' }); } catch (e) { assert.ok(!e.message.includes('secreto')); }
+});
+
+test('script init-superusuario: crea una sola vez, sin eco de la contraseña y sin valores por defecto (PostgreSQL)', async () => {
+  const esquema = nuevoEsquema();
+  const env = { ...process.env, DATABASE_URL: urlPrueba(), DB_SCHEMA: esquema, DB_MIGRATIONS: 'auto', INTERACT_SUPERUSER_PASSWORD: '' };
+  const correr = (extra = {}) => spawnSync(process.execPath, ['--no-warnings', path.join(raiz, 'scripts/init-superusuario.mjs'), '--email', 'root@uni.test'],
+    { input: 'clave-super-larga-2026\n', encoding: 'utf8', env: { ...env, ...extra } });
   try {
-    const sin = spawnSync(process.execPath, ['--no-warnings', path.join(raiz, 'scripts/init-superusuario.mjs'), '--email', 'root@uni.test'], { input: 'x', encoding: 'utf8', env: { ...process.env, DATA_DIR: '', DB_PATH: '' } });
+    const sin = correr({ DATABASE_URL: '' });
     assert.notEqual(sin.status, 0);
+    assert.match(sin.stderr, /DATABASE_URL es obligatoria/);
     const a = correr();
     assert.equal(a.status, 0, a.stderr);
     assert.ok(!a.stdout.includes('clave-super') && !a.stderr.includes('clave-super'));
-    assert.ok(existsSync(path.join(dir, 'interact.sqlite')));
+    const fila = await conCliente(esquema, (c) => c.query("SELECT email, rol, email_verificado, hash FROM usuarios WHERE rol = 'superusuario'"));
+    assert.equal(fila.rowCount, 1);
+    assert.equal(fila.rows[0].email, 'root@uni.test');
+    assert.equal(fila.rows[0].email_verificado, true);
+    assert.match(fila.rows[0].hash, /^scrypt\$32768\$/);
     assert.notEqual(correr().status, 0, 'segunda ejecución rechazada');
-    const r = spawnSync(process.execPath, ['--no-warnings', path.join(raiz, 'scripts/respaldar.mjs')], { encoding: 'utf8', env: { ...process.env, DATA_DIR: dir } });
-    assert.equal(r.status, 0, r.stderr);
-    assert.equal(JSON.parse(r.stdout).integra, true);
-  } finally { rmSync(dir, { recursive: true, force: true }); }
+    // Producción: con el esquema migrado arranca; con migraciones pendientes se niega (no altera el esquema).
+    const otro = nuevoEsquema();
+    const r = correr({ DB_SCHEMA: otro, DB_MIGRATIONS: 'verificar' });
+    assert.notEqual(r.status, 0);
+    assert.match(r.stderr, /Migraciones pendientes|esquema/i);
+    await borrarEsquema(otro);
+  } finally { await borrarEsquema(esquema); }
 });

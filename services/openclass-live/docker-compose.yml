@@ -1,10 +1,107 @@
 # OpenClass Live — stack para /home/openclass-live/ (Docker Compose plugin; adoptable en Dockhand).
 # Valida antes de levantar:  docker compose config --quiet && docker compose up -d --build
 # No publica puertos en el host: Traefik (red externa «web») es la única entrada, con HTTPS.
+# PostgreSQL (motor oficial desde 0.4.0) vive en la red interna «interact-db» (internal: sin salida ni puertos).
+# Perfil «postgres-dedicado» (COMPOSE_PROFILES en .env): base dedicada en este stack. Sin ese perfil, las URL
+# DATABASE_* apuntan a un PostgreSQL administrado y los servicios interact-db / interact-db-preparar no se crean.
+# Cada servicio recibe SOLO su credencial: administración (preparar), migraciones (migrar), aplicación.
+# Copias de seguridad: docker-compose.respaldo.yml (credencial de solo lectura, almacenamiento independiente).
 name: openclass-live
 
+x-endurecido: &endurecido
+  init: true
+  read_only: true
+  cap_drop:
+    - ALL
+  security_opt:
+    - no-new-privileges:true
+  logging:
+    driver: json-file
+    options:
+      max-size: "5m"
+      max-file: "3"
+
 services:
+  interact-db:
+    <<: *endurecido
+    profiles: ["postgres-dedicado"]
+    image: postgres:16.10-alpine@sha256:029660641a0cfc575b14f336ba448fb8a75fd595d42e1fa316b9fb4378742297
+    container_name: interact-db
+    restart: unless-stopped
+    init: false
+    user: "70:70"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_ADMIN_PASSWORD:?POSTGRES_ADMIN_PASSWORD is required}
+      POSTGRES_DB: postgres
+      POSTGRES_INITDB_ARGS: "--auth-host=scram-sha-256 --data-checksums"
+      PGDATA: /var/lib/postgresql/data/pgdata
+      TZ: UTC
+    command: ["postgres", "-c", "max_connections=40", "-c", "password_encryption=scram-sha-256", "-c", "shared_buffers=96MB",
+      "-c", "log_connections=on", "-c", "log_disconnections=on", "-c", "log_min_duration_statement=2000"]
+    volumes:
+      - interact-pgdata:/var/lib/postgresql/data
+    tmpfs:
+      - /var/run/postgresql:size=1m,uid=70,gid=70,mode=0700
+      - /tmp:size=32m,uid=70,gid=70,mode=0700
+    shm_size: 128m
+    mem_limit: 512m
+    memswap_limit: 512m
+    cpus: 1.0
+    pids_limit: 256
+    stop_grace_period: 30s
+    networks:
+      - interact-db
+    healthcheck:
+      test: ["CMD", "pg_isready", "-q", "-h", "127.0.0.1", "-U", "postgres", "-d", "postgres"]
+      interval: 10s
+      timeout: 5s
+      start_period: 30s
+      retries: 6
+
+  # Una sola vez por despliegue (idempotente): base, esquema y roles con mínimo privilegio.
+  interact-db-preparar:
+    <<: *endurecido
+    profiles: ["postgres-dedicado"]
+    image: openclass-live:0.4.0
+    restart: "no"
+    user: "1000:1000"
+    command: ["node", "scripts/preparar-roles.mjs"]
+    environment:
+      DATABASE_ADMIN_URL: ${DATABASE_ADMIN_URL:?DATABASE_ADMIN_URL is required}
+      INTERACT_DB_MIGRATOR_PASSWORD: ${INTERACT_DB_MIGRATOR_PASSWORD:?INTERACT_DB_MIGRATOR_PASSWORD is required}
+      INTERACT_DB_APP_PASSWORD: ${INTERACT_DB_APP_PASSWORD:?INTERACT_DB_APP_PASSWORD is required}
+      INTERACT_DB_BACKUP_PASSWORD: ${INTERACT_DB_BACKUP_PASSWORD:?INTERACT_DB_BACKUP_PASSWORD is required}
+    mem_limit: 128m
+    pids_limit: 64
+    networks:
+      - interact-db
+    depends_on:
+      interact-db:
+        condition: service_healthy
+
+  # Migraciones versionadas con la credencial propietaria del esquema; la aplicación no tiene DDL.
+  interact-migrar:
+    <<: *endurecido
+    image: openclass-live:0.4.0
+    restart: "no"
+    user: "1000:1000"
+    command: ["node", "scripts/migrar.mjs"]
+    environment:
+      DATABASE_MIGRATION_URL: ${DATABASE_MIGRATION_URL:?DATABASE_MIGRATION_URL is required}
+      DB_SSL: ${DB_SSL:-desactivado}
+      DB_CONNECT_WAIT_SECONDS: "60"
+    mem_limit: 128m
+    pids_limit: 64
+    networks:
+      - interact-db
+    depends_on:
+      interact-db-preparar:
+        condition: service_completed_successfully
+        required: false
+
   openclass-live:
+    <<: *endurecido
     build:
       context: .
       dockerfile: Dockerfile
@@ -19,7 +116,11 @@ services:
       SESSION_SECRET: ${SESSION_SECRET:?SESSION_SECRET is required}
       # Opcional (acceso heredado 0.3.0). Vacío = solo cuentas personales.
       ADMIN_PASSWORD_HASH: ${ADMIN_PASSWORD_HASH:-}
-      DATA_DIR: /data
+      # Credencial de la APLICACIÓN (solo DML). Nunca la de administración ni la de migraciones.
+      DATABASE_URL: ${DATABASE_URL:?DATABASE_URL is required}
+      DB_SSL: ${DB_SSL:-desactivado}
+      DB_POOL_MAX: ${DB_POOL_MAX:-10}
+      DB_MIGRATIONS: verificar
       MAIL_TRANSPORT: ${MAIL_TRANSPORT:-desactivado}
       SMTP_HOST: ${SMTP_HOST:-}
       SMTP_PORT: ${SMTP_PORT:-587}
@@ -28,21 +129,14 @@ services:
       MAIL_FROM: ${MAIL_FROM:-}
       PRESENTER_ORIGINS: ${PRESENTER_ORIGINS:-http://localhost:8613,http://localhost:8600}
       TRUST_PROXY: ${TRUST_PROXY:-true}
+      TRUSTED_PROXY_CIDRS: ${TRUSTED_PROXY_CIDRS:-172.16.0.0/12,10.0.0.0/8,192.168.0.0/16}
       TEACHER_SESSION_HOURS: ${TEACHER_SESSION_HOURS:-8}
       ROOM_TTL_MINUTES: ${ROOM_TTL_MINUTES:-180}
       MAX_ROOM_PARTICIPANTS: ${MAX_ROOM_PARTICIPANTS:-150}
       MAX_ROOMS: ${MAX_ROOMS:-20}
-    init: true
     user: "1000:1000"
-    read_only: true
-    volumes:
-      - interact-data:/data
     tmpfs:
       - /tmp:size=16m,mode=1777
-    cap_drop:
-      - ALL
-    security_opt:
-      - no-new-privileges:true
     mem_limit: 256m
     memswap_limit: 256m
     cpus: 0.50
@@ -52,17 +146,19 @@ services:
       - "3000"
     networks:
       - web
+      - interact-db
+    depends_on:
+      interact-migrar:
+        condition: service_completed_successfully
+      interact-db:
+        condition: service_healthy
+        required: false
     healthcheck:
       test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/healthz').then((r) => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
       interval: 30s
       timeout: 5s
-      start_period: 15s
+      start_period: 30s
       retries: 3
-    logging:
-      driver: json-file
-      options:
-        max-size: "5m"
-        max-file: "3"
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=web"
@@ -74,8 +170,11 @@ services:
       - "traefik.http.services.openclass-live-svc.loadbalancer.server.port=3000"
 
 volumes:
-  interact-data:
+  interact-pgdata:
 
 networks:
   web:
     external: true
+  # Red privada de la base: sin salida a Internet ni puertos publicados; solo los servicios de este stack.
+  interact-db:
+    internal: true

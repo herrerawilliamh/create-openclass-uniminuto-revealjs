@@ -1,4 +1,5 @@
 import test from 'node:test';
+import { borrarEsquema, nuevoEsquema, urlPrueba } from './ayuda.mjs';
 import assert from 'node:assert/strict';
 import { cpSync, mkdtempSync, readFileSync, writeFileSync, rmSync, utimesSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -15,7 +16,7 @@ const raiz = new URL('../', import.meta.url);const VERSION = JSON.parse(readFile
 test('paquete reproducible, aislado y con versiones coherentes; rechaza archivos ajenos', () => {
   const dir = mkdtempSync(path.join(tmpdir(), 'oclive-release-'));
   try {
-    for (const f of ['package.json','package-lock.json','Dockerfile','.dockerignore','.env.example','docker-compose.yml','src','public','scripts']) {
+    for (const f of ['package.json','package-lock.json','Dockerfile','.dockerignore','.env.example','docker-compose.yml','docker-compose.respaldo.yml','src','public','scripts']) {
       cpSync(new URL(f, raiz), path.join(dir, f), { recursive: true });
     }
     writeFileSync(path.join(dir, '.env'), 'PRIVATE_SENTINEL=DO_NOT_PACKAGE');
@@ -46,7 +47,9 @@ test('verificador de promoción completa HTTP, WS y protocolo 2 con el servicio 
   await new Promise((resolve) => reserva.close(resolve));
   const base = `http://127.0.0.1:${port}`;
   const password = 'synthetic-release-verifier-password';
-  const app = crearApp(leerConfig({ APP_URL: base, SESSION_SECRET: 'synthetic-release-signing-secret-for-local-test', ADMIN_PASSWORD_HASH: hashPassword(password) }), { log: () => {} });
+  const esquema = nuevoEsquema();
+  const app = await crearApp(leerConfig({ APP_URL: base, SESSION_SECRET: 'synthetic-release-signing-secret-for-local-test', ADMIN_PASSWORD_HASH: hashPassword(password),
+    DATABASE_URL: urlPrueba(), DB_SCHEMA: esquema }), { log: () => {} });
   await app.escuchar(port, '127.0.0.1');
   try {
     const result = await new Promise((resolve, reject) => {
@@ -60,7 +63,7 @@ test('verificador de promoción completa HTTP, WS y protocolo 2 con el servicio 
     assert.equal(result.code, 0, result.output);
     assert.match(result.output, /PASS  protocolo v2 anunciado/);
     assert.equal(app.almacen.listarSalas().length, 0);
-  } finally { await app.cerrar(); }
+  } finally { await app.cerrar(); await borrarEsquema(esquema); }
 });
 
 test('empaquetador oficial: dos empaquetados independientes dan el mismo SHA-256 y coinciden con el manifiesto', async () => {
@@ -70,7 +73,7 @@ test('empaquetador oficial: dos empaquetados independientes dan el mismo SHA-256
   const sha = (b) => createHash('sha256').update(b).digest('hex');
   const empaquetar = () => {
     const dir = mkdtempSync(path.join(tmpdir(), 'oclive-repro-'));
-    for (const f of ['package.json','package-lock.json','Dockerfile','.dockerignore','.env.example','docker-compose.yml','src','public','scripts']) {
+    for (const f of ['package.json','package-lock.json','Dockerfile','.dockerignore','.env.example','docker-compose.yml','docker-compose.respaldo.yml','src','public','scripts']) {
       cpSync(new URL(f, raiz), path.join(dir, f), { recursive: true });
     }
     assert.equal(spawnSync(process.execPath, ['scripts/empaquetar-despliegue.mjs'], { cwd: dir, encoding: 'utf8' }).status, 0);

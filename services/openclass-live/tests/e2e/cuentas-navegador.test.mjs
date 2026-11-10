@@ -8,7 +8,7 @@ import assert from 'node:assert/strict';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { abrirNavegador } from '../../../../scripts/lib/chrome.mjs';
-import { crearApp } from '../../src/app.mjs';
+import { crearAppPrueba, entornoPg } from '../ayuda.mjs';
 import { leerConfig } from '../../src/config.mjs';
 
 const ADMIN = { email: 'admin@willedtech.test', password: 'clave-admin-larga-2026' };
@@ -16,14 +16,14 @@ const CAPTURAS = process.env.INTERACT_CAPTURAS;
 
 async function montar(t) {
   const env = { SESSION_SECRET: 'cue'.repeat(20), TRUST_PROXY: 'false' };
-  const sondeo = crearApp(leerConfig({ ...env, APP_URL: 'http://127.0.0.1:1' }), { log: () => {} });
+  const sondeo = await crearAppPrueba(leerConfig({ ...entornoPg(),  ...env, APP_URL: 'http://127.0.0.1:1' }), { log: () => {} });
   const { port } = await sondeo.escuchar(0, '127.0.0.1');
   await sondeo.cerrar();
   const APP = `http://127.0.0.1:${port}`;
-  const app = crearApp(leerConfig({ ...env, APP_URL: APP }), { log: () => {} });
+  const app = await crearAppPrueba(leerConfig({ ...entornoPg(),  ...env, APP_URL: APP }), { log: () => {} });
   await app.escuchar(port, '127.0.0.1');
   t.after(() => app.cerrar());
-  app.cuentas.crearSuperusuario(ADMIN);
+  await app.cuentas.crearSuperusuario(ADMIN);
   const navegador = await abrirNavegador({ ancho: 1280, alto: 900 });
   t.after(() => navegador.cerrar());
   return { app, APP, navegador };
@@ -40,10 +40,10 @@ const sinDesborde = (pagina) => pagina.evaluar('document.documentElement.scrollW
 test('flujo completo en navegador: invitación, verificación, acceso, historial y administración', async (t) => {
   const { app, APP, navegador } = await montar(t);
   const pagina = await navegador.pagina({ ancho: 1280, alto: 900 });
-  const admin = app.cuentas.listarUsuarios()[0];
+  const admin = (await app.cuentas.listarUsuarios())[0];
 
   // --- Invitación → crear cuenta ---
-  const inv = app.cuentas.invitar({ actorId: admin.id, email: 'ana@uni.test', rol: 'docente' });
+  const inv = await app.cuentas.invitar({ actorId: admin.id, email: 'ana@uni.test', rol: 'docente' });
   await pagina.ir(`${APP}/cuenta/#invitacion=${inv.token}`);
   await pagina.esperarA(visible('v-invitacion'));
   assert.equal(await pagina.evaluar('location.hash'), '', 'el token se borra de la barra de direcciones');

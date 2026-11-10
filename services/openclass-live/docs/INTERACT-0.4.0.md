@@ -65,26 +65,33 @@ hasta que el administrador entregue el `enlaceManual` por un canal que él consi
   como no verificado, y exige confirmar «Sí, soy yo». Alguien que consiga que otra persona escriba su código no obtiene
   la cuenta sin esa confirmación; el origen proviene de la cabecera `Origin` (un cliente no navegador puede falsearla).
 - Cupos: 200 vínculos pendientes en total y 5 por IP; el límite por IP se aplica a iniciar, sondear y aprobar.
-- IP del cliente: con `TRUST_PROXY=true` se usa el **último** tramo de `X-Forwarded-For` (lo añade Traefik); `X-Real-Ip`
-  solo si no hay XFF, porque Traefik no lo sobrescribe. Con `TRUST_PROXY=false` se ignoran todas. Si el servicio se
-  expone sin proxy, `TRUST_PROXY` debe ser `false` (el valor por omisión es `true`, pensado para Traefik).
+- IP del cliente (solo para límites y cupos, nunca para autorizar): las cabeceras de reenvío cuentan **solo si la
+  conexión TCP llega desde un proxy de confianza** (`TRUST_PROXY=true` y par dentro de `TRUSTED_PROXY_CIDRS`,
+  recomendado: la subred exacta de la red `web`). Entonces se usa el **último** tramo de `X-Forwarded-For` (lo añade
+  Traefik) y, si falta, `X-Real-Ip`. Un valor que no sea una IP válida se descarta. Desde cualquier otro par, o con
+  `TRUST_PROXY=false` (valor por omisión fuera de producción), se ignoran y se usa la dirección del par. Pruebas
+  deterministas de esto y de los cupos 5/200: `tests/p2-auditoria.test.mjs`.
 
 Probado contra un servidor SMTP local de prueba (`tests/correo.test.mjs`); falta una prueba contra el proveedor real.
 
 ## Persistencia
 
-SQLite integrada (`node:sqlite`, Node ≥ 22.13, sin módulos nativos) en `$DATA_DIR/interact.sqlite`
-(volumen `interact-data` → `/data`, **fuera del contenedor efímero**). WAL, `foreign_keys=ON`, `busy_timeout`.
-Migraciones versionadas en `src/migraciones/NNN-nombre.sql` (tabla `migraciones`, lineales, transaccionales).
-SQL estándar sin funciones propias de SQLite: pasar a PostgreSQL = reescribir `db.mjs` y las consultas de
-`cuentas.mjs`/`historial.mjs`; el dominio de salas (memoria) no cambia.
+**PostgreSQL 16** es el motor oficial (decisión: `ADR-0001-POSTGRESQL.md`; operación: `POSTGRESQL.md`). Cliente
+`pg` con pool y consultas parametrizadas. Base dedicada en el Compose (`interact-db`, red interna sin puertos
+publicados) o PostgreSQL administrado por configuración. Cuatro credenciales separadas: administración,
+migraciones (DDL), aplicación (solo DML) y respaldo (solo lectura).
 
-**Copias de seguridad**: `node scripts/respaldar.mjs` (VACUUM INTO + `integrity_check`, rotación `BACKUP_KEEP`);
-el servicio también copia a `$DATA_DIR/respaldos` al arrancar y cada 24 h. Las copias contienen hashes de
-contraseñas e historial: tratarlas como dato personal. **Restaurar**: detener el servicio, reemplazar
-`interact.sqlite` por la copia (y borrar `-wal`/`-shm`), arrancar.
+Migraciones versionadas en `src/migraciones/NNN-nombre.sql`, registradas con su SHA-256 en `esquema_migraciones`,
+lineales, transaccionales y serializadas con un bloqueo consultivo. En producción el servicio solo **verifica** el
+esquema; migra `interact-migrar` (`scripts/migrar.mjs`) antes de que arranque. Tokens, invitaciones, verificación,
+recuperación, suspensión y revocación son atómicos (un `UPDATE … RETURNING` por consumo y una transacción por
+operación compuesta).
 
-Fuera de producción, sin `DATA_DIR` la base es en memoria (no persiste; desarrollo y pruebas).
+**Copias de seguridad y restauración**: `pg_dump` verificado y rotado (perfil `respaldo`) y restauración
+automatizada solo hacia bases `*_restauracion` vacías. Detalle, RPO/RTO y la evaluación de PITR en
+`RESPALDO-RESTAURACION.md`. Las copias contienen hashes de contraseñas e historial: son dato personal.
+
+No hay base en memoria: desarrollo y pruebas usan un PostgreSQL real (`INTERACT_TEST_DATABASE_URL`).
 
 ## Historial y política de datos
 
@@ -120,6 +127,8 @@ ejemplo, diapositivas ni IP. Con «Conservar resultados» desactivado al crear l
 - `ADMIN_PASSWORD_HASH` pasó a opcional: si se define, la contraseña compartida sigue funcionando como cuenta
   interna `docente-heredado@interact.invalid` (sin correo; su historial existe pero es de esa cuenta). Recomendado:
   dejarlo vacío y usar cuentas.
-- Nuevo en el despliegue: volumen `interact-data`, `DATA_DIR`, variables de correo. `gen-env` ya no pide contraseña.
+- Nuevo en el despliegue: PostgreSQL (servicios `interact-db`, `interact-db-preparar` e `interact-migrar`; volumen
+  `interact-pgdata`; variables `DATABASE_*`, `POSTGRES_ADMIN_PASSWORD` e `INTERACT_DB_*`), `TRUSTED_PROXY_CIDRS` y
+  variables de correo. `gen-env` genera todas las contraseñas y ya no pide la contraseña compartida.
 - La imagen necesita Node ≥ 22.13 (la base fijada es 22.23.1).
 - Protocolo 2, QR, moderación, encuestas, reconexión y revelación controlada: sin cambios.

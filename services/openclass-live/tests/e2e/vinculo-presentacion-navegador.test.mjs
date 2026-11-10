@@ -13,7 +13,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { abrirNavegador } from '../../../../scripts/lib/chrome.mjs';
 import { servir } from '../../../../scripts/lib/servidor.mjs';
-import { crearApp } from '../../src/app.mjs';
+import { crearAppPrueba, entornoPg } from '../ayuda.mjs';
 import { leerConfig } from '../../src/config.mjs';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../../..');
@@ -47,7 +47,7 @@ test('presentación local: iniciar sesión con la cuenta actualiza el menú al i
   let port = Number(process.env.OPENCLASS_LIVE_DIST && puertoCompilado(process.env.OPENCLASS_LIVE_DIST));
   const env = { SESSION_SECRET: 'vin'.repeat(20), TRUST_PROXY: 'false' };
   if (!port) {
-    const sondeo = crearApp(leerConfig({ ...env, APP_URL: 'http://127.0.0.1:1' }), { log: () => {} });
+    const sondeo = await crearAppPrueba(leerConfig({ ...entornoPg(),  ...env, APP_URL: 'http://127.0.0.1:1' }), { log: () => {} });
     ({ port } = await sondeo.escuchar(0, '127.0.0.1'));
     await sondeo.cerrar();
   }
@@ -57,10 +57,10 @@ test('presentación local: iniciar sesión con la cuenta actualiza el menú al i
   const estatico = await servir(dist, { base: '/' });
   t.after(() => estatico.cerrar());
   const DECK = new URL(estatico.url).origin;
-  const app = crearApp(leerConfig({ ...env, APP_URL: APP, PRESENTER_ORIGINS: DECK }), { log: () => {} });
+  const app = await crearAppPrueba(leerConfig({ ...entornoPg(),  ...env, APP_URL: APP, PRESENTER_ORIGINS: DECK }), { log: () => {} });
   await app.escuchar(port, '127.0.0.1');
   t.after(() => app.cerrar());
-  app.cuentas.crearSuperusuario(ADMIN);
+  await app.cuentas.crearSuperusuario(ADMIN);
 
   const nav = await abrirNavegador({ ancho: 1920, alto: 1080 });
   t.after(() => nav.cerrar());

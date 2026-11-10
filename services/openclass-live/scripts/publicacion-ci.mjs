@@ -84,8 +84,11 @@ export function bytesPublicables(lock, archiveBytes) {
 export function composeCandidato(base, lock) {
   const out = composePorDigest(base, lock);
   const images = [...out.matchAll(/^\s+image:\s*(\S+)\s*$/gm)].map(m => m[1]);
-  assert.equal(images.length, 1);
-  assert.equal(images[0], `${imageRepository}@${lock.manifestDigest}`);
+  const propias = images.filter((i) => i.startsWith(`${imageRepository}@`) || /(^|\/)openclass-live[:@]/.test(i));
+  assert.ok(propias.length >= 1, 'El Compose candidato debe usar la imagen del servicio');
+  for (const i of propias) assert.equal(i, `${imageRepository}@${lock.manifestDigest}`);
+  // Imágenes de terceros (PostgreSQL): solo por digest literal, nunca por etiqueta móvil.
+  for (const i of images.filter((x) => !propias.includes(x))) assert.match(i, /^[\w./-]+:[\w.-]+@sha256:[a-f0-9]{64}$/, `Imagen sin digest: ${i}`);
   assert.ok(!/latest/i.test(out), 'latest no es una referencia admisible');
   return out;
 }
