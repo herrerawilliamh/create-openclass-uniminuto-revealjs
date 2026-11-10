@@ -236,8 +236,20 @@ test('historial persistente: sobrevive al reinicio, marca salas interrumpidas y 
     const abierta = (await pedir(s, 'sala:crear', { titulo: 'Queda abierta' })).sala;
     abiertaId = abierta.id;
     await pedir(s, 'sala:finalizar', { salaId: sinHist.id });
-    const det = (await c.get(`/api/historial/detalle?id=${finalizadaId}`, doc)).json;
+    await c.app.persistido(); // el cierre se guarda en segundo plano
+    // Las escrituras del historial son asíncronas por diseño: se espera (acotado) a que el cierre quede confirmado.
+    const leerDetalle = async (id, estado) => {
+      let d;
+      for (let i = 0; i < 100; i++) {
+        d = (await c.get(`/api/historial/detalle?id=${id}`, doc)).json;
+        if (d?.estado === estado) break;
+        await new Promise((r) => setTimeout(r, 50));
+      }
+      return d;
+    };
+    const det = await leerDetalle(finalizadaId, 'finalizada');
     assert.equal(det.estado, 'finalizada');
+    await leerDetalle(sinHist.id, 'finalizada');
     assert.equal(det.participantes, 1);
     assert.equal(det.actividades[0].rondas[0].respondientes, 1);
     assert.deepEqual(det.actividades[0].rondas[0].conteos, [1, 0]);
@@ -274,6 +286,7 @@ test('historial: filtros, CSV seguro, eliminación y políticas de conservación
       ids.push(sala.id);
       await pedir(s, 'sala:finalizar', { salaId: sala.id });
     }
+    await c.app.persistido();
     assert.equal((await c.get('/api/historial?q=lge', doc)).json.total, 1);
     assert.equal((await c.get('/api/historial?q=%25', doc)).json.total, 0, 'comodines escapados');
     assert.equal((await c.get(`/api/historial?desde=${new Date(Date.now() + 86_400_000).toISOString()}`, doc)).json.total, 0);
