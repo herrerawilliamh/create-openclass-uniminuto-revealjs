@@ -1,9 +1,13 @@
 # GitOps: generado desde docker-compose.yml; verificar con scripts/verificar-gitops.mjs.
 # Valida antes de levantar:  docker compose config --quiet && docker compose up -d --build
 # No publica puertos en el host: Traefik (red externa «web») es la única entrada, con HTTPS.
-# PostgreSQL (motor oficial desde 0.4.0) vive en la red interna «interact-db» (internal: sin salida ni puertos).
-# Perfil «postgres-dedicado» (COMPOSE_PROFILES en .env): base dedicada en este stack. Sin ese perfil, las URL
-# DATABASE_* apuntan a un PostgreSQL administrado y los servicios interact-db / interact-db-preparar no se crean.
+# PostgreSQL (motor oficial desde 0.4.0). EXACTAMENTE UN perfil en COMPOSE_PROFILES:
+#  A) «postgres-dedicado»: base en este stack, en la red «interact-db» (internal: sin salida ni puertos publicados);
+#     interact-db-preparar e interact-migrar viven SOLO en esa red.
+#  B) «postgres-administrado»: base de un proveedor externo. interact-migrar-administrado usa la red «interact-salida»
+#     (con DNS y salida, sin puertos publicados) y DB_SSL=verificado exige cadena + nombre de host (DB_SSL_CA_FILE
+#     opcional para una CA propia). La aplicación llega al proveedor por su red «web» (ya con salida).
+# La base dedicada NUNCA se conecta a «interact-salida» ni a «web».
 # Cada servicio recibe SOLO su credencial: administración (preparar), migraciones (migrar), aplicación.
 # Copias de seguridad: docker-compose.respaldo.yml (credencial de solo lectura, almacenamiento independiente).
 name: openclass-live
@@ -84,6 +88,7 @@ services:
   # Migraciones versionadas con la credencial propietaria del esquema; la aplicación no tiene DDL.
   interact-migrar:
     <<: *endurecido
+    profiles: ["postgres-dedicado"]
     image: openclass-live:0.4.0-${LIVE_REVISION:?Full approved Git SHA required}
     pull_policy: never
     restart: "no"
@@ -92,7 +97,10 @@ services:
     environment:
       DATABASE_MIGRATION_URL: ${DATABASE_MIGRATION_URL:?DATABASE_MIGRATION_URL is required}
       DB_SSL: ${DB_SSL:-desactivado}
+      DB_SSL_CA_FILE: ${DB_SSL_CA_FILE:-}
       DB_CONNECT_WAIT_SECONDS: "60"
+    volumes:
+      - ${DB_CA_HOST_FILE:-/dev/null}:/etc/interact/db-ca.pem:ro
     mem_limit: 128m
     pids_limit: 64
     networks:
@@ -100,7 +108,51 @@ services:
     depends_on:
       interact-db-preparar:
         condition: service_completed_successfully
-        required: false
+
+  # Modo B: mismas migraciones contra un PostgreSQL administrado, por una red con DNS y salida (sin puertos publicados).
+  interact-migrar-administrado:
+    <<: *endurecido
+    profiles: ["postgres-administrado"]
+    image: openclass-live:0.4.0-${LIVE_REVISION:?Full approved Git SHA required}
+    pull_policy: never
+    restart: "no"
+    user: "1000:1000"
+    command: ["node", "scripts/migrar.mjs"]
+    environment:
+      DATABASE_MIGRATION_URL: ${DATABASE_MIGRATION_URL:?DATABASE_MIGRATION_URL is required}
+      DB_SSL: ${DB_SSL:-desactivado}
+      DB_SSL_CA_FILE: ${DB_SSL_CA_FILE:-}
+      DB_CONNECT_WAIT_SECONDS: "60"
+    volumes:
+      - ${DB_CA_HOST_FILE:-/dev/null}:/etc/interact/db-ca.pem:ro
+    mem_limit: 128m
+    pids_limit: 64
+    networks:
+      - interact-salida
+
+  # Modo B, una sola vez: base, esquema y roles en el proveedor con SU cuenta de administración (perfil aparte,
+  # no forma parte del arranque normal):  COMPOSE_PROFILES=postgres-preparar-administrado docker compose run --rm interact-db-preparar-administrado
+  interact-db-preparar-administrado:
+    <<: *endurecido
+    profiles: ["postgres-preparar-administrado"]
+    image: openclass-live:0.4.0-${LIVE_REVISION:?Full approved Git SHA required}
+    pull_policy: never
+    restart: "no"
+    user: "1000:1000"
+    command: ["node", "scripts/preparar-roles.mjs"]
+    environment:
+      DATABASE_ADMIN_URL: ${DATABASE_ADMIN_URL:?DATABASE_ADMIN_URL is required}
+      INTERACT_DB_MIGRATOR_PASSWORD: ${INTERACT_DB_MIGRATOR_PASSWORD:?INTERACT_DB_MIGRATOR_PASSWORD is required}
+      INTERACT_DB_APP_PASSWORD: ${INTERACT_DB_APP_PASSWORD:?INTERACT_DB_APP_PASSWORD is required}
+      INTERACT_DB_BACKUP_PASSWORD: ${INTERACT_DB_BACKUP_PASSWORD:?INTERACT_DB_BACKUP_PASSWORD is required}
+      DB_SSL: ${DB_SSL:-desactivado}
+      DB_SSL_CA_FILE: ${DB_SSL_CA_FILE:-}
+    volumes:
+      - ${DB_CA_HOST_FILE:-/dev/null}:/etc/interact/db-ca.pem:ro
+    mem_limit: 128m
+    pids_limit: 64
+    networks:
+      - interact-salida
 
   openclass-live:
     <<: *endurecido
@@ -126,6 +178,7 @@ services:
       # Credencial de la APLICACIÓN (solo DML). Nunca la de administración ni la de migraciones.
       DATABASE_URL: ${DATABASE_URL:?DATABASE_URL is required}
       DB_SSL: ${DB_SSL:-desactivado}
+      DB_SSL_CA_FILE: ${DB_SSL_CA_FILE:-}
       DB_POOL_MAX: ${DB_POOL_MAX:-10}
       DB_MIGRATIONS: verificar
       MAIL_TRANSPORT: ${MAIL_TRANSPORT:-desactivado}
@@ -136,12 +189,15 @@ services:
       MAIL_FROM: ${MAIL_FROM:-}
       PRESENTER_ORIGINS: ${PRESENTER_ORIGINS:-http://localhost:8613,http://localhost:8600}
       TRUST_PROXY: ${TRUST_PROXY:-true}
-      TRUSTED_PROXY_CIDRS: ${TRUSTED_PROXY_CIDRS:-172.16.0.0/12,10.0.0.0/8,192.168.0.0/16}
+      # Sin valor por defecto: en producción el arranque falla si TRUST_PROXY=true y esto está vacío (IP/32 o subred exacta del proxy).
+      TRUSTED_PROXY_CIDRS: ${TRUSTED_PROXY_CIDRS:-}
       TEACHER_SESSION_HOURS: ${TEACHER_SESSION_HOURS:-8}
       ROOM_TTL_MINUTES: ${ROOM_TTL_MINUTES:-180}
       MAX_ROOM_PARTICIPANTS: ${MAX_ROOM_PARTICIPANTS:-150}
       MAX_ROOMS: ${MAX_ROOMS:-20}
     user: "1000:1000"
+    volumes:
+      - ${DB_CA_HOST_FILE:-/dev/null}:/etc/interact/db-ca.pem:ro
     tmpfs:
       - /tmp:size=16m,mode=1777
     mem_limit: 256m
@@ -157,6 +213,10 @@ services:
     depends_on:
       interact-migrar:
         condition: service_completed_successfully
+        required: false
+      interact-migrar-administrado:
+        condition: service_completed_successfully
+        required: false
       interact-db:
         condition: service_healthy
         required: false
@@ -185,3 +245,5 @@ networks:
   # Red privada de la base: sin salida a Internet ni puertos publicados; solo los servicios de este stack.
   interact-db:
     internal: true
+  # Solo modo B: salida hacia el proveedor administrado (DNS + TLS). Sin puertos publicados; nunca la base dedicada.
+  interact-salida: {}

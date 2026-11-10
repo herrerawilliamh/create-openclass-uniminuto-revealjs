@@ -2,33 +2,33 @@
   "version": "0.4.0",
   "protocol": 2,
   "archive": "openclass-live-0.4.0.tar.gz",
-  "archiveSha256": "358ed0e39d020d3976be8e27c169b6c6b7ea969cef183d5071bace45becce491",
+  "archiveSha256": "f43158f4d396ff94003098f7b7e7de07c0d058d844391e4ff4c6801eac5ae996",
   "sourceBase": "79e06b5b497b19b7a097040066d1e85d63c0ef77",
   "files": [
     {
       "path": ".dockerignore",
-      "sha256": "bb14282c67636882fc60cb5204f9868d66e7165fd36c1a887b1cacf2ad3ce25a",
-      "gitSha256": "bb14282c67636882fc60cb5204f9868d66e7165fd36c1a887b1cacf2ad3ce25a"
+      "sha256": "53d90ed9b7626f0395224548d3b716b60d872bb7f140621006818910d04f0224",
+      "gitSha256": "53d90ed9b7626f0395224548d3b716b60d872bb7f140621006818910d04f0224"
     },
     {
       "path": ".env.example",
-      "sha256": "b00e8330569218e76f5a96d0b0957053be35a5f1c69070a6bd36de2ef9507306",
-      "gitSha256": "b00e8330569218e76f5a96d0b0957053be35a5f1c69070a6bd36de2ef9507306"
+      "sha256": "e130c07f3b1c0255a28126873a246a54aaf78a34efa0e04b840771861beefdc9",
+      "gitSha256": "e130c07f3b1c0255a28126873a246a54aaf78a34efa0e04b840771861beefdc9"
     },
     {
       "path": "docker-compose.respaldo.yml",
-      "sha256": "46545e5cd4322f1348bb42704bed83323e4c118c1f9e120958b897b1668497c7",
-      "gitSha256": "46545e5cd4322f1348bb42704bed83323e4c118c1f9e120958b897b1668497c7"
+      "sha256": "80863c9381483bffec15c7f767d6c0b74b8094ca8ddb812ff545d2fb7a9518ef",
+      "gitSha256": "80863c9381483bffec15c7f767d6c0b74b8094ca8ddb812ff545d2fb7a9518ef"
     },
     {
       "path": "docker-compose.yml",
-      "sha256": "1986177d104ee28d4e2dbba7c78aaceedfec3108106523203c0e6249fdae4b14",
-      "gitSha256": "1986177d104ee28d4e2dbba7c78aaceedfec3108106523203c0e6249fdae4b14"
+      "sha256": "7ed4f53562cd5a70cf7e6405234e74d06346b9496d4910560a073cee52cb08e8",
+      "gitSha256": "7ed4f53562cd5a70cf7e6405234e74d06346b9496d4910560a073cee52cb08e8"
     },
     {
       "path": "Dockerfile",
-      "sha256": "d3916fea7d2d316bf90f328cc54c5c12ea80dd520cecb5c6051c72110c58cca5",
-      "gitSha256": "d3916fea7d2d316bf90f328cc54c5c12ea80dd520cecb5c6051c72110c58cca5"
+      "sha256": "9cc27c0c8c506e850d2a873e9c136e2bac0c6ce231dacf4e242ed19adad085d4",
+      "gitSha256": "9cc27c0c8c506e850d2a873e9c136e2bac0c6ce231dacf4e242ed19adad085d4"
     },
     {
       "path": "package-lock.json",
@@ -186,6 +186,11 @@
       "gitSha256": "f9bf85eedbfe115be1a62ad3a815b4a81a7aa9c35213bcbd7ce86dc45901a865"
     },
     {
+      "path": "scripts/autenticidad-respaldo.mjs",
+      "sha256": "1a2d0d9689b908acd2c4ad835bf0279e798f31ca4b121679ef4aec353aa6fbe6",
+      "gitSha256": "1a2d0d9689b908acd2c4ad835bf0279e798f31ca4b121679ef4aec353aa6fbe6"
+    },
+    {
       "path": "scripts/hash-password.mjs",
       "sha256": "21b45c789233f7c085c74b73a25f1307ee6d74aaa9d5014cb2cd790cf6411b96",
       "gitSha256": "21b45c789233f7c085c74b73a25f1307ee6d74aaa9d5014cb2cd790cf6411b96"
@@ -202,23 +207,23 @@
     },
     {
       "path": "scripts/pg-herramientas.mjs",
-      "sha256": "26721453c36f90b152f1553bcdb7d128e3e17cef6fa70615ebf544cf8d04fd7e",
-      "gitSha256": "26721453c36f90b152f1553bcdb7d128e3e17cef6fa70615ebf544cf8d04fd7e"
+      "sha256": "817a2a4e2e8aa4570a66775409f6264d09e53592b1446b4110edc92b05d9a6bd",
+      "gitSha256": "817a2a4e2e8aa4570a66775409f6264d09e53592b1446b4110edc92b05d9a6bd"
     },
     {
       "path": "scripts/preparar-roles.mjs",
-      "sha256": "ceb441c8070f959fa9bb4d9c533e86dca9e5d45935de2b82c60e7c6b37813da8",
-      "gitSha256": "ceb441c8070f959fa9bb4d9c533e86dca9e5d45935de2b82c60e7c6b37813da8"
+      "sha256": "7e27a505e0588e93ddf51bd0d79848f3b2b79782c810b16abbf1916aa26241cf",
+      "gitSha256": "7e27a505e0588e93ddf51bd0d79848f3b2b79782c810b16abbf1916aa26241cf"
     },
     {
       "path": "scripts/respaldar.mjs",
-      "sha256": "9d6d6671897e0c596bbe4730451a84305979f3f42b533a697850e7d1d1e407e4",
-      "gitSha256": "9d6d6671897e0c596bbe4730451a84305979f3f42b533a697850e7d1d1e407e4"
+      "sha256": "d7cee7b7ac7a9404bca15bf6d1a5032afae05bc76923ab3d53f1b77db5d0ed25",
+      "gitSha256": "d7cee7b7ac7a9404bca15bf6d1a5032afae05bc76923ab3d53f1b77db5d0ed25"
     },
     {
       "path": "scripts/restaurar.mjs",
-      "sha256": "71603ee90f2ca3eb01e525fc996492ae35232199069be12d5353afd04975d15c",
-      "gitSha256": "71603ee90f2ca3eb01e525fc996492ae35232199069be12d5353afd04975d15c"
+      "sha256": "e8b76cc2423648268d9631d941cb7686d1d93bad41fabae20de5f0991ed10d95",
+      "gitSha256": "e8b76cc2423648268d9631d941cb7686d1d93bad41fabae20de5f0991ed10d95"
     },
     {
       "path": "src/api-cuentas.mjs",
@@ -237,8 +242,8 @@
     },
     {
       "path": "src/config.mjs",
-      "sha256": "58c9c35e5a7e480430f1c364c7eb750704a7d30316b7731bf7b39678b404cf65",
-      "gitSha256": "58c9c35e5a7e480430f1c364c7eb750704a7d30316b7731bf7b39678b404cf65"
+      "sha256": "74f58848c987d00d79c9af5f5084bf067595192d70d8fdc13c049bfb32bd5817",
+      "gitSha256": "74f58848c987d00d79c9af5f5084bf067595192d70d8fdc13c049bfb32bd5817"
     },
     {
       "path": "src/correo.mjs",
@@ -267,8 +272,8 @@
     },
     {
       "path": "src/limites.mjs",
-      "sha256": "c95992907f9880c58a2ec28eab79d3805978ae27963621e3e7a7df32e3d2eeff",
-      "gitSha256": "c95992907f9880c58a2ec28eab79d3805978ae27963621e3e7a7df32e3d2eeff"
+      "sha256": "9bc6b97246a0cda7e2231d0715f4ff7a6d39564f7ccb691f64178c65cc13c5f5",
+      "gitSha256": "9bc6b97246a0cda7e2231d0715f4ff7a6d39564f7ccb691f64178c65cc13c5f5"
     },
     {
       "path": "src/migraciones/001-esquema-inicial.sql",

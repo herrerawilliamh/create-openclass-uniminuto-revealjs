@@ -52,7 +52,7 @@ test('1. contrato de release aprobada: autoridad y todos los bytes antes del can
   // Desde el servicio en adelante (secretos, PostgreSQL de la aplicación, Traefik) nada cambia salvo la imagen.
   const desde = (t) => t.slice(t.indexOf('    container_name: openclass-live\n'));
   assert.equal(desde(compose), desde(normalized));
-  assert.equal(compose.split(`image: ${imageRepository}@${f.lock.manifestDigest}`).length - 1, 3, 'servicio, preparación y migraciones usan el mismo digest');
+  assert.equal(compose.split(`image: ${imageRepository}@${f.lock.manifestDigest}`).length - 1, 5, 'servicio, preparación y migraciones usan el mismo digest');
   const attest = f.calls.find(args => args[0] === 'attestation');
   assert.ok(attest.includes('--source-digest') && attest.includes(f.lock.sourceCommit));
   assert.ok(attest.includes('--signer-digest') && attest.includes('--deny-self-hosted-runners'));

@@ -11,3 +11,5 @@
 !scripts/respaldar.mjs
 !scripts/restaurar.mjs
 !scripts/pg-herramientas.mjs
+
+!scripts/autenticidad-respaldo.mjs

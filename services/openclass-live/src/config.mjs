@@ -2,6 +2,7 @@
  * OpenClass Live: configuración leída del entorno (.env en el despliegue).
  * Falla al arrancar si faltan secretos o si son débiles: nunca hay valores por defecto para ellos.
  */
+import { readFileSync } from 'node:fs';
 import { crearConfianzaProxy } from './limites.mjs';
 const entero = (valor, defecto, min, max) => {
   if (valor === undefined || valor === '') return defecto;
@@ -12,8 +13,41 @@ const entero = (valor, defecto, min, max) => {
 
 const lista = (valor) => String(valor ?? '').split(',').map((s) => s.trim()).filter(Boolean);
 
-/** Redes donde puede estar Traefik por omisión (Docker usa rangos privados). En producción conviene la subred exacta de «web». */
-export const REDES_PRIVADAS = '127.0.0.0/8,::1/128,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,fc00::/7';
+/** Fuera de producción (pruebas) el único proxy implícito es el bucle local. En producción NO hay valor por defecto. */
+const PROXY_LOCAL = '127.0.0.0/8,::1/128';
+
+/**
+ * Pares TCP cuyas cabeceras X-Forwarded-For se aceptan. En producción son OBLIGATORIOS y explícitos (la IP o subred
+ * exacta del proxy de entrada, idealmente en una red dedicada Traefik–Interact); no se aceptan rangos genéricos
+ * (todo Internet ni redes privadas completas), porque cualquier contenedor de esa red podría falsear su IP.
+ */
+export function leerProxy(env, produccion) {
+  if (String(env.TRUST_PROXY ?? (produccion ? 'true' : 'false')) !== 'true') return false;
+  const cidrs = lista(env.TRUSTED_PROXY_CIDRS ?? (produccion ? '' : PROXY_LOCAL));
+  if (!cidrs.length) throw new Error('TRUST_PROXY=true exige TRUSTED_PROXY_CIDRS (IP/32 o subred exacta del proxy de entrada) o TRUST_PROXY=false.');
+  if (produccion) {
+    for (const c of cidrs) {
+      const prefijo = Number(c.split('/')[1]);
+      const v6 = c.includes(':');
+      if (!Number.isInteger(prefijo) || prefijo < (v6 ? 64 : 24)) throw new Error(`TRUSTED_PROXY_CIDRS demasiado amplio para producción: ${c} (mínimo /24 en IPv4, /64 en IPv6).`);
+    }
+  }
+  return crearConfianzaProxy(cidrs);
+}
+
+/** TLS hacia PostgreSQL (DB_SSL = desactivado | requerido | verificado; DB_SSL_CA_FILE = CA propia del proveedor). */
+export function leerSsl(env) {
+  const modoSsl = String(env.DB_SSL ?? 'desactivado');
+  const ssl = { desactivado: false, requerido: { rejectUnauthorized: false }, verificado: { rejectUnauthorized: true } }[modoSsl];
+  if (ssl === undefined) throw new Error('DB_SSL debe ser desactivado, requerido o verificado.');
+  // CA propia del proveedor (opcional, solo con DB_SSL=verificado): se añade a la validación, no la desactiva.
+  const rutaCa = String(env.DB_SSL_CA_FILE ?? '');
+  if (rutaCa) {
+    if (modoSsl !== 'verificado') throw new Error('DB_SSL_CA_FILE solo se admite con DB_SSL=verificado.');
+    try { ssl.ca = readFileSync(rutaCa, 'utf8'); } catch { throw new Error('DB_SSL_CA_FILE no se puede leer.'); }
+  }
+  return { ssl, modoSsl };
+}
 
 /**
  * PostgreSQL. DATABASE_URL es obligatoria en todos los modos (no hay base en memoria) y nunca se registra.
@@ -31,9 +65,7 @@ export function leerBase(env, produccion = env.NODE_ENV === 'production', variab
   if (esquema && !/^[a-z_][a-z0-9_]{0,62}$/.test(esquema)) throw new Error('DB_SCHEMA debe ser un identificador en minúsculas.');
   const migraciones = String(env.DB_MIGRATIONS ?? (produccion ? 'verificar' : 'auto'));
   if (!['auto', 'verificar'].includes(migraciones)) throw new Error('DB_MIGRATIONS debe ser auto o verificar.');
-  const modoSsl = String(env.DB_SSL ?? 'desactivado');
-  const ssl = { desactivado: false, requerido: { rejectUnauthorized: false }, verificado: { rejectUnauthorized: true } }[modoSsl];
-  if (ssl === undefined) throw new Error('DB_SSL debe ser desactivado, requerido o verificado.');
+  const { ssl, modoSsl } = leerSsl(env);
   return Object.freeze({
     url, esquema, migraciones, ssl, modoSsl,
     poolMax: entero(env.DB_POOL_MAX, 10, 1, 50),
@@ -88,8 +120,7 @@ export function leerConfig(env = process.env) {
     respaldosConservar: entero(env.BACKUP_KEEP, 7, 1, 90),
     cookieSegura: appUrl.startsWith('https://'),
     // P2 «confianza en proxy»: las cabeceras de reenvío solo cuentan si el par TCP está en TRUSTED_PROXY_CIDRS.
-    confiarProxy: String(env.TRUST_PROXY ?? (produccion ? 'true' : 'false')) === 'true'
-      ? crearConfianzaProxy(lista(env.TRUSTED_PROXY_CIDRS ?? REDES_PRIVADAS)) : false,
+    confiarProxy: leerProxy(env, produccion),
     origenesPresentador: Object.freeze(presentadores),
     sesionDocenteHoras: entero(env.TEACHER_SESSION_HOURS, 8, 1, 24),
     salaTtlMin: entero(env.ROOM_TTL_MINUTES, 180, 5, 720),

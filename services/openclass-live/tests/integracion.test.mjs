@@ -417,16 +417,16 @@ test('orígenes y CSWSH: estudiante y panel solo desde APP_URL', async (t) => {
 
 test('límites: intentos de unión fallidos, inicio de sesión, ráfagas de eventos y tamaño de mensaje', async (t) => {
   const { srv, doc, sala } = await preparar(t);
-  const ip = { 'x-real-ip': '203.0.113.9' };
+  const ip = { 'x-forwarded-for': '203.0.113.9' };
   for (let i = 0; i < 10; i++) assert.equal(await rechazo(srv.conectar('/participante', { cabeceras: ip, auth: { codigo: 'ZZZZZZ' } })), 'sala_inexistente');
   assert.equal(await rechazo(srv.conectar('/participante', { cabeceras: ip, auth: { codigo: sala.codigo } })), 'frecuencia', 'tras 10 fallos la IP espera');
   // Una clase detrás de la misma IP (wifi del campus) entra sin problema.
-  const campus = { 'x-real-ip': '198.51.100.20' };
+  const campus = { 'x-forwarded-for': '198.51.100.20' };
   const clase = await Promise.all(Array.from({ length: 60 }, () => srv.estudiante(sala.codigo, { cabeceras: campus })));
   assert.equal(clase.length, 60);
 
   const malas = [];
-  for (let i = 0; i < 6; i++) malas.push((await srv.peticion('/api/docente/login', { metodo: 'POST', cuerpo: { password: 'incorrecta' }, cabeceras: { 'x-real-ip': '203.0.113.50' } })).estado);
+  for (let i = 0; i < 6; i++) malas.push((await srv.peticion('/api/docente/login', { metodo: 'POST', cuerpo: { password: 'incorrecta' }, cabeceras: { 'x-forwarded-for': '203.0.113.50' } })).estado);
   assert.deepEqual(malas, [401, 401, 401, 401, 401, 429]);
 
   const a = clase[0].s;
@@ -441,7 +441,7 @@ test('límites: intentos de unión fallidos, inicio de sesión, ráfagas de even
 
 test('privacidad: registros sin alias, textos, respuestas ni IP; rutas sin contenido institucional', async (t) => {
   const { srv, doc, sala } = await preparar(t);
-  const a = await srv.estudiante(sala.codigo, { alias: 'AliasSecreto', cabeceras: { 'x-real-ip': '192.0.2.77' } });
+  const a = await srv.estudiante(sala.codigo, { alias: 'AliasSecreto', cabeceras: { 'x-forwarded-for': '192.0.2.77' } });
   const { encuesta } = await pedir(doc, 'encuesta:crear', { salaId: sala.id, encuesta: ENCUESTA, abrir: true });
   await pedir(a.s, 'encuesta:responder', { encuestaId: encuesta.id, ronda: 1, seleccion: [3] });
   await pedir(a.s, 'pregunta:enviar', { texto: 'TextoPrivadoDeLaPregunta' });

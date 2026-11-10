@@ -66,11 +66,13 @@ hasta que el administrador entregue el `enlaceManual` por un canal que él consi
   la cuenta sin esa confirmación; el origen proviene de la cabecera `Origin` (un cliente no navegador puede falsearla).
 - Cupos: 200 vínculos pendientes en total y 5 por IP; el límite por IP se aplica a iniciar, sondear y aprobar.
 - IP del cliente (solo para límites y cupos, nunca para autorizar): las cabeceras de reenvío cuentan **solo si la
-  conexión TCP llega desde un proxy de confianza** (`TRUST_PROXY=true` y par dentro de `TRUSTED_PROXY_CIDRS`,
-  recomendado: la subred exacta de la red `web`). Entonces se usa el **último** tramo de `X-Forwarded-For` (lo añade
-  Traefik) y, si falta, `X-Real-Ip`. Un valor que no sea una IP válida se descarta. Desde cualquier otro par, o con
-  `TRUST_PROXY=false` (valor por omisión fuera de producción), se ignoran y se usa la dirección del par. Pruebas
-  deterministas de esto y de los cupos 5/200: `tests/p2-auditoria.test.mjs`.
+  conexión TCP llega desde un proxy de confianza explícito** (`TRUST_PROXY=true` y par dentro de `TRUSTED_PROXY_CIDRS`).
+  En producción `TRUSTED_PROXY_CIDRS` es **obligatorio y sin valor por defecto**: vacío o con rangos genéricos
+  (`10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16`, prefijo menor que /24) el servicio **no arranca**. Se usa el
+  **último** tramo de `X-Forwarded-For` (lo añade el proxy); `X-Real-Ip` **no se usa nunca** (no hay garantía de que
+  el proxy la sanee). Desde cualquier otro par se ignoran y se usa la dirección del par. Sigue siendo necesario que
+  solo Traefik pueda alcanzar el puerto 3000: ver `PROXY-ENTRADA.md` (red de entrada dedicada, cambio pendiente de
+  autorización separada). Pruebas: `tests/p2-auditoria.test.mjs` y `tests/docker-proxy.test.mjs`.
 
 Probado contra un servidor SMTP local de prueba (`tests/correo.test.mjs`); falta una prueba contra el proveedor real.
 

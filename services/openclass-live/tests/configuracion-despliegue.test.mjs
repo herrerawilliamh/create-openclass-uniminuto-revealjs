@@ -24,7 +24,8 @@ test('gen-env creates valid secrets privately and never overwrites existing conf
       const i = l.indexOf('=');
       return [l.slice(0, i), l.slice(i + 1).replace(/^'|'$/g, '')];
     }));
-    const config = leerConfig(env);
+    assert.throws(() => leerConfig(env), /TRUSTED_PROXY_CIDRS/, 'el proxy de confianza debe declararse: sin valor por defecto');
+    const config = leerConfig({ ...env, TRUSTED_PROXY_CIDRS: '172.30.77.2/32' });
     assert.equal(config.secreto.length, 64);
     assert.equal(config.hashDocente, '', 'sin contraseña compartida por defecto');
     assert.equal(config.db.migraciones, 'verificar', 'producción no migra desde el servicio');

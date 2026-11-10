@@ -56,7 +56,7 @@ Ver [.env.example](.env.example). El archivo `.env` real **nunca** se versiona (
 | `POSTGRES_ADMIN_PASSWORD`, `INTERACT_DB_*_PASSWORD` | Contraseñas de la base dedicada y de sus roles (generadas por `npm run gen-env`). |
 | `DB_SSL`, `DB_POOL_MAX` | TLS hacia PostgreSQL (`verificado` si la base no está en el mismo host) y tamaño del pool. |
 | `PRESENTER_ORIGINS` | Orígenes de la presentación local (`http://localhost:8613,http://localhost:8600`). |
-| `TRUST_PROXY`, `TRUSTED_PROXY_CIDRS` | `true` detrás de Traefik. Las cabeceras de reenvío solo cuentan si el par TCP está en `TRUSTED_PROXY_CIDRS` (solo para límites en memoria). |
+| `TRUST_PROXY`, `TRUSTED_PROXY_CIDRS` | `true` detrás de Traefik. **`TRUSTED_PROXY_CIDRS` es obligatorio en producción** (IP/32 o subred exacta ≥ /24 del proxy; sin valor por defecto, el servicio no arranca sin él). Solo se usa `X-Forwarded-For` de ese par; `X-Real-Ip` no se usa. Ver `docs/PROXY-ENTRADA.md`. |
 | `TEACHER_SESSION_HOURS`, `ROOM_TTL_MINUTES`, `MAX_ROOM_PARTICIPANTS`, `MAX_ROOMS` | Duración de la sesión docente, vida de una sala, cupos. |
 
 El servidor se niega a arrancar si falta un secreto, si conserva el valor de ejemplo o si es débil; el mensaje nombra la variable, nunca su valor.

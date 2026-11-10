@@ -66,7 +66,7 @@ export function crearConfianzaProxy(cidrs) {
  * `confiarProxy`: false (se ignoran las cabeceras) | función de redes de confianza | true (cualquier par; solo pruebas).
  * Las cabeceras SOLO cuentan si la conexión TCP viene de un proxy de confianza (Traefik). Entonces manda el último
  * tramo de X-Forwarded-For, que añade ese proxy; lo anterior lo puede escribir el cliente. Un valor que no sea una
- * IP válida se descarta y se usa la dirección del par. Sin proxy de confianza, X-Forwarded-For y X-Real-Ip se ignoran.
+ * IP válida se descarta y se usa la dirección del par. X-Real-Ip NO se usa nunca (no hay garantía verificable de que el proxy lo sanee). Sin proxy de confianza se ignoran todas.
  */
 export function ipCliente(cabeceras, direccion, confiarProxy) {
   const par = normalizarIp(direccion) ?? String(direccion ?? 'desconocida');
@@ -74,8 +74,6 @@ export function ipCliente(cabeceras, direccion, confiarProxy) {
   if (confiable) {
     const reenviada = normalizarIp(String(cabeceras['x-forwarded-for'] ?? '').split(',').pop());
     if (reenviada) return reenviada;
-    const real = normalizarIp(cabeceras['x-real-ip']);
-    if (real) return real;
   }
   return par;
 }

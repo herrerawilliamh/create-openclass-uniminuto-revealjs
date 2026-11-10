@@ -60,7 +60,7 @@ export function verificarOci(lock, readBlob) {
 /**
  * Parte del Compose base aprobado; preserva íntegros secretos, Traefik e identidad.
  * Desde 0.4.0 la misma imagen del servicio ejecuta también la preparación de roles y las migraciones de
- * PostgreSQL: TODAS sus referencias pasan al mismo digest (1 a 3 usos), y el único build desaparece.
+ * PostgreSQL: TODAS sus referencias pasan al mismo digest (1 a 5 usos), y el único build desaparece.
  */
 export function composePorDigest(base, lock) {
   const image = validarLock(lock);
@@ -69,7 +69,7 @@ export function composePorDigest(base, lock) {
   base = base.replace(/\r\n/g, '\n');
   assert.equal(base.split(build).length, 2, 'Build base inesperado');
   const usos = base.split(oldImage).length - 1;
-  assert.ok(usos >= 1 && usos <= 3, 'Imagen base inesperada');
+  assert.ok(usos >= 1 && usos <= 5, 'Imagen base inesperada');
   const result = base.replace(build, '').split(oldImage).join(
     `    image: ${image}\n    platform: ${lock.platform}\n    pull_policy: always\n`);
   assert.ok(!/\bbuild:|LIVE_REVISION|\$\{.*(?:IMAGE|REVISION)/.test(result));

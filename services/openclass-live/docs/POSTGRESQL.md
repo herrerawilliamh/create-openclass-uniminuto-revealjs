@@ -54,15 +54,26 @@ sesión no puede revalidarse se cortan (fallo cerrado), y al volver la base el p
 - La configuración rechaza URL que no sean `postgres://`, contraseñas de ejemplo (`CAMBIAR`) en producción y
   esquemas no válidos. Ningún mensaje de error ni registro incluye la URL o la contraseña.
 
-## PostgreSQL administrado o dedicado en otro host
+## Dos modos soportados (probados en Docker)
 
-1. Quitar `COMPOSE_PROFILES=postgres-dedicado` de `.env` (no se crean `interact-db` ni `interact-db-preparar`).
-2. Con la cuenta de administración del proveedor, ejecutar una vez desde un equipo de operación:
-   `DATABASE_ADMIN_URL=… INTERACT_DB_*_PASSWORD=… node scripts/preparar-roles.mjs`
-   (con proveedores que no permiten `CREATE DATABASE`, crear antes la base `interact` y dar `CONNECT`).
-3. Apuntar `DATABASE_MIGRATION_URL`, `DATABASE_URL` y `DATABASE_BACKUP_URL` al proveedor, con `DB_SSL=verificado`
-   (y la CA en `NODE_EXTRA_CA_CERTS` si no es pública). Restringir por IP en el proveedor al host del servicio.
-4. Preferir la PITR del proveedor (ver `RESPALDO-RESTAURACION.md`).
+| | A · dedicado | B · administrado |
+|---|---|---|
+| `COMPOSE_PROFILES` | `postgres-dedicado` | `postgres-administrado` |
+| Base | `interact-db` en la red **interna** `interact-db` (sin salida, sin puertos) | proveedor externo |
+| Preparar roles | `interact-db-preparar` (automático) | una vez: `COMPOSE_PROFILES=postgres-preparar-administrado docker compose run --rm interact-db-preparar-administrado` (con la cuenta de administración del proveedor) |
+| Migrar | `interact-migrar` (red `interact-db`) | `interact-migrar-administrado` (red `interact-salida`: DNS + salida, **sin puertos**) |
+| Respaldar | `--profile respaldo-dedicado` → `interact-respaldo` | `--profile respaldo-administrado` → `interact-respaldo-administrado` |
+| TLS | opcional | `DB_SSL=verificado` (cadena + nombre de host; `verify-full` en `pg_dump`) |
+
+Exactamente **un** perfil de base. La base dedicada nunca se conecta a `interact-salida` ni a `web`. La aplicación
+llega al proveedor por su red `web` (que ya tiene salida). Para una CA privada del proveedor: monte el archivo con
+`DB_CA_HOST_FILE=/ruta/ca.pem` y use `DB_SSL_CA_FILE=/etc/interact/db-ca.pem` (se **añade** a la validación; no la
+desactiva). Restrinja por IP en el proveedor al host del servicio y prefiera su PITR (ver `RESPALDO-RESTAURACION.md`).
+
+**Alcance de la prueba del modo B** (`tests/docker-redes.test.mjs`, `INTERACT_TEST_DOCKER=1`): topología de ENSAYO con un
+contenedor PostgreSQL 16 con TLS y CA propia, fuera de las redes del stack. Demuestra red, DNS, salida, TLS verificado
+(rechazo por CA desconocida, por nombre distinto y por falta de TLS), migración, preparación de roles y respaldo. **No
+está certificado contra ningún proveedor administrado concreto** (pooler, `CREATE DATABASE`, roles y límites propios).
 
 ## Variables
 
@@ -71,6 +82,7 @@ sesión no puede revalidarse se cortan (fallo cerrado), y al volver la base el p
 | `DATABASE_URL` | — (obligatoria) | Credencial de la aplicación. |
 | `DB_SCHEMA` | (`search_path` del rol) | Solo pruebas o instalaciones especiales. |
 | `DB_MIGRATIONS` | `verificar` (producción) / `auto` | `auto` solo en desarrollo y pruebas. |
+| `DB_SSL_CA_FILE` | — | Ruta de una CA propia (solo con `DB_SSL=verificado`); en Compose `/etc/interact/db-ca.pem`. |
 | `DB_SSL` | `desactivado` | `requerido` (cifra sin validar) · `verificado` (cifra y valida; obligatorio fuera del host). |
 | `DB_POOL_MAX` | 10 | 1–50. |
 | `DB_CONNECT_WAIT_SECONDS` | 60 prod / 15 | Reintentos al arrancar. |

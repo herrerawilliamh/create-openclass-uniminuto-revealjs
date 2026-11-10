@@ -14,7 +14,10 @@ claves de presentador abiertas dejan de valer, y hay que volver a iniciar sesió
 ## Respaldo (implementado)
 
 ```bash
-docker compose -f docker-compose.yml -f docker-compose.respaldo.yml --profile respaldo run --rm interact-respaldo
+# Modo A (PostgreSQL dedicado)
+docker compose -f docker-compose.yml -f docker-compose.respaldo.yml --profile respaldo-dedicado run --rm interact-respaldo
+# Modo B (PostgreSQL administrado, DB_SSL=verificado)
+docker compose -f docker-compose.yml -f docker-compose.respaldo.yml --profile respaldo-administrado run --rm interact-respaldo-administrado
 ```
 
 - `scripts/respaldar.mjs` con `pg_dump` 16 en formato personalizado (`--format=custom --compress=6`), con
@@ -43,8 +46,12 @@ Salvaguardas de `scripts/restaurar.mjs`:
 1. Rechaza una base cuyo nombre no termine en `_restauracion`, `_prueba` o `_test`, salvo con
    `--confirmar-destino <nombre-exacto>` (decisión humana documentada para una recuperación real).
 2. Rechaza una base que ya contenga tablas de Interact: no mezcla ni sobrescribe datos.
-3. Comprueba la suma `.sha256`. Restaura en una sola transacción (`--single-transaction --exit-on-error`).
-4. Verifica migraciones conocidas e íntegras, integridad referencial y restricciones validadas, y devuelve
+3. **Integridad**: el comprobante `.sha256` es obligatorio. Su ausencia, un formato inválido (`<sha256>  <nombre>`), un
+   comprobante de otro archivo o una suma discordante provocan un rechazo explícito, también en bases de ensayo.
+4. **Autenticidad** (manifiesto firmado, ver más abajo): obligatoria para toda base que no sea `*_restauracion`/`_prueba`/`_test`.
+   Sin `--clave-publica` una restauración de ensayo se informa con `autenticidad:"no-verificada"` y `confiable:false`.
+   Restaura en una sola transacción (`--single-transaction --exit-on-error`).
+5. Verifica migraciones conocidas e íntegras, integridad referencial y restricciones validadas, y devuelve
    recuentos por tabla.
 
 **Prueba automatizada** (`tests/respaldo-restauracion.test.mjs`, obligatoria en CI): crea datos a través del
@@ -52,7 +59,32 @@ servicio, respalda, restaura en una base `*_restauracion` y **arranca el servici
 producción. Comprueba el inicio de sesión con la contraseña original (hash protegido), los roles (superusuario y
 docente), las invitaciones pendientes (el enlace sigue valiendo) y revocadas, la sesión persistente previa, el
 historial con sus recuentos, la auditoría, y que siguen siendo posibles escrituras nuevas. También comprueba las
-salvaguardas (destino no seguro, destino no vacío, copia alterada) y la rotación.
+salvaguardas (destino no seguro, destino no vacío, copia alterada) y la rotación. Las pruebas negativas de
+integridad y autenticidad (ausencia, mal formado, otro archivo, sustitución con suma recalculada, firma de otra clave,
+manifiesto manipulado, manifiesto de otra copia) están en `tests/respaldo-autenticidad.test.mjs`.
+
+## Autenticidad: manifiesto firmado (Ed25519)
+
+El `.sha256` demuestra integridad, **no origen**: quien sustituye la copia puede recalcular la suma. Por eso cada copia
+se acompaña de `<copia>.manifiesto.json` + `<copia>.firma` (firma desprendida Ed25519 sobre el manifiesto: archivo,
+SHA-256, tamaño, fecha y huella de la clave). El elemento de confianza es la **clave pública**, entregada aparte
+(`--clave-publica` o `INTERACT_BACKUP_PUBLIC_KEY_FILE`) desde un almacén que **no** es el de las copias. La clave
+**privada** nunca está en Git, en las copias ni en las imágenes: se firma **fuera del host de producción**.
+
+```bash
+# una sola vez, en el equipo/HSM del operador (la privada NO sale de ahí)
+node scripts/autenticidad-respaldo.mjs generar-claves --privada ~/oculto/interact-respaldo.key --publica interact-respaldo.pub
+# tras cada respaldo, con la copia descargada al equipo del operador
+node scripts/autenticidad-respaldo.mjs firmar --copia interact-AAAAMMDDTHHMMSSZ.dump --clave-privada ~/oculto/interact-respaldo.key
+# restauración confiable (la pública viene del almacén de confianza, y opcionalmente una fecha mínima anti-reposición)
+node scripts/restaurar.mjs --copia … --clave-publica interact-respaldo.pub --no-anterior-a 2026-11-01T00:00:00Z
+```
+
+**Gate operativo PENDIENTE (no cerrado):** hoy el job de respaldo no firma (correctamente: no tiene la clave). Falta
+decidir y desplegar dónde vive la clave privada (equipo del operador, HSM o gestor de secretos), el proceso que firma
+cada copia replicada y el almacén de la clave pública. Hasta entonces, una restauración de producción **no puede
+declararse confiable**: la herramienta lo impide para bases fuera de ensayo. Probado localmente (claves de prueba
+generadas en cada ensayo); no hay prueba contra infraestructura de firma real.
 
 **Recuperación real** (procedimiento, sin automatizar): restaurar en `interact_restauracion`, validar, detener
 `openclass-live`, renombrar las bases (`ALTER DATABASE interact RENAME TO interact_anterior_<fecha>;

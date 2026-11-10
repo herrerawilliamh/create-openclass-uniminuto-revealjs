@@ -19,7 +19,7 @@ COPY package.json ./
 COPY src ./src
 COPY public ./public
 COPY scripts/hash-password.mjs scripts/init-superusuario.mjs scripts/migrar.mjs scripts/preparar-roles.mjs \
-     scripts/respaldar.mjs scripts/restaurar.mjs scripts/pg-herramientas.mjs ./scripts/
+     scripts/respaldar.mjs scripts/restaurar.mjs scripts/pg-herramientas.mjs scripts/autenticidad-respaldo.mjs ./scripts/
 USER node
 EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \

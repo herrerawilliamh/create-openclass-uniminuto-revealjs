@@ -23,7 +23,7 @@ test('P2-1: las cabeceras de reenvío solo cuentan desde un proxy de confianza y
   assert.equal(ipCliente(h, 'fd00::1', traefik), '9.9.9.9');
   assert.equal(ipCliente(h, '203.0.113.7', traefik), '203.0.113.7', 'un par ajeno no puede elegir su IP');
   assert.equal(ipCliente(h, '172.19.0.5', traefik), '172.19.0.5', 'otra red Docker no es el proxy');
-  assert.equal(ipCliente({ 'x-forwarded-for': 'no-es-ip', 'x-real-ip': '2.2.2.2' }, '172.18.0.5', traefik), '2.2.2.2');
+  assert.equal(ipCliente({ 'x-forwarded-for': 'no-es-ip', 'x-real-ip': '2.2.2.2' }, '172.18.0.5', traefik), '172.18.0.5', 'X-Real-Ip no es respaldo');
   assert.equal(ipCliente({ 'x-forwarded-for': '1.1.1.1, 9.9.9.9 x', 'x-real-ip': 'basura' }, '172.18.0.5', traefik), '172.18.0.5', 'valor inválido → par');
   assert.equal(ipCliente({ 'x-forwarded-for': '1.1.1.1, 999.1.1.1' }, '172.18.0.5', traefik), '172.18.0.5');
   assert.equal(ipCliente(h, '10.0.0.1', false), '10.0.0.1', 'TRUST_PROXY=false ignora todo');
@@ -31,10 +31,29 @@ test('P2-1: las cabeceras de reenvío solo cuentan desde un proxy de confianza y
   assert.throws(() => crearConfianzaProxy(['10.0.0.0/33']), /inválida/);
   assert.throws(() => crearConfianzaProxy(['traefik']), /inválida/);
   assert.throws(() => leerConfig({ ...BASE, TRUST_PROXY: 'true', TRUSTED_PROXY_CIDRS: '172.18.0.0/16,mal' }), /TRUSTED_PROXY_CIDRS/);
-  // Fuera de producción el proxy no es de confianza salvo que se declare; en producción sí (detrás de Traefik).
   assert.equal(leerConfig(BASE).confiarProxy, false);
-  assert.equal(typeof leerConfig({ ...BASE, NODE_ENV: 'production' }).confiarProxy, 'function');
-  assert.equal(leerConfig({ ...BASE, NODE_ENV: 'production' }).confiarProxy('8.8.8.8'), false, 'una IP pública nunca es «el proxy»');
+});
+
+test('P2-1: producción exige proxies explícitos; sin lista o con rangos genéricos el arranque falla (fallo seguro)', () => {
+  const PROD = { ...BASE, NODE_ENV: 'production' };
+  assert.throws(() => leerConfig(PROD), /TRUSTED_PROXY_CIDRS/, 'producción sin lista: no hay rangos privados por defecto');
+  assert.throws(() => leerConfig({ ...PROD, TRUSTED_PROXY_CIDRS: '' }), /TRUSTED_PROXY_CIDRS/);
+  for (const amplio of ['10.0.0.0/8', '172.16.0.0/12', '192.168.0.0/16', '0.0.0.0/0', '::/0', 'fc00::/7', '172.18.0.0/16']) {
+    assert.throws(() => leerConfig({ ...PROD, TRUSTED_PROXY_CIDRS: amplio }), /demasiado amplio/, amplio);
+  }
+  const ok = leerConfig({ ...PROD, TRUSTED_PROXY_CIDRS: '172.30.77.2/32' }).confiarProxy;
+  assert.equal(ok('172.30.77.2'), true);
+  assert.equal(ok('172.30.77.3'), false, 'otro contenedor de la misma red no es el proxy');
+  assert.equal(ok('8.8.8.8'), false);
+  assert.equal(leerConfig({ ...PROD, TRUST_PROXY: 'false' }).confiarProxy, false, 'sin proxy declarado: se ignoran las cabeceras');
+  assert.equal(leerConfig({ ...PROD, TRUSTED_PROXY_CIDRS: '172.30.77.0/24' }).confiarProxy('172.30.77.9'), true);
+});
+
+test('P2-1: X-Real-Ip no se usa nunca, ni siquiera desde un proxy de confianza', () => {
+  const traefik = crearConfianzaProxy(['172.30.77.2/32']);
+  assert.equal(ipCliente({ 'x-real-ip': '2.2.2.2' }, '172.30.77.2', traefik), '172.30.77.2', 'sin X-Forwarded-For válido se usa el par');
+  assert.equal(ipCliente({ 'x-forwarded-for': '9.9.9.9', 'x-real-ip': '2.2.2.2' }, '172.30.77.2', traefik), '9.9.9.9');
+  assert.equal(ipCliente({ 'x-real-ip': '2.2.2.2' }, '203.0.113.7', traefik), '203.0.113.7');
 });
 
 const iniciarVinculo = (c, ip) => c.peticion('/api/vinculo/iniciar', { metodo: 'POST', origen: LOCAL, cuerpo: {},
@@ -47,6 +66,10 @@ test('P2-1 (HTTP): un cliente que no es el proxy no evade el cupo por IP falsifi
     const estados = [];
     for (let i = 1; i <= 6; i++) estados.push(await iniciarVinculo(c, `203.0.113.${i}`));
     assert.deepEqual(estados, [200, 200, 200, 200, 200, 429], 'seis IP inventadas cuentan como la misma: la sexta se rechaza');
+    const reales = [];
+    for (let i = 0; i < 6; i++) reales.push((await c.peticion('/api/vinculo/iniciar', { metodo: 'POST', origen: LOCAL, cuerpo: {},
+      cabeceras: { 'x-real-ip': `203.0.114.${i}` } })).estado);
+    assert.ok(reales.every((e) => e === 429), 'X-Real-Ip falsificado tampoco da cupo nuevo');
   } finally { await c.cerrar(); }
 });
 

@@ -11,6 +11,7 @@
  * Nunca se imprimen. Con PostgreSQL administrado, ejecute este script con la cuenta de administración del proveedor.
  */
 import pg from 'pg';
+import { leerSsl } from '../src/config.mjs';
 import { fileURLToPath } from 'node:url';
 
 const ID = /^[a-z_][a-z0-9_]{0,62}$/;
@@ -28,6 +29,7 @@ export function opcionesDesdeEntorno(env = process.env) {
     claves: { migrador: env.INTERACT_DB_MIGRATOR_PASSWORD, app: env.INTERACT_DB_APP_PASSWORD, respaldo: env.INTERACT_DB_BACKUP_PASSWORD },
     limites: { migrador: 3, app: Number(env.DB_APP_CONNECTION_LIMIT ?? 25), respaldo: 2 },
   };
+  o.ssl = leerSsl(env).ssl; // DB_SSL / DB_SSL_CA_FILE: imprescindible con un PostgreSQL administrado
   if (!o.adminUrl) throw new Error('DATABASE_ADMIN_URL es obligatoria.');
   for (const n of [o.base, o.esquema, ...Object.values(o.roles)]) if (!ID.test(n)) throw new Error(`Identificador no válido: ${n}`);
   for (const [k, v] of Object.entries(o.claves)) {
@@ -37,17 +39,17 @@ export function opcionesDesdeEntorno(env = process.env) {
   return o;
 }
 
-const conectar = async (url, base) => {
+const conectar = async (url, base, ssl) => {
   const u = new URL(url);
   if (base) u.pathname = `/${base}`;
-  const c = new pg.Client({ connectionString: u.toString() });
+  const c = new pg.Client({ connectionString: u.toString(), ssl });
   await c.connect();
   return c;
 };
 
 export async function prepararRoles(o) {
   const { base, esquema, roles: R, claves, limites } = o;
-  const admin = await conectar(o.adminUrl);
+  const admin = await conectar(o.adminUrl, undefined, o.ssl);
   try {
     for (const k of ['migrador', 'app', 'respaldo']) {
       const existe = (await admin.query('SELECT 1 FROM pg_roles WHERE rolname = $1', [R[k]])).rowCount === 1;
@@ -67,7 +69,7 @@ export async function prepararRoles(o) {
     await admin.query(`GRANT CONNECT ON DATABASE ${base} TO ${R.app}, ${R.respaldo}`);
   } finally { await admin.end(); }
 
-  const c = await conectar(o.adminUrl, base);
+  const c = await conectar(o.adminUrl, base, o.ssl);
   try {
     await c.query('BEGIN');
     await c.query('REVOKE ALL ON SCHEMA public FROM PUBLIC');

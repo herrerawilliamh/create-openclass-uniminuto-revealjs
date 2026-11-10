@@ -14,6 +14,7 @@ import { mkdtempSync, readdirSync, rmSync, writeFileSync, readFileSync } from 'n
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { respaldar } from '../scripts/respaldar.mjs';
+import { firmarCopia, generarClaves } from '../scripts/autenticidad-respaldo.mjs';
 import { restaurar } from '../scripts/restaurar.mjs';
 import { binario, ejecutar, versionMayor } from '../scripts/pg-herramientas.mjs';
 import { recuentos } from '../src/db.mjs';
@@ -49,6 +50,7 @@ test('restauración operativa completa: cuentas, contraseñas, roles, invitacion
     rmSync(dir, { recursive: true, force: true });
     await borrarEsquema(esquema).catch(() => {});
     await conCliente(null, (c) => c.query(`DROP DATABASE IF EXISTS ${destinoBase} WITH (FORCE)`));
+    await conCliente(null, (c) => c.query(`DROP DATABASE IF EXISTS ${destinoBase.replace('_restauracion', 'b_restauracion')} WITH (FORCE)`));
   });
 
   // ---------- 1. Datos de origen (a través del servicio, como en uso real) ----------
@@ -105,15 +107,29 @@ test('restauración operativa completa: cuentas, contraseñas, roles, invitacion
   await conCliente(null, (c) => c.query(`CREATE DATABASE ${destinoBase}`));
   const alterada = path.join(dir, 'alterada.dump');
   writeFileSync(alterada, Buffer.concat([readFileSync(r.copia), Buffer.from('x')]));
-  writeFileSync(`${alterada}.sha256`, readFileSync(`${r.copia}.sha256`));
+  writeFileSync(`${alterada}.sha256`, readFileSync(`${r.copia}.sha256`, 'utf8').replace(path.basename(r.copia), 'alterada.dump'));
   await assert.rejects(restaurar({ url: urlDestino, copia: alterada, esquema }), /SHA-256/);
 
   // ---------- 4. Restauración en base vacía y verificación ----------
   const res = await restaurar({ url: urlDestino, copia: r.copia, esquema });
   assert.equal(res.integra, true);
+  assert.equal(res.autenticidad, 'no-verificada');
+  assert.equal(res.confiable, false, 'sin firma verificada la restauración NO es de producción confiable');
   assert.equal(res.version, 1);
   assert.deepEqual(res.recuentos, antes, 'mismas filas en todas las tablas');
   await assert.rejects(restaurar({ url: urlDestino, copia: r.copia, esquema }), /ya contiene tablas/, 'nunca mezcla datos');
+
+  // ---------- 4b. Restauración AUTÉNTICA: manifiesto firmado con una clave cuya parte pública se entrega aparte ----------
+  const claves = { privada: path.join(dir, 'ext-privada.pem'), publica: path.join(dir, 'ext-publica.pem') };
+  generarClaves(claves);
+  firmarCopia({ copia: r.copia, clavePrivada: claves.privada });
+  const destino2 = destinoBase.replace('_restauracion', 'b_restauracion');
+  const urlDestino2 = (() => { const u = new URL(urlDestino); u.pathname = `/${destino2}`; return u.toString(); })();
+  await conCliente(null, (c) => c.query(`CREATE DATABASE ${destino2}`));
+  const res2 = await restaurar({ url: urlDestino2, copia: r.copia, esquema, clavePublica: claves.publica });
+  assert.equal(res2.autenticidad, 'verificada');
+  assert.equal(res2.confiable, true);
+  assert.deepEqual(res2.recuentos, antes);
 
   // ---------- 5. El servicio arranca sobre la copia (modo producción: solo verifica el esquema) ----------
   const restaurado = await iniciar({ env: { ...env, DATABASE_URL: urlDestino, DB_MIGRATIONS: 'verificar' }, esquema, conservarEsquema: true });

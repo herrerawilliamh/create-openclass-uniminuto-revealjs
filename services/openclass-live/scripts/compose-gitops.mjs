@@ -12,7 +12,7 @@ import { fileURLToPath } from 'node:url';
 export const PAYLOAD = Object.freeze(['docker-compose.yml', 'docker-compose.respaldo.yml', 'Dockerfile', '.dockerignore', '.env.example',
   'package.json', 'package-lock.json', 'src', 'public',
   'scripts/hash-password.mjs', 'scripts/init-superusuario.mjs', 'scripts/migrar.mjs', 'scripts/preparar-roles.mjs',
-  'scripts/respaldar.mjs', 'scripts/restaurar.mjs', 'scripts/pg-herramientas.mjs']);
+  'scripts/respaldar.mjs', 'scripts/restaurar.mjs', 'scripts/pg-herramientas.mjs', 'scripts/autenticidad-respaldo.mjs']);
 
 export function derivarGitops(base, version) {
   base = base.replace(/\r\n/g, '\n');

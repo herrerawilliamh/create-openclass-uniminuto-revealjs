@@ -6,6 +6,8 @@
  *   REPEATABLE READ): no detiene el servicio ni bloquea escrituras.
  * - Escribe primero «.parcial» y solo renombra si pg_dump terminó bien; añade «.sha256» y comprueba que
  *   pg_restore puede leer el archivo y que contiene todas las tablas de Interact.
+ * - Autenticidad: este trabajo NO firma (la clave privada no puede vivir en producción ni en la copia). Firme fuera del
+ *   host con scripts/autenticidad-respaldo.mjs; la restauración confiable exige esa firma.
  * - La copia contiene cuentas (hashes scrypt), sesiones, invitaciones, auditoría e historial: es DATO PERSONAL.
  *   Permisos 600; debe copiarse fuera del host (almacenamiento independiente) y cifrada en reposo.
  * Salida: JSON { copia, sha256, bytes, tablas, verificada }. Nunca imprime la URL ni la contraseña.
@@ -52,7 +54,7 @@ export async function respaldar({ url, dir, conservar = 7, esquema = null, ahora
     .sort((a, b) => (a.replace(/\.dump$/, '') < b.replace(/\.dump$/, '') ? -1 : 1));
   for (const vieja of copias.slice(0, Math.max(0, copias.length - conservar))) {
     rmSync(path.join(dir, vieja), { force: true });
-    rmSync(path.join(dir, `${vieja}.sha256`), { force: true });
+    for (const ext of ['.sha256', '.manifiesto.json', '.firma']) rmSync(path.join(dir, `${vieja}${ext}`), { force: true });
   }
   return { copia: destino, sha256, bytes: statSync(destino).size, tablas: TABLAS.length, verificada: true };
 }

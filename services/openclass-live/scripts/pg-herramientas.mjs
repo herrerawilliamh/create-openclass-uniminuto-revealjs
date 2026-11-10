@@ -17,8 +17,11 @@ export function entornoPg(url, base = process.env) {
     PGPASSWORD: decodeURIComponent(u.password), PGDATABASE: decodeURIComponent(u.pathname.slice(1)),
     PGCONNECT_TIMEOUT: '10', PGAPPNAME: 'interact-respaldo',
   };
-  const sslmode = u.searchParams.get('sslmode') ?? base.PGSSLMODE;
+  // DB_SSL (el mismo vocabulario que el servicio) manda sobre ?sslmode: verificado = verify-full (cadena + nombre de host).
+  const porModo = { requerido: 'require', verificado: 'verify-full' }[base.DB_SSL ?? ''];
+  const sslmode = porModo ?? u.searchParams.get('sslmode') ?? base.PGSSLMODE;
   if (sslmode) env.PGSSLMODE = sslmode;
+  if (base.DB_SSL_CA_FILE) env.PGSSLROOTCERT = base.DB_SSL_CA_FILE;
   return Object.fromEntries(Object.entries(env).filter(([, v]) => v !== undefined));
 }
 

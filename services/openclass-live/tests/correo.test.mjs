@@ -11,7 +11,7 @@ import { borrarEsquema, conCliente, nuevoEsquema, urlPrueba } from './ayuda.mjs'
 
 const raiz = fileURLToPath(new URL('../', import.meta.url));
 // La configuración no abre conexiones: una URL sintáctica basta para estas pruebas.
-const BASE = { APP_URL: 'https://interact.test', SESSION_SECRET: 'z'.repeat(40), DATABASE_URL: 'postgres://interact_app:clave-sintetica@db.invalid:5432/interact' };
+const BASE = { APP_URL: 'https://interact.test', TRUSTED_PROXY_CIDRS: '172.30.77.2/32', SESSION_SECRET: 'z'.repeat(40), DATABASE_URL: 'postgres://interact_app:clave-sintetica@db.invalid:5432/interact' };
 
 /** Servidor SMTP mínimo: guarda lo que recibe y responde como uno real (sin STARTTLS: solo bucle local). */
 function servidorSmtp({ rechazarRcpt = false } = {}) {

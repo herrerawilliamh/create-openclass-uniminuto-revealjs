@@ -5,20 +5,24 @@
  * - El nombre de la base destino debe terminar en _restauracion, _prueba o _test; cualquier otro nombre exige
  *   `--confirmar-destino <nombre-exacto>` (decisión humana explícita, p. ej. una recuperación real planificada).
  * - La base destino debe estar VACÍA de tablas de Interact: no mezcla ni sobrescribe datos.
- * - Comprueba la suma «.sha256» antes de restaurar; restaura en una sola transacción (todo o nada).
+ * - El comprobante «.sha256» es OBLIGATORIO (ausente, mal formado, de otro archivo o discordante → rechazo).
+ * - Autenticidad: con --clave-publica (o INTERACT_BACKUP_PUBLIC_KEY_FILE) se exige manifiesto firmado válido
+ *   (scripts/autenticidad-respaldo.mjs). Es OBLIGATORIA para toda base que no sea *_restauracion/_prueba/_test;
+ *   sin ella una restauración de ensayo se informa con autenticidad:"no-verificada" y confiable:false.
+ * - Restaura en una sola transacción (todo o nada).
  * - Después verifica: esquema al día (migraciones e sumas), integridad referencial y recuentos por tabla.
  * Salida: JSON { destino, version, integra, recuentos }. Nunca imprime la URL ni la contraseña.
  */
-import { createHash } from 'node:crypto';
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { abrirBase, recuentos, verificarIntegridad, versionEsquema } from '../src/db.mjs';
 import { binario, ejecutar, entornoPg } from './pg-herramientas.mjs';
+import { verificarAutenticidad, verificarSuma } from './autenticidad-respaldo.mjs';
 
 export const DESTINO_SEGURO = /_(restauracion|prueba|test)$/;
 
-export async function restaurar({ url, copia, esquema = null, confirmarDestino = null, env = process.env }) {
+export async function restaurar({ url, copia, esquema = null, confirmarDestino = null, clavePublica = null, noAnteriorA = null, env = process.env }) {
   if (!url) throw new Error('DATABASE_RESTORE_URL es obligatoria.');
   if (!copia || !existsSync(copia)) throw new Error('--copia no existe.');
   if (esquema && !/^[a-z_][a-z0-9_]{0,62}$/.test(esquema)) throw new Error('DB_SCHEMA no válido.');
@@ -27,12 +31,11 @@ export async function restaurar({ url, copia, esquema = null, confirmarDestino =
   if (!DESTINO_SEGURO.test(destino) && confirmarDestino !== destino) {
     throw new Error(`La base destino «${destino}» no es de prueba/restauración. Use una base *_restauracion o confirme con --confirmar-destino ${destino}.`);
   }
-  const suma = `${copia}.sha256`;
-  if (existsSync(suma)) {
-    const esperada = readFileSync(suma, 'utf8').trim().split(/\s+/)[0];
-    const real = createHash('sha256').update(readFileSync(copia)).digest('hex');
-    if (esperada !== real) throw new Error('La suma SHA-256 de la copia no coincide: archivo alterado o incompleto.');
-  }
+  const esEnsayo = DESTINO_SEGURO.test(destino);
+  verificarSuma(copia);
+  let autenticidad = 'no-verificada';
+  if (clavePublica) { verificarAutenticidad({ copia, clavePublica, noAnteriorA }); autenticidad = 'verificada'; }
+  else if (!esEnsayo) throw new Error('Una restauración sobre una base que no es de ensayo exige verificar la autenticidad: indique --clave-publica (manifiesto firmado).');
 
   // Destino vacío: ninguna tabla de Interact en el esquema de destino (ni en ningún esquema si no se indicó).
   const previa = await abrirBase({ url, esquema: null, max: 1, migraciones: 'ninguna', esperaMs: 15_000, aplicacion: 'interact-restaurar' });
@@ -51,7 +54,7 @@ export async function restaurar({ url, copia, esquema = null, confirmarDestino =
   const base = await abrirBase({ url, esquema, max: 2, migraciones: 'verificar', esperaMs: 15_000, aplicacion: 'interact-restaurar' });
   try {
     const integridad = await verificarIntegridad(base);
-    return { destino, version: await versionEsquema(base), integra: integridad.integra, violacionesFk: integridad.violacionesFk, recuentos: await recuentos(base) };
+    return { destino, version: await versionEsquema(base), autenticidad, confiable: autenticidad === 'verificada' && integridad.integra, integra: integridad.integra, violacionesFk: integridad.violacionesFk, recuentos: await recuentos(base) };
   } finally { await base.cerrar(); }
 }
 
@@ -59,7 +62,8 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
   const arg = (n) => { const i = process.argv.indexOf(`--${n}`); return i > 0 ? process.argv[i + 1] : undefined; };
   try {
     const r = await restaurar({ url: process.env.DATABASE_RESTORE_URL, copia: arg('copia') && path.resolve(arg('copia')),
-      esquema: process.env.DB_SCHEMA || null, confirmarDestino: arg('confirmar-destino') ?? null });
+      esquema: process.env.DB_SCHEMA || null, confirmarDestino: arg('confirmar-destino') ?? null,
+      clavePublica: arg('clave-publica') ?? process.env.INTERACT_BACKUP_PUBLIC_KEY_FILE ?? null, noAnteriorA: arg('no-anterior-a') ?? null });
     process.stdout.write(`${JSON.stringify(r)}\n`);
     process.exitCode = r.integra ? 0 : 1;
   } catch (error) {
