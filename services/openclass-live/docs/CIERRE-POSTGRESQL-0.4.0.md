@@ -1,6 +1,7 @@
 # Interact 0.4.0 · Cierre de la migración a PostgreSQL (para auditoría Codex)
 
-Base auditada previamente: `dc4f305abe7210e626eb4739478ac8e4386aca03` (PR #8). Esta entrega reemplaza la persistencia
+Base auditada previamente: `dc4f305abe7210e626eb4739478ac8e4386aca03` (PR #8). Código validado en CI sobre `c296fef0c212394eedfdf65d7985e4f8291569a2` (todo en verde; manifiesto `releases/0.4.0.json` de 60 archivos).
+Esta entrega reemplaza la persistencia
 SQLite por PostgreSQL 16 en la misma versión 0.4.0. Decisión: `ADR-0001-POSTGRESQL.md`. Operación: `POSTGRESQL.md`.
 Copias: `RESPALDO-RESTAURACION.md`.
 
@@ -27,7 +28,7 @@ Copias: `RESPALDO-RESTAURACION.md`.
 | 3. Cupos 5/200 deterministas | Resuelto | `tests/p2-auditoria.test.mjs`: exactamente 5 por IP (el 6.º recibe 429), otra IP sigue admitida, exactamente 200 globales (el 201.º recibe 429 con IP nueva). Sin aserciones condicionales. |
 | 4. Restauración operativa completa | Resuelto | `tests/respaldo-restauracion.test.mjs` (obligatoria en CI): pg_dump → base `*_restauracion` → el servicio arranca sobre la copia y se comprueban login, roles, invitaciones pendientes y revocadas, sesión previa, historial, auditoría y escrituras nuevas, además de las salvaguardas y la rotación. |
 
-## Pruebas ejecutadas en esta entrega (PostgreSQL 16.10 real)
+## Pruebas locales de la entrega PostgreSQL (16.10 real; históricas respecto a las correcciones posteriores, la CI sobre `c296fef` es la referencia vigente)
 
 | Suite | Entorno | Resultado |
 |---|---|---|

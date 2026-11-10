@@ -1,10 +1,24 @@
 # Evidencias de cierre — Interact 0.4.0
 
 Base: `release/openclass-live` @ `79e06b5b497b19b7a097040066d1e85d63c0ef77` (merge del PR #7, Interact 0.3.0).
-Rama: `feat/interact-0.4.0-identidad`. Código evaluado: ver el SHA de implementación del PR.
-Manifiesto: `releases/0.4.0.json` (54 archivos, artefacto reproducible). `releases/0.2.0.json` y `0.3.0.json` no se tocaron.
+Rama: `feat/interact-0.4.0-identidad` (PR #8). SHA auditado en CI: `c296fef0c212394eedfdf65d7985e4f8291569a2`.
+Persistencia definitiva: **PostgreSQL 16** (ver `CIERRE-POSTGRESQL-0.4.0.md`); SQLite fue reemplazado en esta misma versión.
+Manifiesto: `releases/0.4.0.json` (**60 archivos**, artefacto reproducible; regenerado con la migración a PostgreSQL).
+`releases/0.2.0.json` y `0.3.0.json` no se tocaron.
 
-## Pruebas ejecutadas (Node 22.23.1, Windows, Chrome real)
+## Resultados de CI sobre `c296fef` (GitHub Actions, PR #8)
+
+| Flujo | Resultado |
+|---|---|
+| `OpenClass Live` · «Live release checks» (PostgreSQL 16 real, restauración obligatoria, gate Docker) | success (8 min 14 s) |
+| `OpenClass Live` · build OCI, aprobación humana, publicación GHCR | omitidos (skipped) por diseño: no se publica |
+| `Pruebas del generador (CI)` · Node 20.19.0 / 22 / 24, Chrome real, npm pack, arranque Windows | success |
+
+## Pruebas locales históricas (previas a PostgreSQL)
+Los resultados de la tabla siguiente se obtuvieron con la persistencia SQLite, antes de la migración; se conservan como
+registro histórico. Las pruebas vigentes con PostgreSQL 16 están en `CIERRE-POSTGRESQL-0.4.0.md` y en la CI anterior.
+
+### Pruebas ejecutadas con SQLite (Node 22.23.1, Windows, Chrome real) — históricas
 
 | Suite | Resultado |
 |---|---|
@@ -38,13 +52,14 @@ Contraseñas scrypt; tokens de 32 bytes con SHA-256 en base; un solo uso atómic
 intentos; respuestas idénticas para cuentas desconocidas (sin esperar el envío SMTP); recuperación que revoca
 sesiones; suspensión que corta sockets; docente sin acceso a rutas de administración (403) ni a sesiones/salas
 ajenas por HTTP o Socket.IO (`prohibido`/404); CSRF y mismo origen; CSV sin inyección de fórmulas; historial que
-sobrevive al reinicio, salas `interrumpida`; base y respaldo con `integrity_check`; SMTP sin credenciales en claro.
+sobrevive al reinicio, salas `interrumpida`; base y respaldo verificados (con SQLite: `integrity_check`; vigente: pg_dump verificado y restauración probada); SMTP sin credenciales en claro.
 
 ## Limitaciones conocidas / pendiente
 - **SMTP real sin configurar ni probado**: no se envió ningún correo real.
-- Migración a PostgreSQL no implementada (solo preparada por diseño).
+- ~~Migración a PostgreSQL no implementada~~: **implementada** (PostgreSQL 16); PITR con WAL evaluada y no implementada.
 - `/api/vinculo/iniciar` admite hasta 200 vínculos pendientes (5 min): un cliente hostil con origen permitido podría
   agotarlos temporalmente; el aprobar exige sesión y código.
-- El flujo de GitHub Actions `openclass-live.yml` conserva la etiqueta por defecto 0.3.0: la promoción de 0.4.0
+- El flujo `openclass-live.yml` conserva la etiqueta por defecto `openclass-live-v0.3.0`: la promoción de 0.4.0
   requiere su gate específico (no se publicó GHCR, ni autosync, ni Dockhand, ni VPS).
-- Auditoría independiente (Codex): pendiente sobre el SHA del PR.
+- Sin fusión del PR #8, release, GitOps ni despliegue.
+- Auditoría independiente (Codex): pendiente sobre el SHA final de esta rama (`READY_FOR_CODEX`).
