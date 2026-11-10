@@ -2,7 +2,7 @@
   "version": "0.4.0",
   "protocol": 2,
   "archive": "openclass-live-0.4.0.tar.gz",
-  "archiveSha256": "ce4940ecc50cf6e3675e5e45b84ce1283d21ab7e46571ec6720aae86256c2b2e",
+  "archiveSha256": "e447d1f5b747e2aab5b6a0435e4ee73aad60a19f2241208904252b540da9b852",
   "sourceBase": "79e06b5b497b19b7a097040066d1e85d63c0ef77",
   "files": [
     {
@@ -22,8 +22,8 @@
     },
     {
       "path": "docker-compose.yml",
-      "sha256": "7ed4f53562cd5a70cf7e6405234e74d06346b9496d4910560a073cee52cb08e8",
-      "gitSha256": "7ed4f53562cd5a70cf7e6405234e74d06346b9496d4910560a073cee52cb08e8"
+      "sha256": "f3268975891cfd750a30bbf75da47ea45be44fe6b2dfe3f8c538611fdc060d3b",
+      "gitSha256": "63745c87634f00b0d88fee9e218d0d0cc9ea54408e0b5a97fde5ee1497a07915"
     },
     {
       "path": "Dockerfile",
@@ -212,8 +212,8 @@
     },
     {
       "path": "scripts/preparar-roles.mjs",
-      "sha256": "7e27a505e0588e93ddf51bd0d79848f3b2b79782c810b16abbf1916aa26241cf",
-      "gitSha256": "7e27a505e0588e93ddf51bd0d79848f3b2b79782c810b16abbf1916aa26241cf"
+      "sha256": "3a2963aa9f54919367fa3797a8ff465f81737c47912f99c0e800d1f89ab6c10a",
+      "gitSha256": "3478c26842a1d0e4169d7891160de6a192d94a925f45ab999b961f320268db9d"
     },
     {
       "path": "scripts/respaldar.mjs",
