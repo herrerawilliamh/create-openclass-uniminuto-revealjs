@@ -61,6 +61,8 @@ sesión no puede revalidarse se cortan (fallo cerrado), y al volver la base el p
 | `COMPOSE_PROFILES` | `postgres-dedicado` | `postgres-administrado` |
 | Base | `interact-db` en la red **interna** `interact-db` (sin salida, sin puertos) | proveedor externo |
 | Preparar roles | `interact-db-preparar` (automático) | una vez: `COMPOSE_PROFILES=postgres-preparar-administrado docker compose run --rm interact-db-preparar-administrado` (con la cuenta de administración del proveedor) |
+
+`DB_MODO_POSTGRES` (`administrado` por omisión, `dedicado`): solo el Compose del PostgreSQL propio fija `dedicado`, que además exige SUPERUSER y revoca `CONNECT` a PUBLIC en la base `postgres`. En modo administrado `preparar-roles` nunca toca privilegios de `postgres` ni de bases compartidas (aunque la URL termine en `/postgres`), acepta roles y base ya provisionados, y falla con un mensaje seguro si faltan privilegios (CREATEROLE/CREATEDB) sin ampliarlos.
 | Migrar | `interact-migrar` (red `interact-db`) | `interact-migrar-administrado` (red `interact-salida`: DNS + salida, **sin puertos**) |
 | Respaldar | `--profile respaldo-dedicado` → `interact-respaldo` | `--profile respaldo-administrado` → `interact-respaldo-administrado` |
 | TLS | opcional | `DB_SSL=verificado` (cadena + nombre de host; `verify-full` en `pg_dump`) |

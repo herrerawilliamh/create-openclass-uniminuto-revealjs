@@ -72,6 +72,7 @@ services:
     user: "1000:1000"
     command: ["node", "scripts/preparar-roles.mjs"]
     environment:
+      DB_MODO_POSTGRES: dedicado
       DATABASE_ADMIN_URL: ${DATABASE_ADMIN_URL:?DATABASE_ADMIN_URL is required}
       INTERACT_DB_MIGRATOR_PASSWORD: ${INTERACT_DB_MIGRATOR_PASSWORD:?INTERACT_DB_MIGRATOR_PASSWORD is required}
       INTERACT_DB_APP_PASSWORD: ${INTERACT_DB_APP_PASSWORD:?INTERACT_DB_APP_PASSWORD is required}

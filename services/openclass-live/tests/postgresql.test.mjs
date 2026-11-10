@@ -313,3 +313,73 @@ test('arranque sin base disponible: falla con un error genérico que no revela l
     return true;
   });
 });
+
+// ── Preparación de roles: modos dedicado y administrado (P2 pre-merge) ───────────────────────────────────────
+const datacl = (c, base) => c.query('SELECT datacl::text AS a FROM pg_database WHERE datname = $1', [base]).then((r) => r.rows[0].a);
+const adminPostgres = () => { const u = new URL(urlPrueba()); u.pathname = '/postgres'; return u.toString(); };
+function recursos() {
+  const sufijo = randomBytes(4).toString('hex');
+  const R = { migrador: `m_${sufijo}`, app: `a_${sufijo}`, respaldo: `r_${sufijo}` };
+  const base = `interact_modo_${sufijo}_test`;
+  const adm = `adm_${sufijo}`;
+  const C = { migrador: clave(), app: clave(), respaldo: clave() };
+  const limpiar = async () => conCliente(null, async (c) => {
+    await c.query('GRANT CONNECT ON DATABASE postgres TO PUBLIC'); // restaura lo que el modo dedicado revoca en la base de prueba
+    await c.query(`DROP DATABASE IF EXISTS ${base} WITH (FORCE)`);
+    await c.query(`REVOKE ALL ON DATABASE postgres FROM ${adm}`).catch(() => {});
+    for (const r of [...Object.values(R), adm]) await c.query(`DROP ROLE IF EXISTS ${r}`);
+  });
+  const o = (extra = {}) => ({ adminUrl: adminPostgres(), base, esquema: 'interact', roles: R, claves: C, limites: { migrador: 3, app: 10, respaldo: 2 }, ...extra });
+  return { R, C, base, adm, limpiar, o };
+}
+
+test('preparar-roles: una URL administrativa «/postgres» NO activa revocaciones ajenas (modo administrado por omisión)', async (t) => {
+  const x = recursos(); t.after(x.limpiar);
+  const antes = await conCliente(null, (c) => datacl(c, 'postgres'));
+  await prepararRoles(x.o());
+  assert.equal(await conCliente(null, (c) => datacl(c, 'postgres')), antes, 'la base «postgres» conserva sus permisos');
+  await prepararRoles(x.o()); // idempotente
+  assert.equal(await conCliente(null, (c) => datacl(c, 'postgres')), antes);
+});
+
+test('preparar-roles: modo dedicado explícito aísla la base de mantenimiento; exige SUPERUSER y no se activa solo', async (t) => {
+  const x = recursos(); t.after(x.limpiar);
+  const antes = await conCliente(null, (c) => datacl(c, 'postgres'));
+  await prepararRoles(x.o({ modo: 'dedicado' }));
+  const despues = await conCliente(null, (c) => datacl(c, 'postgres'));
+  assert.notEqual(despues, antes, 'el modo dedicado sí revoca CONNECT a PUBLIC en «postgres»');
+  // Los roles de Interact no abren sesión en la base de mantenimiento; sí en la suya.
+  const conectar = async (rol, base) => { const c = new pg.Client({ connectionString: conUsuario(x.R[rol], x.C[rol], base) }); await c.connect(); return c; };
+  await assert.rejects(conectar('app', 'postgres'), (e) => e.code === '42501');
+  await (await conectar('app', x.base)).end();
+  // Sin SUPERUSER verificable, el modo dedicado se niega.
+  await conCliente(null, (c) => c.query(`CREATE ROLE ${x.adm} LOGIN CREATEROLE CREATEDB PASSWORD '${x.C.app}'`));
+  await conCliente(null, (c) => c.query(`GRANT CONNECT ON DATABASE postgres TO ${x.adm}`));
+  await assert.rejects(prepararRoles(x.o({ modo: 'dedicado', adminUrl: conUsuario(x.adm, x.C.app, 'postgres') })), /SUPERUSER/);
+});
+
+test('preparar-roles: administrador sin SUPERUSER ni privilegios no modifica nada ajeno y falla con mensaje seguro; recursos provisionados se respetan', async (t) => {
+  const x = recursos(); t.after(x.limpiar);
+  const antes = await conCliente(null, (c) => datacl(c, 'postgres'));
+  const clavAdm = clave();
+  await conCliente(null, (c) => c.query(`CREATE ROLE ${x.adm} LOGIN PASSWORD '${clavAdm}'`));
+  const admUrl = conUsuario(x.adm, clavAdm, 'postgres');
+  // Sin CREATEROLE y con los roles ausentes: error claro, sin ampliar permisos por su cuenta.
+  await assert.rejects(prepararRoles(x.o({ adminUrl: admUrl })), (e) => /no tiene privilegios para crear el rol/.test(e.message) && !e.message.includes(clavAdm));
+  assert.equal(await conCliente(null, (c) => datacl(c, 'postgres')), antes);
+  assert.equal((await conCliente(null, (c) => c.query('SELECT rolcreaterole FROM pg_roles WHERE rolname = $1', [x.adm]))).rows[0].rolcreaterole, false, 'no se amplió el rol');
+  // Operador del proveedor provisiona roles y base; el administrador restringido solo completa lo propio de Interact.
+  await conCliente(null, async (c) => {
+    for (const k of ['migrador', 'app', 'respaldo']) await c.query(`CREATE ROLE ${x.R[k]} LOGIN NOSUPERUSER PASSWORD '${x.C[k]}'`);
+    await c.query(`CREATE DATABASE ${x.base} OWNER ${x.adm}`);
+  });
+  await conCliente(null, async (c) => {
+    await c.query(`ALTER DATABASE ${x.base} OWNER TO ${x.R.migrador}`);
+    await c.query(`ALTER ROLE ${x.adm} CREATEROLE`); // el proveedor concede CREATEROLE acotado, nunca SUPERUSER
+    for (const k of ['migrador', 'app', 'respaldo']) await c.query(`GRANT ${x.R[k]} TO ${x.adm} WITH ADMIN OPTION, INHERIT TRUE`);
+  });
+  await prepararRoles(x.o({ adminUrl: admUrl }));
+  assert.equal(await conCliente(null, (c) => datacl(c, 'postgres')), antes, 'la base compartida sigue intacta');
+  const mig = await ejecutarMigraciones({ DATABASE_MIGRATION_URL: conUsuario(x.R.migrador, x.C.migrador, x.base), DB_APP_ROLE: x.R.app });
+  assert.deepEqual(mig.aplicadas, [1]);
+});

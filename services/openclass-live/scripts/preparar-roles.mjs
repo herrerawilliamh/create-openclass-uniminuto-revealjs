@@ -9,6 +9,9 @@
  *   interact_respaldo  copias de seguridad: solo SELECT.
  * Contraseñas: INTERACT_DB_MIGRATOR_PASSWORD, INTERACT_DB_APP_PASSWORD, INTERACT_DB_BACKUP_PASSWORD (≥ 24 caracteres).
  * Nunca se imprimen. Con PostgreSQL administrado, ejecute este script con la cuenta de administración del proveedor.
+ * Modo (DB_MODO_POSTGRES): «administrado» (por omisión) solo toca recursos de Interact: nunca cambia privilegios de la
+ * base de administración ni de ninguna base compartida, y respeta roles/base ya provisionados por el operador.
+ * «dedicado» debe elegirse de forma explícita (lo hace el Compose del PostgreSQL propio) y exige SUPERUSER verificable.
  */
 import pg from 'pg';
 import { leerSsl } from '../src/config.mjs';
@@ -27,9 +30,11 @@ export function opcionesDesdeEntorno(env = process.env) {
       respaldo: env.DB_BACKUP_ROLE ?? 'interact_respaldo',
     },
     claves: { migrador: env.INTERACT_DB_MIGRATOR_PASSWORD, app: env.INTERACT_DB_APP_PASSWORD, respaldo: env.INTERACT_DB_BACKUP_PASSWORD },
+    modo: (env.DB_MODO_POSTGRES ?? 'administrado').toLowerCase(),
     limites: { migrador: 3, app: Number(env.DB_APP_CONNECTION_LIMIT ?? 25), respaldo: 2 },
   };
   o.ssl = leerSsl(env).ssl; // DB_SSL / DB_SSL_CA_FILE: imprescindible con un PostgreSQL administrado
+  if (!['administrado', 'dedicado'].includes(o.modo)) throw new Error('DB_MODO_POSTGRES debe ser «administrado» o «dedicado».');
   if (!o.adminUrl) throw new Error('DATABASE_ADMIN_URL es obligatoria.');
   for (const n of [o.base, o.esquema, ...Object.values(o.roles)]) if (!ID.test(n)) throw new Error(`Identificador no válido: ${n}`);
   for (const [k, v] of Object.entries(o.claves)) {
@@ -51,20 +56,36 @@ export async function prepararRoles(o) {
   const { base, esquema, roles: R, claves, limites } = o;
   const admin = await conectar(o.adminUrl, undefined, o.ssl);
   try {
+    const dedicado = o.modo === 'dedicado';
+    const yo = (await admin.query('SELECT rolsuper, rolcreaterole, rolcreatedb FROM pg_roles WHERE rolname = current_user')).rows[0] ?? {};
+    // El aislamiento de la base de mantenimiento solo existe si se eligió el modo dedicado y se verifica SUPERUSER.
+    if (dedicado && !yo.rolsuper) throw new Error('El modo dedicado exige una cuenta de administración con SUPERUSER.');
+    const puedeRoles = yo.rolsuper || yo.rolcreaterole;
+    const sinPrivilegio = (que) => new Error(`La cuenta de administración no tiene privilegios para ${que}; pida al proveedor que lo provisione.`);
     for (const k of ['migrador', 'app', 'respaldo']) {
       const existe = (await admin.query('SELECT 1 FROM pg_roles WHERE rolname = $1', [R[k]])).rowCount === 1;
+      if (!existe && !puedeRoles) throw sinPrivilegio(`crear el rol ${R[k]}`);
+      if (existe && !puedeRoles) throw sinPrivilegio(`configurar el rol ${R[k]} (CREATEROLE)`);
       // Sin SUPERUSER, CREATEDB, CREATEROLE ni REPLICATION; contraseñas como literal escapado (no admiten $1).
-      const atributos = `LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS CONNECTION LIMIT ${limites[k]} PASSWORD ${admin.escapeLiteral(claves[k])}`;
+      // Sin SUPERUSER, un administrador no puede tocar atributos que no posee (PostgreSQL 16): se usan los valores por
+      // omisión de CREATE ROLE y se VERIFICA después que el rol no tiene privilegios.
+      const nivel = yo.rolsuper ? 'LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS' : 'LOGIN';
+      const atributos = `${nivel} CONNECTION LIMIT ${limites[k]} PASSWORD ${admin.escapeLiteral(claves[k])}`;
       await admin.query(`${existe ? 'ALTER' : 'CREATE'} ROLE ${R[k]} ${existe ? 'WITH ' : ''}${atributos}`);
     }
+    const fuertes = await admin.query(
+      'SELECT rolname FROM pg_roles WHERE rolname = ANY($1) AND (rolsuper OR rolcreatedb OR rolcreaterole OR rolreplication OR rolbypassrls)', [Object.values(R)]);
+    if (fuertes.rowCount) throw new Error(`Los roles de Interact no deben tener atributos privilegiados: ${fuertes.rows.map((r) => r.rolname).join(', ')}.`);
     const hayBase = (await admin.query('SELECT 1 FROM pg_database WHERE datname = $1', [base])).rowCount === 1;
-    if (!hayBase) await admin.query(`CREATE DATABASE ${base} OWNER ${R.migrador} ENCODING 'UTF8' TEMPLATE template0`);
-    await admin.query(`REVOKE ALL ON DATABASE ${base} FROM PUBLIC`);
-    // Servidor dedicado: los roles de Interact no pueden abrir sesión en la base de mantenimiento.
-    // (Con un proveedor administrado la base de administración tiene otro nombre y no se toca.)
-    if (new URL(o.adminUrl).pathname === '/postgres' && o.aislarBaseAdmin !== false) {
-      await admin.query('REVOKE CONNECT ON DATABASE postgres FROM PUBLIC');
+    if (!hayBase) {
+      if (!yo.rolsuper && !yo.rolcreatedb) throw sinPrivilegio(`crear la base ${base}`);
+      if (!yo.rolsuper) await admin.query(`GRANT ${R.migrador} TO CURRENT_USER`).catch(() => { throw sinPrivilegio(`crear la base ${base} con propietario ${R.migrador}`); });
+      await admin.query(`CREATE DATABASE ${base} OWNER ${R.migrador} ENCODING 'UTF8' TEMPLATE template0`);
     }
+    await admin.query(`REVOKE ALL ON DATABASE ${base} FROM PUBLIC`);
+    // Solo servidor dedicado y elegido explícitamente: los roles de Interact no abren sesión en la base de mantenimiento.
+    // Nunca se infiere del nombre de la URL: en un proveedor administrado esa base es compartida y no se toca.
+    if (dedicado) await admin.query('REVOKE CONNECT ON DATABASE postgres FROM PUBLIC');
     await admin.query(`GRANT CONNECT, TEMPORARY ON DATABASE ${base} TO ${R.migrador}`);
     await admin.query(`GRANT CONNECT ON DATABASE ${base} TO ${R.app}, ${R.respaldo}`);
   } finally { await admin.end(); }
