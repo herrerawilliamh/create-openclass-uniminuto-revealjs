@@ -383,3 +383,97 @@ test('preparar-roles: administrador sin SUPERUSER ni privilegios no modifica nad
   const mig = await ejecutarMigraciones({ DATABASE_MIGRATION_URL: conUsuario(x.R.migrador, x.C.migrador, x.base), DB_APP_ROLE: x.R.app });
   assert.deepEqual(mig.aplicadas, [1]);
 });
+
+// ── Modo «externo»: solo verifica recursos provisionados por el administrador del servicio ────────────────────
+const enBase = async (base, fn) => {
+  const u = new URL(urlPrueba()); u.pathname = `/${base}`;
+  const c = new pg.Client({ connectionString: u.toString() });
+  await c.connect();
+  try { return await fn(c); } finally { await c.end(); }
+};
+/** Lo que haría el administrador del proveedor (superusuario de pruebas): roles, base, esquema y permisos mínimos. */
+async function provisionar(x) {
+  await conCliente(null, async (c) => {
+    for (const k of ['migrador', 'app', 'respaldo']) await c.query(`CREATE ROLE ${x.R[k]} LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE PASSWORD '${x.C[k]}'`);
+    await c.query(`CREATE DATABASE ${x.base} OWNER ${x.R.migrador}`);
+    await c.query(`REVOKE ALL ON DATABASE ${x.base} FROM PUBLIC`);
+    await c.query(`GRANT CONNECT ON DATABASE ${x.base} TO ${x.R.migrador}, ${x.R.app}, ${x.R.respaldo}`);
+  });
+  await enBase(x.base, async (c) => {
+    const { R } = x;
+    await c.query(`CREATE SCHEMA interact AUTHORIZATION ${R.migrador}`);
+    for (const r of Object.values(R)) await c.query(`ALTER ROLE ${r} IN DATABASE ${x.base} SET search_path = interact`);
+    await c.query(`GRANT USAGE ON SCHEMA interact TO ${R.app}, ${R.respaldo}`);
+    await c.query(`ALTER DEFAULT PRIVILEGES FOR ROLE ${R.migrador} IN SCHEMA interact GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO ${R.app}`);
+    await c.query(`ALTER DEFAULT PRIVILEGES FOR ROLE ${R.migrador} IN SCHEMA interact GRANT USAGE, SELECT ON SEQUENCES TO ${R.app}`);
+    await c.query(`ALTER DEFAULT PRIVILEGES FOR ROLE ${R.migrador} IN SCHEMA interact GRANT SELECT ON TABLES TO ${R.respaldo}`);
+    await c.query(`ALTER DEFAULT PRIVILEGES FOR ROLE ${R.migrador} IN SCHEMA interact GRANT SELECT ON SEQUENCES TO ${R.respaldo}`);
+  });
+}
+const instantanea = (c, R) => c.query(
+  'SELECT r.rolname, r.rolsuper, r.rolcreaterole, r.rolcreatedb, r.rolconnlimit, a.rolpassword FROM pg_roles r JOIN pg_authid a USING (oid) WHERE r.rolname = ANY($1) ORDER BY 1',
+  [Object.values(R)]).then((r) => JSON.stringify(r.rows));
+
+test('preparar-roles externo: administrador sin CREATEROLE y recursos provisionados → verifica sin modificar nada ajeno ni rotar contraseñas', async (t) => {
+  const x = recursos(); t.after(x.limpiar);
+  const clavAdm = clave();
+  await conCliente(null, (c) => c.query(`CREATE ROLE ${x.adm} LOGIN PASSWORD '${clavAdm}'`)); // sin CREATEROLE ni CREATEDB
+  await provisionar(x);
+  const admUrl = conUsuario(x.adm, clavAdm, 'postgres');
+  const antesPg = await conCliente(null, (c) => datacl(c, 'postgres'));
+  const antesRoles = await conCliente(null, (c) => instantanea(c, x.R));
+  const antesBase = await conCliente(null, (c) => datacl(c, x.base));
+
+  // El modo administrado SÍ exigiría CREATEROLE aunque los roles existan (el defecto que cierra el modo externo).
+  await assert.rejects(prepararRoles(x.o({ adminUrl: admUrl, modo: 'administrado' })), /CREATEROLE/);
+  const r = await prepararRoles(x.o({ adminUrl: admUrl, modo: 'externo' }));
+  assert.deepEqual({ modo: r.modo, verificado: r.verificado }, { modo: 'externo', verificado: true });
+  await prepararRoles(x.o({ adminUrl: admUrl, modo: 'externo' })); // repetible
+
+  assert.equal(await conCliente(null, (c) => datacl(c, 'postgres')), antesPg, 'la base «postgres» no cambia');
+  assert.equal(await conCliente(null, (c) => datacl(c, x.base)), antesBase, 'sin concesiones ni revocaciones');
+  assert.equal(await conCliente(null, (c) => instantanea(c, x.R)), antesRoles, 'roles y hashes de contraseña intactos: no se rota nada');
+  assert.equal((await conCliente(null, (c) => c.query('SELECT rolcreaterole FROM pg_roles WHERE rolname = $1', [x.adm]))).rows[0].rolcreaterole, false);
+
+  // Privilegios suficientes para operar: migrar con el migrador, usar la app y volver a verificar con tablas existentes.
+  const mig = await ejecutarMigraciones({ DATABASE_MIGRATION_URL: conUsuario(x.R.migrador, x.C.migrador, x.base), DB_APP_ROLE: x.R.app });
+  assert.deepEqual(mig.aplicadas, [1]);
+  await prepararRoles(x.o({ adminUrl: admUrl, modo: 'externo' }));
+  const app = new pg.Client({ connectionString: conUsuario(x.R.app, x.C.app, x.base) }); await app.connect();
+  try { assert.equal((await app.query('SELECT COUNT(*)::int AS n FROM usuarios')).rows[0].n, 0); } finally { await app.end(); }
+});
+
+test('preparar-roles externo: rechaza con mensajes seguros roles privilegiados, permisos insuficientes y credenciales inválidas', async (t) => {
+  const x = recursos(); t.after(x.limpiar);
+  await provisionar(x);
+  const falla = async (extra, patron, prohibidos = []) => {
+    await assert.rejects(prepararRoles(x.o({ modo: 'externo', ...extra })), (e) => {
+      assert.match(e.message, patron);
+      for (const s of [...Object.values(x.C), ...prohibidos]) assert.ok(!e.message.includes(s), 'el mensaje no contiene credenciales');
+      return true;
+    });
+  };
+  // Contraseña que no es la vigente: no se asume que se pueda cambiar.
+  const mala = clave();
+  await falla({ claves: { ...x.C, app: mala } }, new RegExp(`${x.R.app}.*contraseña rechazada`), [mala]);
+  // Permisos insuficientes: el respaldo pierde SELECT por omisión.
+  await enBase(x.base, (c) => c.query(`ALTER DEFAULT PRIVILEGES FOR ROLE ${x.R.migrador} IN SCHEMA interact REVOKE SELECT ON TABLES FROM ${x.R.respaldo}`));
+  await falla({}, new RegExp(`SELECT sobre tablas para ${x.R.respaldo}`));
+  await enBase(x.base, (c) => c.query(`ALTER DEFAULT PRIVILEGES FOR ROLE ${x.R.migrador} IN SCHEMA interact GRANT SELECT ON TABLES TO ${x.R.respaldo}`));
+  await prepararRoles(x.o({ modo: 'externo' }));
+  // Respaldo con escritura: demasiado permiso.
+  await enBase(x.base, (c) => c.query(`GRANT CREATE ON SCHEMA interact TO ${x.R.respaldo}`));
+  await falla({}, new RegExp(`${x.R.respaldo} no debe poder crear objetos`));
+  await enBase(x.base, (c) => c.query(`REVOKE CREATE ON SCHEMA interact FROM ${x.R.respaldo}`));
+  // Rol privilegiado.
+  await conCliente(null, (c) => c.query(`ALTER ROLE ${x.R.app} CREATEROLE`));
+  await falla({}, new RegExp(`${x.R.app} tiene atributos privilegiados.*CREATEROLE`));
+  await conCliente(null, (c) => c.query(`ALTER ROLE ${x.R.app} NOCREATEROLE`));
+  // search_path del rol sin configurar.
+  await enBase(x.base, (c) => c.query(`ALTER ROLE ${x.R.app} IN DATABASE ${x.base} RESET search_path`));
+  await falla({}, new RegExp(`${x.R.app} necesita search_path`));
+  await enBase(x.base, (c) => c.query(`ALTER ROLE ${x.R.app} IN DATABASE ${x.base} SET search_path = interact`));
+  // Esquema ausente y base ausente.
+  await falla({ esquema: 'otro_esquema' }, /falta el esquema otro_esquema/);
+  await falla({ base: 'base_inexistente_xyz' }, /la base no existe/);
+});
