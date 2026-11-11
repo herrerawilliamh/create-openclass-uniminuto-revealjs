@@ -42,7 +42,7 @@ test('H02 vencimiento efectivo: cookie de 1 s que vence antes que el SID; ningú
 
   // Sesión docente de un segundo: SID de 1 s y cookie firmada de 1 s, creados cerca del final de un segundo real.
   await esperarVentanaDeSegundo();
-  const sid = srv.app.sesiones.crear(1);
+  const sid = await srv.app.sesiones.crear(1);
   const token = srv.app.firmador.firmar({ t: 'docente', sid }, 1);
   const cookie = `oclive_docente=${token}`;
   const expiraCookie = expDelToken(token) * 1000;
@@ -67,7 +67,7 @@ test('H02 vencimiento efectivo: cookie de 1 s que vence antes que el SID; ningú
 
   // 1. Esperar el vencimiento firmado de la cookie mientras el SID todavía es válido.
   await esperar(Math.max(0, expiraCookie - Date.now()) + 30);
-  assert.equal(srv.app.sesiones.valida(sid), true, 'precondición: el SID debe seguir vivo tras vencer la cookie');
+  assert.equal(await srv.app.sesiones.valida(sid), true, 'precondición: el SID debe seguir vivo tras vencer la cookie');
 
   // 2. HTTP ya no autentica con la cookie vencida.
   const http = await srv.peticion('/api/docente/sesion', { cabeceras: { cookie } });

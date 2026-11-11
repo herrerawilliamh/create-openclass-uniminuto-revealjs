@@ -131,11 +131,12 @@ export function soloId(valor, campo = 'id') {
 }
 
 export function crearSala(valor) {
-  const v = objeto(valor ?? {}, ['titulo', 'preModeracion'], 'sala');
+  const v = objeto(valor ?? {}, ['titulo', 'preModeracion', 'conservarResultados'], 'sala');
   if (v.preModeracion !== undefined && typeof v.preModeracion !== 'boolean') falla('sala: preModeracion debe ser booleano');
   return {
     titulo: v.titulo ? limpiarTexto(v.titulo, { max: LIMITES.titulo, campo: 'título' }) : '',
     preModeracion: v.preModeracion ?? true,
+    conservarResultados: v.conservarResultados !== false,
   };
 }
 

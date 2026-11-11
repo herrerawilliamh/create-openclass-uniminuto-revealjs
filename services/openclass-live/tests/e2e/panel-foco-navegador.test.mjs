@@ -10,7 +10,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { io } from 'socket.io-client';
 import { abrirNavegador } from '../../../../scripts/lib/chrome.mjs';
-import { crearApp } from '../../src/app.mjs';
+import { crearAppPrueba, entornoPg } from '../ayuda.mjs';
 import { hashPassword } from '../../src/auth.mjs';
 import { leerConfig } from '../../src/config.mjs';
 
@@ -18,11 +18,11 @@ const PASSWORD = 'clave-e2e-panel-foco';
 
 async function montar(t) {
   const env = { SESSION_SECRET: 'foc'.repeat(20), ADMIN_PASSWORD_HASH: hashPassword(PASSWORD), TRUST_PROXY: 'false' };
-  const sondeo = crearApp(leerConfig({ ...env, APP_URL: 'http://127.0.0.1:1' }), { log: () => {} });
+  const sondeo = await crearAppPrueba(leerConfig({ ...entornoPg(),  ...env, APP_URL: 'http://127.0.0.1:1' }), { log: () => {} });
   const { port } = await sondeo.escuchar(0, '127.0.0.1');
   await sondeo.cerrar();
   const APP = `http://127.0.0.1:${port}`;
-  const app = crearApp(leerConfig({ ...env, APP_URL: APP }), { log: () => {} });
+  const app = await crearAppPrueba(leerConfig({ ...entornoPg(),  ...env, APP_URL: APP }), { log: () => {} });
   await app.escuchar(port, '127.0.0.1');
   t.after(() => app.cerrar());
   const navegador = await abrirNavegador({ ancho: 1366, alto: 900 });

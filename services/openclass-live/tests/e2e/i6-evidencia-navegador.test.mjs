@@ -13,7 +13,7 @@ import { mkdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { io } from 'socket.io-client';
 import { abrirNavegador } from '../../../../scripts/lib/chrome.mjs';
-import { crearApp } from '../../src/app.mjs';
+import { crearAppPrueba, entornoPg } from '../ayuda.mjs';
 import { hashPassword } from '../../src/auth.mjs';
 import { leerConfig } from '../../src/config.mjs';
 
@@ -91,11 +91,11 @@ const abrirSala = (pg, cod) => pg.evaluar(`[...document.querySelectorAll('#lista
 
 async function montar(t, extra = {}) {
   const env = { SESSION_SECRET: 'i6x'.repeat(20), ADMIN_PASSWORD_HASH: hashPassword(PASSWORD), TEACHER_SESSION_HOURS: '1', TRUST_PROXY: 'false', ...extra };
-  const sondeo = crearApp(leerConfig({ ...env, APP_URL: 'http://127.0.0.1:1' }), { log: () => {}, ahora: relojReal });
+  const sondeo = await crearAppPrueba(leerConfig({ ...entornoPg(),  ...env, APP_URL: 'http://127.0.0.1:1' }), { log: () => {}, ahora: relojReal });
   const { port } = await sondeo.escuchar(0, '127.0.0.1');
   await sondeo.cerrar();
   const APP = `http://127.0.0.1:${port}`;
-  const app = crearApp(leerConfig({ ...env, APP_URL: APP }), { log: () => {}, ahora: relojReal });
+  const app = await crearAppPrueba(leerConfig({ ...entornoPg(),  ...env, APP_URL: APP }), { log: () => {}, ahora: relojReal });
   await app.escuchar(port, '127.0.0.1');
   t.after(() => app.cerrar());
   const navegador = await abrirNavegador({ ancho: 1280, alto: 900 });

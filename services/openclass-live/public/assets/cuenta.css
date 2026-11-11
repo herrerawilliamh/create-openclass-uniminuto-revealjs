@@ -1,0 +1,29 @@
+/* Interact 0.4.0: cuentas, historial y administración. Reutiliza los tokens de willedtech.css y estilos.css. */
+.chip-usuario { display: inline-flex; align-items: center; min-height: 2rem; padding: 0 var(--e2); border: 1px solid currentColor; border-radius: 999px; font-size: var(--t-nota); max-width: 18rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.vistas { display: flex; flex-wrap: wrap; gap: var(--e1); max-width: 1360px; margin: var(--e1) auto 0; }
+.vistas button[aria-current="page"] { text-decoration: underline; text-underline-offset: 4px; font-weight: 700; }
+.filtros { display: grid; grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr)); gap: var(--e3); align-items: end; }
+.filtros .campo { display: grid; gap: var(--e1); }
+.filtros .fila { grid-column: 1 / -1; }
+.tabla-responsive { overflow-x: auto; max-width: 100%; }
+.tabla-responsive table { min-width: 36rem; }
+.estado-chip { display: inline-block; padding: 0 var(--e2); border: 1px solid var(--raya); border-radius: 999px; font-size: var(--t-nota); }
+.estado-chip.activa { border-color: var(--visto); }
+.estado-chip.interrumpida { border-color: var(--campana-texto); color: var(--campana-texto); }
+.detalle-actividad { display: grid; gap: var(--e1); padding: var(--e3) 0; border-top: 1px solid var(--raya); }
+.detalle-actividad table { width: 100%; border-collapse: collapse; font-size: var(--t-nota); }
+.detalle-actividad th, .detalle-actividad td { padding: var(--e1) var(--e2) var(--e1) 0; text-align: left; border-bottom: 1px solid var(--raya); }
+.acciones-fila { display: flex; flex-wrap: wrap; gap: var(--e1); }
+.enlace-boton { display: inline-flex; align-items: center; min-height: var(--toque, 2.75rem); }
+.cuenta-pagina { max-width: 480px; margin: var(--e6) auto; padding: var(--e4); }
+.cuenta-pagina .acceso { margin: 0; max-width: none; }
+.cuenta-pagina .marca-cinta { margin-bottom: var(--e4); }
+.vinculo-codigo { font-size: 2rem; letter-spacing: .15em; font-family: ui-monospace, monospace; }
+@media (max-width: 40rem) { .chip-usuario { max-width: 10rem; } }
+
+/* Los campos nuevos (correo, búsqueda, fecha) heredan exactamente el estilo de texto/contraseña. */
+input[type=email], input[type=search], input[type=date] {
+  width: 100%; font: inherit; padding: 10px 12px; border: 1px solid var(--borde); border-radius: 10px; background: var(--panel); color: var(--texto);
+}
+body.docente input[type=email], body.docente input[type=search], body.docente input[type=date] { min-height: var(--toque); border: 1px solid var(--grafito); border-radius: 6px; }
+input[type=email]:focus-visible, input[type=search]:focus-visible, input[type=date]:focus-visible { outline: 3px solid var(--foco); outline-offset: 2px; }

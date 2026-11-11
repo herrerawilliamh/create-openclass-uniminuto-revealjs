@@ -5,6 +5,7 @@ import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import { esBinario, huellaGit, sha256 } from './huella.mjs';
+import { PAYLOAD, derivarGitops } from './compose-gitops.mjs';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
 const read = (f) => readFileSync(path.join(root, f), 'utf8').replace(/\r\n/g, '\n');
@@ -37,8 +38,7 @@ function walk(rel) {
     actual.push({ path: rel, gitSha256: huellaGit(rel, bytes) });
   }
 }
-for (const rel of ['docker-compose.yml', 'Dockerfile', '.dockerignore', '.env.example',
-  'package.json', 'package-lock.json', 'src', 'public', 'scripts/hash-password.mjs']) walk(rel);
+for (const rel of PAYLOAD) walk(rel);
 const sorted = (a) => [...a].sort((a, b) => a.path.localeCompare(b.path, 'en'));
 assert.deepEqual(sorted(actual), sorted(release.files.map(({ path, gitSha256 }) => ({ path, gitSha256 }))),
   'El payload Git (LF, según .gitattributes) difiere del artefacto aprobado');
@@ -47,17 +47,9 @@ if (existsSync(archive)) assert.equal(sha256(readFileSync(archive)), release.arc
 const base = read('docker-compose.yml');
 assert.ok(base.includes(`    image: openclass-live:${pkg.version}\n`));
 assert.match(read('Dockerfile'), /node:22\.23\.1-alpine@sha256:[a-f0-9]{64}/);
-const expected = base.replace(
-  '# OpenClass Live — stack para /home/openclass-live/ (Docker Compose plugin; adoptable en Dockhand).',
-  '# GitOps: generado desde docker-compose.yml; verificar con scripts/verificar-gitops.mjs.',
-).replace(`    image: openclass-live:${pkg.version}`, [
-  '      labels:',
-  `        org.opencontainers.image.version: "${pkg.version}"`,
-  '        org.opencontainers.image.revision: ${LIVE_REVISION:?Full approved Git SHA required}',
-  '        org.opencontainers.image.source: https://github.com/herrerawilliamh/create-openclass-uniminuto-revealjs',
-  `    image: openclass-live:${pkg.version}-` + '${LIVE_REVISION:?Full approved Git SHA required}',
-  '    pull_policy: never',
-].join('\n'));
-assert.equal(read('docker-compose.gitops.yml'), expected, 'Compose GitOps desincronizado');
+assert.match(base, /^\s+image: postgres:16\.\d+-alpine@sha256:[a-f0-9]{64}$/m, 'PostgreSQL fijado por versión y digest');
+assert.doesNotMatch(base, /^\s*ports:/m, 'Ningún puerto publicado (ni 3000 ni 5432)');
+assert.match(base, /interact-db:\n\s+internal: true/, 'La red de la base es interna');
+assert.equal(read('docker-compose.gitops.yml'), derivarGitops(base, pkg.version), 'Compose GitOps desincronizado');
 if (process.env.LIVE_REVISION !== undefined) assert.match(process.env.LIVE_REVISION, /^[a-f0-9]{40}$/);
 console.log(`GITOPS_PAYLOAD=PASS VERSION=${pkg.version} PROTOCOL=${release.protocol} FILES=${actual.length}`);

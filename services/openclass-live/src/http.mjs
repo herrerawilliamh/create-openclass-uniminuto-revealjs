@@ -10,6 +10,8 @@ import { readFileSync, readdirSync, statSync } from 'node:fs';
 import path from 'node:path';
 import qrcode from 'qrcode-generator';
 import { COOKIE_DOCENTE, cookieDocente, leerCookies, verificarPassword } from './auth.mjs';
+import { crearApiCuentas } from './api-cuentas.mjs';
+import { esErrorDisponibilidad } from './db.mjs';
 import { ipCliente } from './limites.mjs';
 import { codigoSala } from './validar.mjs';
 
@@ -79,14 +81,18 @@ async function leerJson(req, limite = 2048) {
     if (total > limite) throw Object.assign(new Error('grande'), { estado: 413 });
     partes.push(parte);
   }
-  try { return JSON.parse(Buffer.concat(partes).toString('utf8') || '{}'); } catch { throw Object.assign(new Error('json'), { estado: 400 }); }
+  let valor;
+  try { valor = JSON.parse(Buffer.concat(partes).toString('utf8') || '{}'); } catch { throw Object.assign(new Error('json'), { estado: 400 }); }
+  if (valor === null || typeof valor !== 'object' || Array.isArray(valor)) throw Object.assign(new Error('json'), { estado: 400 });
+  return valor;
 }
 
 /** Sesión docente desde la cookie firmada; null si no hay, es inválida, venció o se revocó. */
-export function sesionDesdeCookie(cabeceraCookie, { firmador, sesiones }) {
+export async function sesionDesdeCookie(cabeceraCookie, { firmador, sesiones }) {
   const token = leerCookies(cabeceraCookie)[COOKIE_DOCENTE];
   const datos = token && firmador.verificar(token, 'docente');
-  return datos && sesiones.valida(datos.sid) ? datos : null;
+  const usuario = datos && await sesiones.usuario(datos.sid);
+  return usuario ? { ...datos, usuario } : null;
 }
 
 /** Peticiones de cambio de estado: mismo origen exacto (Origin o Sec-Fetch-Site) además del token CSRF. */
@@ -96,7 +102,11 @@ function mismoOrigen(req, appUrl) {
   return req.headers['sec-fetch-site'] === 'same-origin';
 }
 
-export function crearManejadorHttp({ config, estaticos, firmador, sesiones, limitadorLogin, limitadorLoginGlobal, log }) {
+export function crearManejadorHttp({ config, estaticos, firmador, sesiones, limitadorLogin, limitadorLoginGlobal, log, cuentas, historial, correo, almacen, limitadorCuenta, limitadorTokens, db = null }) {
+  const apiCuentas = crearApiCuentas({ config, firmador, sesiones, cuentas, historial, correo, almacen, log, limitadorCuenta, limitadorTokens,
+    util: { enviar, leerJson, ipCliente: (req) => ipCliente(req.headers, req.socket.remoteAddress, config.confiarProxy),
+      mismoOrigen: (req) => mismoOrigen(req, config.appUrl), sesionDesdeCookie: (c) => sesionDesdeCookie(c, { firmador, sesiones }),
+      cookieSesion: (valor, segundos) => cookieDocente(valor, { segura: config.cookieSegura, segundos }) } });
   const segundosSesion = config.sesionDocenteHoras * 3600;
   const pagina = (ruta) => estaticos.get(ruta);
 
@@ -105,9 +115,18 @@ export function crearManejadorHttp({ config, estaticos, firmador, sesiones, limi
     const ruta = url.pathname;
     if (config.cookieSegura) res.setHeader('Strict-Transport-Security', 'max-age=15552000');
     try {
+      if (await apiCuentas(req, res, ruta, url.searchParams)) return;
       if (req.method === 'GET' || req.method === 'HEAD') {
-        if (ruta === '/healthz') return enviar(res, 200, { estado: 'ok' });
+        // Salud: el proceso responde Y PostgreSQL contesta. Sin detalles de la base (ni host ni causa).
+        if (ruta === '/healthz') {
+          const ok = !db || await db.disponible();
+          return enviar(res, ok ? 200 : 503, { estado: ok ? 'ok' : 'degradado' });
+        }
         if (ruta === '/docente') return enviar(res, 301, '', 'text/plain', { Location: '/docente/' });
+        if (ruta === '/cuenta') return enviar(res, 301, '', 'text/plain', { Location: '/cuenta/' });
+        if (ruta === '/vincular') return enviar(res, 301, '', 'text/plain', { Location: '/vincular/' });
+        if (ruta === '/cuenta/') return servirArchivo(res, pagina('/cuenta/index.html'));
+        if (ruta === '/vincular/') return servirArchivo(res, pagina('/vincular/index.html'));
 
         const qr = /^\/qr\/([A-Za-z0-9]{6})\.svg$/.exec(ruta);
         if (qr) {
@@ -123,16 +142,17 @@ export function crearManejadorHttp({ config, estaticos, firmador, sesiones, limi
         if (ruta === '/docente/') return servirArchivo(res, pagina('/docente/index.html'));
 
         if (ruta === '/api/docente/sesion') {
-          const s = sesionDesdeCookie(req.headers.cookie, { firmador, sesiones });
-          return enviar(res, 200, s ? { autenticado: true, csrf: firmador.csrf(s.sid) } : { autenticado: false });
+          const s = await sesionDesdeCookie(req.headers.cookie, { firmador, sesiones });
+          return enviar(res, 200, s ? { autenticado: true, heredado: Boolean(config.hashDocente), csrf: firmador.csrf(s.sid), usuario: { id: s.usuario.id, nombre: s.usuario.nombre, email: s.usuario.email, rol: s.usuario.rol } }
+            : { autenticado: false, heredado: Boolean(config.hashDocente) });
         }
 
         const archivo = estaticos.get(ruta);
-        if (archivo && ruta !== '/index.html' && ruta !== '/docente/index.html') return servirArchivo(res, archivo, true);
+        if (archivo && !['/index.html', '/docente/index.html', '/cuenta/index.html', '/vincular/index.html'].includes(ruta)) return servirArchivo(res, archivo, true);
         return enviar(res, 404, { error: 'no_encontrado' });
       }
 
-      if (req.method === 'POST' && ruta === '/api/docente/login') {
+      if (req.method === 'POST' && ruta === '/api/docente/login' && config.hashDocente) {
         if (!mismoOrigen(req, config.appUrl)) return enviar(res, 403, { error: 'origen' });
         const ip = ipCliente(req.headers, req.socket.remoteAddress, config.confiarProxy);
         if (!limitadorLogin.permitir(ip) || !limitadorLoginGlobal.permitir('global')) {
@@ -145,7 +165,8 @@ export function crearManejadorHttp({ config, estaticos, firmador, sesiones, limi
           return enviar(res, 401, { error: 'credenciales' });
         }
         limitadorLogin.olvidar(ip);
-        const sid = sesiones.crear(segundosSesion);
+        const sid = await sesiones.crear(segundosSesion);
+        // Acceso heredado: cuenta interna compartida (sin correo); conservado solo por compatibilidad con 0.3.0.
         const token = firmador.firmar({ t: 'docente', sid }, segundosSesion);
         log('login_ok');
         return enviar(res, 200, { autenticado: true, csrf: firmador.csrf(sid) }, undefined,
@@ -154,10 +175,10 @@ export function crearManejadorHttp({ config, estaticos, firmador, sesiones, limi
 
       if (req.method === 'POST' && ruta === '/api/docente/logout') {
         if (!mismoOrigen(req, config.appUrl)) return enviar(res, 403, { error: 'origen' });
-        const s = sesionDesdeCookie(req.headers.cookie, { firmador, sesiones });
+        const s = await sesionDesdeCookie(req.headers.cookie, { firmador, sesiones });
         if (s) {
           if (req.headers['x-oc-csrf'] !== firmador.csrf(s.sid)) return enviar(res, 403, { error: 'csrf' });
-          sesiones.revocar(s.sid);
+          await sesiones.revocar(s.sid);
         }
         return enviar(res, 200, { autenticado: false }, undefined,
           { 'Set-Cookie': cookieDocente('', { segura: config.cookieSegura, segundos: 0 }) });
@@ -166,6 +187,11 @@ export function crearManejadorHttp({ config, estaticos, firmador, sesiones, limi
       return enviar(res, req.method === 'POST' ? 404 : 405, { error: 'no_admitido' });
     } catch (error) {
       if (error.estado) return enviar(res, error.estado, { error: 'solicitud_invalida' });
+      // Base no disponible: 503 con reintento, sin detalles internos (ni host, ni usuario, ni SQL).
+      if (esErrorDisponibilidad(error)) {
+        log('base_no_disponible', { codigo: String(error.causa ?? error.code ?? '').slice(0, 8) });
+        return enviar(res, 503, { error: 'no_disponible' }, undefined, { 'Retry-After': '5' });
+      }
       log('error_http', { tipo: error.name });
       return enviar(res, 500, { error: 'interno' });
     }

@@ -1,0 +1,76 @@
+# OpenClass Live — trabajo de copia de seguridad de PostgreSQL (complemento de docker-compose.yml).
+# Ejecución bajo demanda (programarla con el cron del host; no hay demonio residente):
+#   Modo A (PostgreSQL dedicado, red interna):
+#     docker compose -f docker-compose.yml -f docker-compose.respaldo.yml --profile respaldo-dedicado run --rm interact-respaldo
+#   Modo B (PostgreSQL administrado, red con salida + TLS verificado):
+#     docker compose -f docker-compose.yml -f docker-compose.respaldo.yml --profile respaldo-administrado run --rm interact-respaldo-administrado
+# - Credencial de RESPALDO (solo SELECT): DATABASE_BACKUP_URL. No recibe ninguna otra credencial.
+# - BACKUP_HOST_DIR: carpeta del host dedicada (permisos 700, propietario uid 1000) que se replica FUERA del host
+#   (almacenamiento independiente, cifrado en reposo). La copia contiene datos personales.
+# - Imagen de herramientas (pg_dump/pg_restore 16), distinta de la imagen del servicio.
+services:
+  interact-respaldo:
+    profiles: ["respaldo-dedicado"]
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: herramientas
+    image: openclass-live-herramientas:0.4.0
+    restart: "no"
+    init: true
+    read_only: true
+    user: "1000:1000"
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    command: ["node", "scripts/respaldar.mjs"]
+    environment:
+      DATABASE_BACKUP_URL: ${DATABASE_BACKUP_URL:?DATABASE_BACKUP_URL is required}
+      BACKUP_DIR: /respaldos
+      BACKUP_KEEP: ${BACKUP_KEEP:-14}
+      DB_SCHEMA: interact
+      DB_SSL: ${DB_SSL:-desactivado}
+      DB_SSL_CA_FILE: ${DB_SSL_CA_FILE:-}
+    volumes:
+      - ${BACKUP_HOST_DIR:?BACKUP_HOST_DIR is required}:/respaldos
+      - ${DB_CA_HOST_FILE:-/dev/null}:/etc/interact/db-ca.pem:ro
+    tmpfs:
+      - /tmp:size=16m,mode=1777
+    mem_limit: 256m
+    pids_limit: 64
+    networks:
+      - interact-db
+
+  interact-respaldo-administrado:
+    profiles: ["respaldo-administrado"]
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: herramientas
+    image: openclass-live-herramientas:0.4.0
+    restart: "no"
+    init: true
+    read_only: true
+    user: "1000:1000"
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    command: ["node", "scripts/respaldar.mjs"]
+    environment:
+      DATABASE_BACKUP_URL: ${DATABASE_BACKUP_URL:?DATABASE_BACKUP_URL is required}
+      BACKUP_DIR: /respaldos
+      BACKUP_KEEP: ${BACKUP_KEEP:-14}
+      DB_SCHEMA: interact
+      DB_SSL: ${DB_SSL:-desactivado}
+      DB_SSL_CA_FILE: ${DB_SSL_CA_FILE:-}
+    volumes:
+      - ${BACKUP_HOST_DIR:?BACKUP_HOST_DIR is required}:/respaldos
+      - ${DB_CA_HOST_FILE:-/dev/null}:/etc/interact/db-ca.pem:ro
+    tmpfs:
+      - /tmp:size=16m,mode=1777
+    mem_limit: 256m
+    pids_limit: 64
+    networks:
+      - interact-salida

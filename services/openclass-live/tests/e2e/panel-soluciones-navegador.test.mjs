@@ -10,7 +10,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { abrirNavegador } from '../../../../scripts/lib/chrome.mjs';
-import { crearApp } from '../../src/app.mjs';
+import { crearAppPrueba, entornoPg } from '../ayuda.mjs';
 import { hashPassword } from '../../src/auth.mjs';
 import { leerConfig } from '../../src/config.mjs';
 
@@ -19,11 +19,11 @@ const CLAVE = 'openclass-live:soluciones';
 const EXPLICACION = 'EXPLICACION-IMPROVISADA-PRIVADA';
 
 test('panel docente: las soluciones improvisadas no sobreviven a la sala ni a la sesión', { timeout: 180_000 }, async (t) => {
-  const sondeo = crearApp(leerConfig({ APP_URL: 'http://127.0.0.1:1', SESSION_SECRET: 'x'.repeat(48), ADMIN_PASSWORD_HASH: hashPassword(PASSWORD) }), { log: () => {} });
+  const sondeo = await crearAppPrueba(leerConfig({ ...entornoPg(),  APP_URL: 'http://127.0.0.1:1', SESSION_SECRET: 'x'.repeat(48), ADMIN_PASSWORD_HASH: hashPassword(PASSWORD) }), { log: () => {} });
   const { port } = await sondeo.escuchar(0, '127.0.0.1');
   await sondeo.cerrar();
   const APP = `http://127.0.0.1:${port}`;
-  const app = crearApp(leerConfig({ APP_URL: APP, SESSION_SECRET: 'e2e'.repeat(20), ADMIN_PASSWORD_HASH: hashPassword(PASSWORD), TRUST_PROXY: 'false' }), { log: () => {} });
+  const app = await crearAppPrueba(leerConfig({ ...entornoPg(),  APP_URL: APP, SESSION_SECRET: 'e2e'.repeat(20), ADMIN_PASSWORD_HASH: hashPassword(PASSWORD), TRUST_PROXY: 'false' }), { log: () => {} });
   await app.escuchar(port, '127.0.0.1');
   t.after(() => app.cerrar());
 

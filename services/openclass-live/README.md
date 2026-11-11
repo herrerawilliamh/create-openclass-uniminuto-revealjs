@@ -2,12 +2,14 @@
 
 **Interact** es una plataforma propia de WillEdTech, independiente de UNIMINUTO: producto de participación en tiempo real que se integra con OpenClass (sistema de presentaciones y cursos) y con otras soluciones educativas. Los identificadores técnicos `openclass-live` (servicio, imagen, rutas, versión 0.3.0) se conservan temporalmente hasta una migración independiente.
 
+**Versión 0.4.0:** cuentas personales, invitaciones verificables, historial persistente y panel de superusuario: [docs/INTERACT-0.4.0.md](docs/INTERACT-0.4.0.md).
+
 Preparación GitOps local y promoción manual: [docs/GITOPS.md](docs/GITOPS.md).
 La definición GitOps conserva la identidad del stack y añade versión + SHA; no activa sincronización.
 
 Participación en tiempo real (encuestas y preguntas) para clases que el docente presenta **en su propio computador** con OpenClass Reveal.js y comparte por Zoom, Teams o Meet. Los estudiantes entran desde el teléfono con un QR o un código de 6 caracteres; no necesitan cuenta.
 
-**Restricción de diseño:** las diapositivas, fondos, logotipos, Markdown y notas del presentador nunca llegan al servidor. Al crear una encuesta solo viajan enunciado, código opcional, tipo y opciones. El contrato v0.2 rechaza `correctas` y `explicacion` en `encuesta:crear`: la solución permanece local hasta la revelación explícita mediante `encuesta:revelar`, con la votación cerrada. También viajan las respuestas y las preguntas de los participantes; el estado se borra al finalizar o vencer la sala.
+**Restricción de diseño:** las diapositivas, fondos, logotipos, Markdown y notas del presentador nunca llegan al servidor. Al crear una encuesta solo viajan enunciado, código opcional, tipo y opciones. El contrato v0.2 rechaza `correctas` y `explicacion` en `encuesta:crear`: la solución permanece local hasta la revelación explícita mediante `encuesta:revelar`, con la votación cerrada. También viajan las respuestas y las preguntas de los participantes; al finalizar o vencer la sala se borran respuestas, preguntas y alias; en el historial de la cuenta solo quedan recuentos agregados (ver docs/INTERACT-0.4.0.md).
 
 - Guía para docentes: [docs/GUIA-DOCENTE.md](docs/GUIA-DOCENTE.md)
 - Protocolo Socket.IO: [docs/PROTOCOLO.md](docs/PROTOCOLO.md)
@@ -49,16 +51,19 @@ Ver [.env.example](.env.example). El archivo `.env` real **nunca** se versiona (
 | --- | --- |
 | `APP_HOST`, `APP_URL` | Dominio público; `APP_URL` es también el único origen admitido para estudiantes y panel. |
 | `SESSION_SECRET` | 48 bytes aleatorios (base64url). Firma cookies y claves. Rotarlo invalida todas las sesiones. |
-| `ADMIN_PASSWORD_HASH` | Hash scrypt de la contraseña docente, entre comillas simples. Nunca la contraseña. |
+| `ADMIN_PASSWORD_HASH` | OPCIONAL (acceso compartido heredado de 0.3.0): hash scrypt entre comillas simples; vacío = solo cuentas personales. Ver docs/INTERACT-0.4.0.md (correo, superusuario). |
+| `DATABASE_URL`, `DATABASE_MIGRATION_URL`, `DATABASE_BACKUP_URL`, `DATABASE_ADMIN_URL` | PostgreSQL: una credencial por función (aplicación, migraciones, respaldo, administración). Ver [docs/POSTGRESQL.md](docs/POSTGRESQL.md). |
+| `POSTGRES_ADMIN_PASSWORD`, `INTERACT_DB_*_PASSWORD` | Contraseñas de la base dedicada y de sus roles (generadas por `npm run gen-env`). |
+| `DB_SSL`, `DB_POOL_MAX` | TLS hacia PostgreSQL (`verificado` si la base no está en el mismo host) y tamaño del pool. |
 | `PRESENTER_ORIGINS` | Orígenes de la presentación local (`http://localhost:8613,http://localhost:8600`). |
-| `TRUST_PROXY` | `true` detrás de Traefik (IP de `X-Real-Ip`, solo para límites en memoria). |
+| `TRUST_PROXY`, `TRUSTED_PROXY_CIDRS` | `true` detrás de Traefik. **`TRUSTED_PROXY_CIDRS` es obligatorio en producción** (IP/32 o subred exacta ≥ /24 del proxy; sin valor por defecto, el servicio no arranca sin él). Solo se usa `X-Forwarded-For` de ese par; `X-Real-Ip` no se usa. Ver `docs/PROXY-ENTRADA.md`. |
 | `TEACHER_SESSION_HOURS`, `ROOM_TTL_MINUTES`, `MAX_ROOM_PARTICIPANTS`, `MAX_ROOMS` | Duración de la sesión docente, vida de una sala, cupos. |
 
 El servidor se niega a arrancar si falta un secreto, si conserva el valor de ejemplo o si es débil; el mensaje nombra la variable, nunca su valor.
 
 ## Privacidad y límites conocidos
 
-- Almacenamiento **solo en memoria**. No hay base de datos ni volumen `data/` (no se justifica). **Reiniciar o actualizar el contenedor pierde las salas abiertas**: hágalo fuera de clase. Tras un fallo, el docente crea una sala nueva; no queda nada que limpiar en disco.
+- Las salas en vivo (encuestas, respuestas, preguntas, participantes) están **solo en memoria**. **Reiniciar o actualizar el contenedor pierde las salas abiertas**: hágalo fuera de clase; quedan en el historial como «interrumpida». Cuentas, sesiones del panel, invitaciones, auditoría e historial **agregado** se guardan en PostgreSQL ([docs/POSTGRESQL.md](docs/POSTGRESQL.md), [respaldo](docs/RESPALDO-RESTAURACION.md)).
 - Finalizar o vencer una sala (`ROOM_TTL_MINUTES`) borra encuestas, respuestas, preguntas y participantes.
 - Mientras el proceso sigue vivo, un estudiante que recarga o pierde la conexión vuelve como el mismo participante (token en `localStorage` de su navegador; en el servidor solo se guarda su hash SHA-256).
 - No se guardan IP en historiales. La IP se usa en memoria, unos minutos, para limitar intentos. Los registros (`docker logs`) solo contienen eventos y contadores: nunca alias, textos, respuestas, códigos ni IP.
@@ -71,6 +76,12 @@ El servidor se niega a arrancar si falta un secreto, si conserva el valor de eje
 Destino: `/home/openclass-live/`, red Docker externa `web`, Traefik con `myresolver`, dominio `openclass-live.apps.willedtech.io`. El contenedor no publica puertos: solo entra tráfico por Traefik/HTTPS.
 
 > El despliegue cambia el servidor: requiere **autorización expresa**. Una mutación → una verificación → siguiente paso. Si un paso falla, detenerse y diagnosticar.
+
+**Desde 0.4.0** el stack incluye PostgreSQL 16 (`interact-db`, red interna, sin puertos publicados), la preparación
+de roles y las migraciones como pasos que terminan antes de arrancar el servicio. Para una base administrada, quite
+el perfil `postgres-dedicado`. Las copias se hacen con `docker-compose.respaldo.yml`. Antes de promover: leer
+[docs/ADR-0001-POSTGRESQL.md](docs/ADR-0001-POSTGRESQL.md), [docs/POSTGRESQL.md](docs/POSTGRESQL.md) y
+[docs/RESPALDO-RESTAURACION.md](docs/RESPALDO-RESTAURACION.md).
 ### Preparación y promoción de v0.3.0 (sustituye a la 0.2.0, que queda inmutable en `releases/0.2.0.json`)
 
 El servicio usa protocolo **2**; el generador npm es **1.3.1**.

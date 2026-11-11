@@ -1,4 +1,5 @@
 import test from 'node:test';
+import { borrarEsquema, nuevoEsquema, urlPrueba } from './ayuda.mjs';
 import assert from 'node:assert/strict';
 import { cpSync, mkdtempSync, readFileSync, writeFileSync, rmSync, utimesSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -9,18 +10,19 @@ import { crearApp } from '../src/app.mjs';
 import { leerConfig } from '../src/config.mjs';
 import { hashPassword } from '../src/auth.mjs';
 
-const raiz = new URL('../', import.meta.url);
+const raiz = new URL('../', import.meta.url);const VERSION = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8')).version; // la versión vigente; releases/0.3.0.json y 0.2.0.json quedan como historia inmutable
+
 
 test('paquete reproducible, aislado y con versiones coherentes; rechaza archivos ajenos', () => {
   const dir = mkdtempSync(path.join(tmpdir(), 'oclive-release-'));
   try {
-    for (const f of ['package.json','package-lock.json','Dockerfile','.dockerignore','.env.example','docker-compose.yml','src','public','scripts']) {
+    for (const f of ['package.json','package-lock.json','Dockerfile','.dockerignore','.env.example','docker-compose.yml','docker-compose.respaldo.yml','src','public','scripts']) {
       cpSync(new URL(f, raiz), path.join(dir, f), { recursive: true });
     }
     writeFileSync(path.join(dir, '.env'), 'PRIVATE_SENTINEL=DO_NOT_PACKAGE');
     const run = () => spawnSync(process.execPath, ['scripts/empaquetar-despliegue.mjs'], { cwd: dir, encoding: 'utf8' });
     assert.equal(run().status, 0);
-    const archive = path.join(dir, 'despliegue/openclass-live-0.3.0.tar.gz');
+    const archive = path.join(dir, `despliegue/openclass-live-${VERSION}.tar.gz`);
     const first = readFileSync(archive);
     utimesSync(path.join(dir, 'src/server.mjs'), new Date(), new Date());
     assert.equal(run().status, 0);
@@ -45,7 +47,9 @@ test('verificador de promoción completa HTTP, WS y protocolo 2 con el servicio 
   await new Promise((resolve) => reserva.close(resolve));
   const base = `http://127.0.0.1:${port}`;
   const password = 'synthetic-release-verifier-password';
-  const app = crearApp(leerConfig({ APP_URL: base, SESSION_SECRET: 'synthetic-release-signing-secret-for-local-test', ADMIN_PASSWORD_HASH: hashPassword(password) }), { log: () => {} });
+  const esquema = nuevoEsquema();
+  const app = await crearApp(leerConfig({ APP_URL: base, SESSION_SECRET: 'synthetic-release-signing-secret-for-local-test', ADMIN_PASSWORD_HASH: hashPassword(password),
+    DATABASE_URL: urlPrueba(), DB_SCHEMA: esquema }), { log: () => {} });
   await app.escuchar(port, '127.0.0.1');
   try {
     const result = await new Promise((resolve, reject) => {
@@ -59,7 +63,7 @@ test('verificador de promoción completa HTTP, WS y protocolo 2 con el servicio 
     assert.equal(result.code, 0, result.output);
     assert.match(result.output, /PASS  protocolo v2 anunciado/);
     assert.equal(app.almacen.listarSalas().length, 0);
-  } finally { await app.cerrar(); }
+  } finally { await app.cerrar(); await borrarEsquema(esquema); }
 });
 
 test('empaquetador oficial: dos empaquetados independientes dan el mismo SHA-256 y coinciden con el manifiesto', async () => {
@@ -69,7 +73,7 @@ test('empaquetador oficial: dos empaquetados independientes dan el mismo SHA-256
   const sha = (b) => createHash('sha256').update(b).digest('hex');
   const empaquetar = () => {
     const dir = mkdtempSync(path.join(tmpdir(), 'oclive-repro-'));
-    for (const f of ['package.json','package-lock.json','Dockerfile','.dockerignore','.env.example','docker-compose.yml','src','public','scripts']) {
+    for (const f of ['package.json','package-lock.json','Dockerfile','.dockerignore','.env.example','docker-compose.yml','docker-compose.respaldo.yml','src','public','scripts']) {
       cpSync(new URL(f, raiz), path.join(dir, f), { recursive: true });
     }
     assert.equal(spawnSync(process.execPath, ['scripts/empaquetar-despliegue.mjs'], { cwd: dir, encoding: 'utf8' }).status, 0);
@@ -77,17 +81,17 @@ test('empaquetador oficial: dos empaquetados independientes dan el mismo SHA-256
   };
   const a = empaquetar(), b = empaquetar();
   try {
-    const nombre = 'despliegue/openclass-live-0.3.0.tar.gz';
+    const nombre = `despliegue/openclass-live-${VERSION}.tar.gz`;
     const ba = readFileSync(path.join(a, nombre)), bb = readFileSync(path.join(b, nombre));
     assert.equal(sha(ba), sha(bb), 'mismo árbol, mismo SHA-256');
     assert.equal(ba[9], 3, 'gzip: sistema operativo normalizado (Unix)');
     assert.equal(ba.readUInt32LE(4), 0, 'gzip: sin fecha');
-    const manifiesto = JSON.parse(readFileSync(new URL('releases/0.3.0.json', raiz), 'utf8'));
-    assert.equal(sha(ba), manifiesto.archiveSha256, 'el artefacto regenerado coincide con releases/0.3.0.json');
+    const manifiesto = JSON.parse(readFileSync(new URL(`releases/${VERSION}.json`, raiz), 'utf8'));
+    assert.equal(sha(ba), manifiesto.archiveSha256, 'el artefacto regenerado coincide con el manifiesto vigente');
     const out = path.join(a, 'extraido');
     mkdirSync(out);
     assert.equal(spawnSync('tar', ['-xzf', nombre, '-C', 'extraido'], { cwd: a }).status, 0);
-    const raizExtraida = path.join(out, 'openclass-live-0.3.0');
+    const raizExtraida = path.join(out, `openclass-live-${VERSION}`);
     const encontrados = [];
     (function walk(d) {
       for (const n of readdirSync(d)) {

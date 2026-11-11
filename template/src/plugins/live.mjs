@@ -2,7 +2,8 @@
  * Interact: adaptador local de Reveal.js (participación en vivo sin publicar las diapositivas).
  *
  * La presentación sigue en el computador del docente; los estudiantes NO la cargan. El adaptador:
- * - no hace ninguna petición al servidor hasta que el docente pulsa «Conectar» con su clave de presentador;
+ * - no hace ninguna petición al servidor hasta que el docente pulsa «Conectar» con su clave de presentador
+ *   o «Iniciar sesión con su cuenta» (vínculo temporal; iniciar sesión nunca abre una sala por sí solo);
  * - envía SOLO la encuesta de la diapositiva actual cuando el docente la abre expresamente
  *   (enunciado, código, tipo y opciones; nunca el Markdown, notas ni imágenes);
  * - conserva la solución (correctas y explicación) en este computador y la envía únicamente al pulsar
@@ -282,6 +283,48 @@ export function OpenClassLive({ servidor }) {
     mensaje(textoIncompatible(componente), 'error');
   }
 
+  // ---------- Cuenta de Interact (vínculo temporal; «Iniciar sesión» no abre ninguna sala) ----------
+  // El navegador del sistema aprueba un código de un solo uso; la credencial recibida vive SOLO en memoria,
+  // nunca viaja en una URL ni se guarda. «Iniciar clase» es un paso aparte y explícito.
+  let cuenta = { estado: 'ninguna', codigo: '', url: '', usuario: null };
+  let credencial = '';
+  let sondeoVinculo = null;
+  const llamarCuenta = async (ruta, cuerpo, autenticada = false) => {
+    try {
+      const r = await fetch(`${base}${ruta}`, { method: 'POST', headers: { 'Content-Type': 'application/json', ...(autenticada ? { Authorization: `Bearer ${credencial}` } : {}) }, body: JSON.stringify(cuerpo ?? {}) });
+      return { estado: r.status, datos: await r.json().catch(() => ({})) };
+    } catch { return { estado: 0, datos: {} }; }
+  };
+  function reiniciarCuenta() { clearInterval(sondeoVinculo); sondeoVinculo = null; credencial = ''; cuenta = { estado: 'ninguna', codigo: '', url: '', usuario: null }; }
+  async function vincularCuenta() {
+    reiniciarCuenta();
+    const r = await llamarCuenta('/api/vinculo/iniciar');
+    if (r.estado !== 200) { mensaje('No se pudo iniciar el vínculo con Interact. Revise la conexión.', 'error'); return pintarMenu(); }
+    const { id, secreto, codigo, url, venceEn } = r.datos;
+    cuenta = { estado: 'vinculando', codigo, url, usuario: null };
+    const limite = Date.now() + venceEn * 1000;
+    sondeoVinculo = setInterval(async () => {
+      if (Date.now() > limite) { reiniciarCuenta(); mensaje('El código venció. Inicie sesión de nuevo.', 'alerta'); return pintarMenu(); }
+      const s = await llamarCuenta('/api/vinculo/sondear', { id, secreto });
+      if (s.estado === 200 && s.datos.estado === 'aprobado') {
+        clearInterval(sondeoVinculo); sondeoVinculo = null;
+        credencial = s.datos.credencial; cuenta = { estado: 'conectada', codigo: '', url: '', usuario: s.datos.usuario };
+        mensaje(`Sesión iniciada como ${s.datos.usuario.nombre || s.datos.usuario.email}. Ahora puede iniciar la clase.`, 'ok', 6000);
+        pintarMenu();
+      } else if (s.estado === 404 || s.estado === 410) { reiniciarCuenta(); mensaje('El vínculo ya no es válido. Inicie sesión de nuevo.', 'alerta'); pintarMenu(); }
+    }, 2000);
+    window.open(url, '_blank', 'noopener,noreferrer');
+    pintarMenu();
+  }
+  async function iniciarClaseCuenta() {
+    mensaje('Abriendo la sala…');
+    const r = await llamarCuenta('/api/vinculo/clase', { titulo: '' }, true);
+    if (r.estado === 200) return conectar(r.datos.clave);
+    if (r.estado === 401) { reiniciarCuenta(); mensaje('La sesión de Interact venció. Inicie sesión de nuevo.', 'alerta'); return pintarMenu(); }
+    mensaje(r.datos?.mensaje || 'No se pudo abrir la sala.', 'error');
+  }
+  async function salirCuenta() { if (credencial) await llamarCuenta('/api/vinculo/salir', {}, true); reiniciarCuenta(); mensaje('Sesión de Interact cerrada en esta presentación.', 'ok', 4000); pintarMenu(); }
+
   function desconectar() {
     socket?.disconnect();
     socket = null;
@@ -466,8 +509,23 @@ export function OpenClassLive({ servidor }) {
       el('li', {}, 'Abra el ', el('a', { href: `${base}/docente/`, target: '_blank', rel: 'noopener noreferrer', texto: 'panel docente' }), ' y cree la sala de la clase.'),
       el('li', { texto: 'Pulse «Copiar clave de presentador».' }),
       el('li', { texto: 'Pegue la clave aquí y pulse «Conectar participación».' }));
+    const bloqueCuenta = cuenta.estado === 'conectada'
+      ? el('div', { clase: 'oc-live-cuenta' },
+        ayudaTexto(`Sesión de Interact: ${cuenta.usuario?.nombre || cuenta.usuario?.email}.`),
+        boton('Iniciar clase', iniciarClaseCuenta, { foco: 'clase', primario: true }),
+        boton('Cerrar sesión de Interact', salirCuenta, { foco: 'salir-cuenta', clase: 'oc-live-enlace' }))
+      : cuenta.estado === 'vinculando'
+        ? el('div', { clase: 'oc-live-cuenta', role: 'status' },
+          ayudaTexto('Se abrió una pestaña de Interact. Inicie sesión allí y escriba este código:'),
+          el('strong', { clase: 'oc-live-codigo-vinculo', texto: cuenta.codigo }),
+          el('a', { href: cuenta.url, target: '_blank', rel: 'noopener noreferrer', texto: 'Abrir de nuevo la pestaña' }),
+          boton('Cancelar', () => { reiniciarCuenta(); pintarMenu(); }, { foco: 'cancelar-vinculo', clase: 'oc-live-enlace' }))
+        : el('div', { clase: 'oc-live-cuenta' },
+          boton('Iniciar sesión con su cuenta', vincularCuenta, { foco: 'cuenta' }),
+          ayudaTexto('Opcional. Iniciar sesión no abre ninguna sala: la clase empieza solo cuando usted pulsa «Iniciar clase».'));
     return el('section', { clase: 'oc-live-momento oc-live-m-desconectado' },
       el('p', { clase: 'oc-live-m-titulo', texto: 'Conectar participación' }),
+      bloqueCuenta,
       guiaAbierta ? el('div', { clase: 'oc-live-guia' }, pasos,
         ayudaTexto('Una sala sirve para toda la clase: el mismo QR en la portada, la temática y cada pregunta. Hasta conectar, la presentación no envía nada.'),
         boton('Entendido', () => { guiaAbierta = false; marcarOrientacion(); pintarMenu(); }, { foco: 'guia' }))
@@ -504,7 +562,7 @@ export function OpenClassLive({ servidor }) {
     const r = ultimaRonda(m.activa);
     // Con cada voto solo cambia el número de respuestas: se actualiza sin rehacer el menú (el foco no salta).
     const firma = JSON.stringify([m.tipo, m.deAqui, m.activa?.id, m.activa?.ronda, m.activa?.estado, m.activa?.resultadosPublicados, m.activa?.correctaRevelada,
-      r?.cierra, r?.cierre, m.previa?.id, sala?.codigo, estado?.sala?.conectados, duracion(), textoMensaje, guiaAbierta, vista, conectando,
+      r?.cierra, r?.cierre, m.previa?.id, sala?.codigo, estado?.sala?.conectados, duracion(), textoMensaje, guiaAbierta, vista, conectando, cuenta.estado, cuenta.codigo, cuenta.url, cuenta.usuario?.email ?? cuenta.usuario?.nombre,
       encuestaDeDiapositiva() ? ocultos.has(deck.getCurrentSlide()) : null, deck?.getIndices?.()]);
     if (firma === firmaMenu) {
       menu.querySelectorAll('[data-oc-respuestas]').forEach((n) => { n.textContent = String(r?.respondientes ?? 0); });

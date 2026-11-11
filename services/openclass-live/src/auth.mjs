@@ -104,7 +104,7 @@ export function cookieDocente(valor, { segura, segundos }) {
  * la cookie puede vencer antes que el SID, y entonces el panel deja de ser válido.
  * `datos` debe venir de `sesionDesdeCookie` (o de `socket.data` ya validado en el handshake).
  */
-export function panelVigente(datos, sesiones) {
+export async function panelVigente(datos, sesiones) {
   const { sid, exp } = datos ?? {};
-  return typeof sid === 'string' && Number.isFinite(exp) && Date.now() < exp * 1000 && sesiones.valida(sid);
+  return typeof sid === 'string' && Number.isFinite(exp) && Date.now() < exp * 1000 && await sesiones.valida(sid);
 }

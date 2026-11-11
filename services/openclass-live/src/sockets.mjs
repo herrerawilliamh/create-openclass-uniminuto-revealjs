@@ -43,7 +43,7 @@ function conSala(datos) {
   return { salaId: V.id(salaId, 'salaId'), resto };
 }
 
-export function crearSockets(servidorHttp, { config, almacen, firmador, sesiones, log, ahora = Date.now, intervaloSesionesMs = 5_000 }) {
+export function crearSockets(servidorHttp, { config, almacen, firmador, sesiones, log, historial = null, cuentas = null, ahora = Date.now, intervaloSesionesMs = 5_000 }) {
   const io = new Server(servidorHttp, {
     serveClient: true,
     maxHttpBufferSize: 16 * 1024,
@@ -68,26 +68,35 @@ export function crearSockets(servidorHttp, { config, almacen, firmador, sesiones
 
   // ---------- H02: autorización del destinatario en el momento de enviar ----------
   /** Credencial del socket docente vigente AHORA (sesión del panel o clave de presentador de su sala). */
-  function destinatarioVigente(socket) {
+  async function destinatarioVigente(socket) {
     const { rol, salaId, version } = socket.data;
     if (rol === 'docente') return panelVigente(socket.data, sesiones);
-    if (rol === 'presentador') return almacen.existe(salaId) && almacen.versionPresentador(salaId) === version;
+    if (rol === 'presentador') return almacen.existe(salaId) && almacen.versionPresentador(salaId) === version && await propietarioActivo(salaId);
     return false;
   }
+  /** Una cuenta suspendida deja sin efecto sus salas: las claves de presentador de su sala dejan de valer. */
+  async function propietarioActivo(salaId) {
+    const dueno = almacen.propietarioDe(salaId);
+    return !dueno || !cuentas || (await cuentas.usuario(dueno))?.estado === 'activo';
+  }
+  /** Revalidación que falla cerrada: si la base no responde, el destinatario no se considera vigente. */
+  const vigenteSeguro = (socket) => destinatarioVigente(socket).catch((error) => { log('revalidacion_fallida', { tipo: error.name }); return false; });
   function cortarSocket(socket) {
     for (const sala of socket.rooms) if (sala !== socket.id) socket.leave(sala);
     socket.disconnect(true);
   }
   /** Revalida a cada destinatario antes de enviar: un socket vencido o revocado se corta y no recibe nada. */
-  function emitirADocentes(salaId, nombre, payload) {
+  async function emitirADocentes(salaId, nombre, payload) {
     const sala = `doc:${salaId}`;
+    // Destinatarios fijados ahora (antes de cualquier espera): quien sale de la sala después ya fue elegido.
+    const objetivos = [...docentes.sockets.values()].filter((socket) => socket.rooms.has(sala));
+    const vigentes = await Promise.all(objetivos.map(vigenteSeguro));
     let datos;
-    for (const socket of docentes.sockets.values()) {
-      if (!socket.rooms.has(sala)) continue;
-      if (!destinatarioVigente(socket)) { cortarSocket(socket); continue; }
+    objetivos.forEach((socket, i) => {
+      if (!vigentes[i]) { cortarSocket(socket); return; }
       datos ??= payload();
-      socket.emit(nombre, datos);
-    }
+      if (datos !== null) socket.emit(nombre, datos);
+    });
   }
 
   // ---------- Difusión agrupada (evita una ráfaga de mensajes por cada voto) ----------
@@ -101,7 +110,7 @@ export function crearSockets(servidorHttp, { config, almacen, firmador, sesiones
       const { alumnos: a, docente: d } = pendientes.get(salaId);
       pendientes.delete(salaId);
       if (!almacen.existe(salaId)) return;
-      if (d) emitirADocentes(salaId, 'estado', () => almacen.estadoDocente(salaId));
+      if (d) await emitirADocentes(salaId, 'estado', () => (almacen.existe(salaId) ? almacen.estadoDocente(salaId) : null));
       if (a) {
         for (const s of await participantes.in(`sala:${salaId}`).fetchSockets()) {
           if (almacen.existe(salaId)) s.emit('estado', almacen.estadoParticipante(salaId, s.data.pid));
@@ -133,7 +142,7 @@ export function crearSockets(servidorHttp, { config, almacen, firmador, sesiones
     temporizadores.delete(salaId);
     const aviso = { motivo };
     participantes.to(`sala:${salaId}`).emit('sala:cerrada', aviso);
-    emitirADocentes(salaId, 'sala:cerrada', () => ({ salaId, ...aviso }));
+    emitirADocentes(salaId, 'sala:cerrada', () => ({ salaId, ...aviso })).catch(() => {});
     participantes.in(`sala:${salaId}`).disconnectSockets(true);
     docentes.in(`doc:${salaId}`).socketsLeave(`doc:${salaId}`);
     // Los presentadores de esa sala ya no tienen nada que controlar.
@@ -216,10 +225,10 @@ export function crearSockets(servidorHttp, { config, almacen, firmador, sesiones
     for (const sala of socket.rooms) if (sala !== socket.id) socket.leave(sala);
   }
   /** Corta los sockets del panel cuya sesión ya no es válida (revocada o vencida). Los presentadores no se tocan. */
-  function cortarSesionesInvalidas() {
-    for (const socket of docentes.sockets.values()) {
-      if (socket.data.rol === 'docente' && !panelVigente(socket.data, sesiones)) cortarSocket(socket);
-    }
+  async function cortarSesionesInvalidas() {
+    const todos = [...docentes.sockets.values()];
+    const vigentes = await Promise.all(todos.map(vigenteSeguro));
+    todos.forEach((socket, i) => { if (!vigentes[i]) cortarSocket(socket); });
   }
   sesiones.alRevocar((sid) => {
     for (const socket of docentes.sockets.values()) {
@@ -227,6 +236,14 @@ export function crearSockets(servidorHttp, { config, almacen, firmador, sesiones
     }
   });
   docentes.use((socket, next) => {
+    autenticarDocente(socket).then((e) => next(e ?? undefined), (error) => {
+      log('handshake_fallido', { tipo: error.name });
+      next(new Error('no_disponible'));
+    });
+  });
+  /** Handshake del panel o del presentador. Devuelve un Error para rechazar, o null para admitir. */
+  async function autenticarDocente(socket) {
+    const next = (e) => e ?? null;
     const { headers, address, auth } = socket.handshake;
     const ip = ipCliente(headers, address, config.confiarProxy);
     if (!limiteConexionDocente.permitir(ip)) return next(new Error('frecuencia'));
@@ -240,44 +257,51 @@ export function crearSockets(servidorHttp, { config, almacen, firmador, sesiones
         return next(Object.assign(new Error('protocolo'), { data: { protocolo: PROTOCOLO } }));
       }
       const d = firmador.verificar(auth.clave, 'presentador');
-      if (!d || !almacen.existe(d.s) || almacen.versionPresentador(d.s) !== d.v) return next(new Error('clave'));
+      if (!d || !almacen.existe(d.s) || almacen.versionPresentador(d.s) !== d.v || !(await propietarioActivo(d.s))) return next(new Error('clave'));
       socket.data = { rol: 'presentador', salaId: d.s, version: d.v };
       return next();
     }
     // La cookie solo vale desde el propio panel: otro origen no puede reutilizarla.
     if (!origenAdmitido(headers, [config.appUrl])) return next(new Error('origen'));
-    const s = sesionDesdeCookie(headers.cookie, { firmador, sesiones });
+    const s = await sesionDesdeCookie(headers.cookie, { firmador, sesiones });
     if (!s) return next(new Error('no_autenticado'));
     // H02: se conserva el exp VERIFICADO de la cookie (nunca un valor del cliente) para revalidarlo en cada envío.
-    socket.data = { rol: 'docente', sid: s.sid, exp: s.exp };
-    if (!panelVigente(socket.data, sesiones)) return next(new Error('no_autenticado'));
+    socket.data = { rol: 'docente', sid: s.sid, exp: s.exp, usuarioId: s.usuario.id };
+    if (!(await panelVigente(socket.data, sesiones))) return next(new Error('no_autenticado'));
     return next();
-  });
+  }
 
   docentes.on('connection', (socket) => {
     const { rol } = socket.data;
+    // Los manejadores se registran en este mismo turno (un evento emitido justo tras «connect» no se pierde);
+    // la revalidación con la base es una puerta: todo evento la espera y, si falla, no se ejecuta.
     // H02: el panel se une a una sala propia de su sesión; permite cortar todas sus pestañas a la vez.
-    if (rol === 'docente') {
-      if (!panelVigente(socket.data, sesiones)) return cortarSocket(socket);
+    const listo = rol !== 'docente' ? Promise.resolve(true) : vigenteSeguro(socket).then((ok) => {
+      if (!ok || !socket.connected) { cortarSocket(socket); return false; }
       socket.join(`sid:${socket.data.sid}`);
-    }
+      return true;
+    });
 
     // Primero viaja el acuse con el error; después se cierra la conexión.
     const expulsar = () => { salirDeSalas(socket); setTimeout(() => socket.disconnect(true), 100); };
 
     /** Autorización por evento: sesión aún válida (logout revoca) y sala dentro del alcance del rol. */
-    function autorizar(salaId, { soloDocente = false } = {}) {
+    async function autorizar(salaId, { soloDocente = false } = {}) {
       if (rol === 'docente') {
-        if (!panelVigente(socket.data, sesiones)) { expulsar(); throw new ErrorSala('no_autenticado', 'Sesión docente vencida'); }
+        if (!(await panelVigente(socket.data, sesiones))) { expulsar(); throw new ErrorSala('no_autenticado', 'Sesión docente vencida'); }
       } else {
         if (soloDocente) throw new ErrorSala('prohibido', 'Operación reservada al panel docente');
         if (salaId && salaId !== socket.data.salaId) throw new ErrorSala('prohibido', 'La clave no corresponde a esta sala');
-        if (!almacen.existe(socket.data.salaId) || almacen.versionPresentador(socket.data.salaId) !== socket.data.version) {
+        if (!almacen.existe(socket.data.salaId) || almacen.versionPresentador(socket.data.salaId) !== socket.data.version || !(await propietarioActivo(socket.data.salaId))) {
           expulsar();
           throw new ErrorSala('clave', 'La clave de presentador fue revocada o venció');
         }
       }
       if (salaId && !almacen.existe(salaId)) throw new ErrorSala('sala_inexistente', 'La sala no existe o ya finalizó');
+      // Autorización por propiedad: una cuenta solo gobierna sus propias salas, aunque conozca otro identificador.
+      if (rol === 'docente' && salaId && almacen.propietarioDe(salaId) !== socket.data.usuarioId) {
+        throw new ErrorSala('prohibido', 'La sala pertenece a otra cuenta');
+      }
     }
 
     const claveDe = (salaId) => {
@@ -286,51 +310,56 @@ export function crearSockets(servidorHttp, { config, almacen, firmador, sesiones
       return firmador.firmar({ t: 'presentador', s: salaId, v: sala.versionPresentador }, segundos);
     };
 
-    const on = (nombre, manejador) => socket.on(nombre, evento(socket, limiteEventosDocente, manejador));
+    const on = (nombre, manejador) => socket.on(nombre, evento(socket, limiteEventosDocente, async (datos) => {
+      if (!(await listo)) throw new ErrorSala('no_autenticado', 'Sesión docente vencida');
+      return manejador(datos);
+    }));
     const conEstado = (salaId, extra = {}) => { difundir(salaId); programarCierre(salaId); return extra; };
 
     if (rol === 'presentador') {
       socket.join([`doc:${socket.data.salaId}`, `pres:${socket.data.salaId}`]);
       socket.emit('sesion', { rol, protocolo: PROTOCOLO, salaId: socket.data.salaId, estado: almacen.estadoDocente(socket.data.salaId) });
     } else {
-      socket.emit('sesion', { rol, protocolo: PROTOCOLO, salas: almacen.listarSalas() });
+      listo.then((ok) => { if (ok) socket.emit('sesion', { rol, protocolo: PROTOCOLO, salas: almacen.listarSalas(socket.data.usuarioId) }); });
     }
 
-    on('sala:crear', (datos) => {
-      autorizar(null, { soloDocente: true });
-      const sala = almacen.crearSala(V.crearSala(datos));
+    on('sala:crear', async (datos) => {
+      await autorizar(null, { soloDocente: true });
+      const sala = almacen.crearSala({ ...V.crearSala(datos), propietarioId: socket.data.usuarioId });
+      // Sin bloquear la clase: si la base falla, el punto de control periódico registra la sala después.
+      if (historial) await historial.abrir(almacen.resumenPersistible(sala.id)).catch((error) => log('historial_alta_fallida', { tipo: error.name }));
       socket.join(`doc:${sala.id}`);
       log('sala_creada', { sala: sala.id.slice(0, 6) });
       return { sala, enlace: `${config.appUrl}/join/${sala.codigo}`, qr: `${config.appUrl}/qr/${sala.codigo}.svg`, clave: claveDe(sala.id) };
     });
 
-    on('sala:listar', () => { autorizar(null, { soloDocente: true }); return { salas: almacen.listarSalas() }; });
+    on('sala:listar', async () => { await autorizar(null, { soloDocente: true }); return { salas: almacen.listarSalas(socket.data.usuarioId) }; });
 
-    on('sala:seguir', (datos) => {
+    on('sala:seguir', async (datos) => {
       const { salaId } = conSala(datos);
-      autorizar(salaId);
+      await autorizar(salaId);
       socket.join(`doc:${salaId}`);
       const sala = almacen.resumenSala(salaId);
       return { estado: almacen.estadoDocente(salaId), enlace: `${config.appUrl}/join/${sala.codigo}`, qr: `${config.appUrl}/qr/${sala.codigo}.svg` };
     });
 
-    on('sala:clave', (datos) => {
+    on('sala:clave', async (datos) => {
       const { salaId } = conSala(datos);
-      autorizar(salaId, { soloDocente: true });
+      await autorizar(salaId, { soloDocente: true });
       return { clave: claveDe(salaId) };
     });
 
-    on('sala:revocarClaves', (datos) => {
+    on('sala:revocarClaves', async (datos) => {
       const { salaId } = conSala(datos);
-      autorizar(salaId, { soloDocente: true });
+      await autorizar(salaId, { soloDocente: true });
       almacen.rotarClavePresentador(salaId);
       docentes.in(`pres:${salaId}`).disconnectSockets(true);
       return { clave: claveDe(salaId) };
     });
 
-    on('encuesta:crear', (datos) => {
+    on('encuesta:crear', async (datos) => {
       const { salaId, resto } = conSala(datos);
-      autorizar(salaId);
+      await autorizar(salaId);
       const { encuesta, abrir, ...otros } = resto;
       if (Object.keys(otros).length) throw new V.ErrorValidacion('mensaje: campos no admitidos');
       const def = V.definicionEncuesta(encuesta);
@@ -339,9 +368,9 @@ export function crearSockets(servidorHttp, { config, almacen, firmador, sesiones
       return conEstado(salaId, { encuesta: e });
     });
 
-    const accionEncuesta = (nombre, fn) => on(nombre, (datos) => {
+    const accionEncuesta = (nombre, fn) => on(nombre, async (datos) => {
       const { salaId, resto } = conSala(datos);
-      autorizar(salaId);
+      await autorizar(salaId);
       return conEstado(salaId, { encuesta: fn(salaId, V.soloId(resto, 'encuestaId')) });
     });
     accionEncuesta('encuesta:abrir', almacen.abrirEncuesta);
@@ -352,9 +381,9 @@ export function crearSockets(servidorHttp, { config, almacen, firmador, sesiones
 
     // La solución viaja SOLO aquí, desde quien la creó (presentación local o navegador del panel).
     // Validación y revelación ocurren en el mismo turno síncrono: nada se intercala entre ambas.
-    on('encuesta:revelar', (datos) => {
+    on('encuesta:revelar', async (datos) => {
       const { salaId, resto } = conSala(datos);
-      autorizar(salaId);
+      await autorizar(salaId);
       const { encuestaId, solucion, ...otros } = resto;
       if (Object.keys(otros).length) throw new V.ErrorValidacion('mensaje: campos no admitidos');
       const eid = V.id(encuestaId, 'encuestaId');
@@ -363,23 +392,23 @@ export function crearSockets(servidorHttp, { config, almacen, firmador, sesiones
       return conEstado(salaId, { encuesta: e });
     });
 
-    on('sala:ajustar', (datos) => {
+    on('sala:ajustar', async (datos) => {
       const { salaId, resto } = conSala(datos);
-      autorizar(salaId);
+      await autorizar(salaId);
       return conEstado(salaId, { ajustes: almacen.ajustarSala(salaId, V.ajustesSala(resto)) });
     });
 
-    on('encuesta:retirar', (datos) => {
+    on('encuesta:retirar', async (datos) => {
       const { salaId, resto } = conSala(datos);
       if (Object.keys(resto).length) throw new V.ErrorValidacion('mensaje: campos no admitidos');
-      autorizar(salaId);
+      await autorizar(salaId);
       almacen.retirarEncuesta(salaId);
       return conEstado(salaId);
     });
 
-    on('pregunta:moderar', (datos) => {
+    on('pregunta:moderar', async (datos) => {
       const { salaId, resto } = conSala(datos);
-      autorizar(salaId);
+      await autorizar(salaId);
       const orden = V.moderacion(resto);
       const r = almacen.moderar(salaId, orden);
       if (orden.accion === 'bloquearAutor') {
@@ -390,16 +419,16 @@ export function crearSockets(servidorHttp, { config, almacen, firmador, sesiones
       return conEstado(salaId, { pregunta: r });
     });
 
-    on('preguntas:ajustar', (datos) => {
+    on('preguntas:ajustar', async (datos) => {
       const { salaId, resto } = conSala(datos);
-      autorizar(salaId);
+      await autorizar(salaId);
       return conEstado(salaId, { ajustes: almacen.ajustarPreguntas(salaId, V.ajustesPreguntas(resto)) });
     });
 
-    on('sala:finalizar', (datos) => {
+    on('sala:finalizar', async (datos) => {
       const { salaId, resto } = conSala(datos);
       if (Object.keys(resto).length) throw new V.ErrorValidacion('mensaje: campos no admitidos');
-      autorizar(salaId, { soloDocente: true });
+      await autorizar(salaId, { soloDocente: true });
       cerrarSala(salaId, 'finalizada');
       almacen.finalizar(salaId);
       log('sala_finalizada', { sala: salaId.slice(0, 6) });
@@ -408,15 +437,24 @@ export function crearSockets(servidorHttp, { config, almacen, firmador, sesiones
   });
 
   // ---------- Vencimiento automático y limpieza de memoria ----------
+  let ultimoPunto = ahora();
   const reloj = setInterval(() => {
     for (const id of almacen.purgar()) { cerrarSala(id, 'vencida'); log('sala_vencida', { sala: id.slice(0, 6) }); }
     for (const id of almacen.vencerVotaciones()) difundir(id);
-    sesiones.purgar();
+    if (historial && ahora() - ultimoPunto >= 60_000) {
+      ultimoPunto = ahora();
+      for (const id of almacen.idsActivos()) {
+        const r = almacen.resumenPersistible(id);
+        // Sin bloquear la clase: un punto de control perdido se repite en el siguiente ciclo.
+        if (r?.propietarioId) historial.checkpoint(r).catch((error) => log('checkpoint_fallido', { tipo: error.name }));
+      }
+    }
+    sesiones.purgar().catch(() => {});
     for (const l of [limiteFallidos, limiteUniones, limiteConexionDocente, limiteEventos, limiteEventosDocente]) l.purgar();
   }, 15_000);
   reloj.unref();
   // Las sesiones vencidas cortan sus sockets aunque el cliente no envíe nada (exposición máxima: este intervalo).
-  const relojSesiones = setInterval(cortarSesionesInvalidas, intervaloSesionesMs);
+  const relojSesiones = setInterval(() => { cortarSesionesInvalidas().catch(() => {}); }, intervaloSesionesMs);
   relojSesiones.unref();
 
   return { io, cerrar: () => {

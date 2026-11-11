@@ -7,6 +7,7 @@
  * improvisada, historial, configuración de la sesión). Las tendencias se actualizan en el sitio con
  * cada respuesta (sin rehacer la tarjeta ni perder el foco) y nunca marcan la correcta con la votación abierta.
  */
+import { crearPanelCuenta } from './cuenta-panel.mjs';
 import { el, letra, textoConCodigo, barras, refrescarBarras, comparar, ESTADOS, crearCuenta, formatoTiempo, textoDuracion, mensajeHttp, esTransitorio, sincronizarLista } from './comun.mjs';
 
 const $ = (id) => document.getElementById(id);
@@ -16,6 +17,7 @@ let salaId = '';
 let estado = null;
 const desveladas = new Set();
 const cuenta = crearCuenta();
+const panelCuenta = crearPanelCuenta({ api: (ruta, cuerpo) => api(ruta, cuerpo), mostrar: (v) => mostrar(v) });
 const DURACIONES = [15, 30, 60, 90];
 
 // Solución de las preguntas improvisadas aquí: vive SOLO en esta pestaña (memoria + sessionStorage,
@@ -51,8 +53,11 @@ function olvidarSoluciones(conservar = () => false) {
 const soloSalas = (salas) => olvidarSoluciones((id) => salas.some((s) => s.id === id));
 guardarSoluciones(); // reescribe sin entradas inválidas o de un formato anterior
 
+let heredado = false;
 function mostrar(vista) {
-  for (const id of ['vista-login', 'vista-salas', 'vista-sala']) $(id).classList.toggle('oculto', id !== vista);
+  for (const id of ['vista-login', 'vista-salas', 'vista-sala', 'vista-historial', 'vista-admin']) $(id).classList.toggle('oculto', id !== vista);
+  $('nav-vistas').classList.toggle('oculto', !['vista-salas', 'vista-historial', 'vista-admin'].includes(vista));
+  if (vista === 'vista-salas') panelCuenta.pestana('salas');
   $('btn-salir').classList.toggle('oculto', vista === 'vista-login');
   // La cinta solo muestra el código y las secciones dentro de una sala.
   $('nav-secciones').classList.toggle('oculto', vista !== 'vista-sala');
@@ -94,6 +99,7 @@ async function api(ruta, cuerpo) {
 function terminarSesion() {
   socket?.disconnect();
   socket = null; csrf = '';
+  panelCuenta.limpiar();
   dejarSala();
   aviso('error-login', '');
   $('btn-reintentar').classList.add('oculto');
@@ -109,7 +115,8 @@ async function iniciar() {
   $('btn-reintentar').disabled = true;
   const r = await api('/api/docente/sesion');
   $('btn-reintentar').disabled = false;
-  if (r.estado === 200 && r.datos.autenticado) { csrf = r.datos.csrf; aviso('error-login', ''); $('btn-reintentar').classList.add('oculto'); conectar(); return; }
+  if (r.estado === 200) configurarLogin(Boolean(r.datos.heredado)); // también con sesión abierta: tras cerrarla el formulario debe saber si hay acceso heredado
+  if (r.estado === 200 && r.datos.autenticado) { csrf = r.datos.csrf; if (r.datos.usuario) panelCuenta.configurar(r.datos.usuario); aviso('error-login', ''); $('btn-reintentar').classList.add('oculto'); conectar(); return; }
   if (esTransitorio(r)) {
     mostrar('vista-login');
     $('btn-reintentar').classList.remove('oculto');
@@ -120,6 +127,13 @@ async function iniciar() {
 }
 $('btn-reintentar').addEventListener('click', () => { aviso('error-login', ''); iniciar(); });
 
+/** Con el acceso compartido heredado el correo es opcional; sin él es obligatorio. */
+function configurarLogin(conHeredado) {
+  heredado = conHeredado;
+  $('email').required = !conHeredado;
+  $('nota-email').textContent = conHeredado ? '(déjelo vacío para el acceso compartido heredado)' : '';
+}
+
 let entrando = false;
 $('form-login').addEventListener('submit', async (ev) => {
   ev.preventDefault();
@@ -129,14 +143,21 @@ $('form-login').addEventListener('submit', async (ev) => {
   boton.disabled = true; boton.textContent = 'Entrando…'; boton.setAttribute('aria-busy', 'true');
   aviso('error-login', '');
   let r;
-  try { r = await api('/api/docente/login', { password: $('password').value }); } finally {
+  const email = $('email').value.trim();
+  if (!email && !heredado) {
+    entrando = false; boton.disabled = false; boton.textContent = 'Entrar'; boton.removeAttribute('aria-busy');
+    aviso('error-login', 'Escriba su correo electrónico.', 'error'); $('email').focus(); return;
+  }
+  try { r = await (email ? api('/api/auth/login', { email, password: $('password').value }) : api('/api/docente/login', { password: $('password').value })); } finally {
     entrando = false;
     boton.disabled = false; boton.textContent = 'Entrar'; boton.removeAttribute('aria-busy');
   }
-  if (r.estado === 200 && r.datos.csrf) { $('password').value = ''; csrf = r.datos.csrf; $('btn-reintentar').classList.add('oculto'); conectar(); return; }
+  if (r.estado === 200 && r.datos.csrf) { $('password').value = ''; csrf = r.datos.csrf; if (r.datos.usuario) { $('email').value = ''; iniciarUsuario(); } $('btn-reintentar').classList.add('oculto'); conectar(); return; }
   // Una contraseña rechazada se borra; ante un fallo del servidor o de la red se conserva para reintentar.
   if (!esTransitorio(r)) $('password').value = '';
-  aviso('error-login', mensajeHttp(r, 'login'), r.estado === 401 ? 'error' : 'alerta');
+  aviso('error-login', r.estado === 403 && r.datos.error === 'no_verificado'
+    ? 'Su correo aún no está verificado. Abra el enlace que le enviamos o pida uno nuevo en la página de cuenta.'
+    : (email && r.estado === 401 ? 'Correo o contraseña incorrectos.' : mensajeHttp(r, 'login')), r.estado === 401 || r.estado === 403 ? 'error' : 'alerta');
   $('password').focus();
 });
 
@@ -155,6 +176,12 @@ $('btn-salir').addEventListener('click', async () => {
     aviso('error-login', `${mensajeHttp(r)} Se cerró el panel y se borró lo privado de este navegador, pero NO se pudo confirmar que el servidor haya cerrado la sesión. Si el equipo es compartido, cierre el navegador o espere a que la sesión venza.`, 'alerta');
   }
 });
+
+/** Tras entrar con cuenta personal, el nombre y el rol salen de /api/docente/sesion. */
+async function iniciarUsuario() {
+  const r = await api('/api/docente/sesion');
+  if (r.estado === 200 && r.datos.usuario) panelCuenta.configurar(r.datos.usuario);
+}
 
 // ---------------- Socket ----------------
 function conectar() {
@@ -184,12 +211,12 @@ function conectar() {
     olvidarSoluciones((s) => s !== id);
     if (id !== salaId) return;
     dejarSala();
-    listar().then(() => aviso('aviso-salas', motivo === 'vencida' ? 'La sala venció y sus datos se eliminaron.' : 'Sesión finalizada. Los datos se eliminaron del servidor.', 'ok'));
+    listar().then(() => aviso('aviso-salas', motivo === 'vencida' ? 'La sala venció. Se eliminaron las respuestas individuales; el resumen queda en «Mis sesiones».' : 'Sesión finalizada. Se eliminaron las respuestas individuales; el resumen queda en «Mis sesiones».', 'ok'));
   });
 }
 
 let salasConocidas = [];
-const AVISO_SALA_AUSENTE = 'La sala ya no está disponible: el docente la finalizó o venció, y sus datos se eliminaron del servidor.';
+const AVISO_SALA_AUSENTE = 'La sala ya no está disponible: se finalizó o venció, o pertenece a otra cuenta. Las respuestas individuales ya no existen en el servidor.';
 
 async function listar() {
   const lista = $('lista-salas');
@@ -217,7 +244,7 @@ function pintarSalas(salas) {
 
 $('form-sala').addEventListener('submit', async (ev) => {
   ev.preventDefault();
-  const r = await emitir('sala:crear', { titulo: $('titulo-sala').value.trim(), preModeracion: $('premoderacion').checked });
+  const r = await emitir('sala:crear', { titulo: $('titulo-sala').value.trim(), preModeracion: $('premoderacion').checked, conservarResultados: $('conservar').checked });
   if (!r.ok) return aviso('aviso-salas', r.mensaje, 'error');
   aviso('aviso-salas', '');
   $('titulo-sala').value = '';

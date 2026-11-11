@@ -1,6 +1,6 @@
 {
   "name": "openclass-live",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "private": true,
   "description": "Interact by WillEdTech: participación en tiempo real (encuestas y preguntas) para clases presentadas localmente con OpenClass Reveal.js",
   "author": "William Herrera",
@@ -8,12 +8,17 @@
   "type": "module",
   "main": "src/server.mjs",
   "engines": {
-    "node": ">=22.12.0"
+    "node": ">=22.13.0"
   },
   "scripts": {
     "start": "node src/server.mjs",
     "dev": "node --env-file-if-exists=.env src/server.mjs",
     "hash-password": "node scripts/hash-password.mjs",
+    "init-superusuario": "node scripts/init-superusuario.mjs",
+    "preparar-roles": "node scripts/preparar-roles.mjs",
+    "migrar": "node scripts/migrar.mjs",
+    "respaldar": "node scripts/respaldar.mjs",
+    "restaurar": "node scripts/restaurar.mjs",
     "gen-env": "node scripts/generar-env.mjs",
     "test": "node --test --test-concurrency=1 tests/*.test.mjs",
     "test:navegador": "node --test --test-concurrency=1 tests/e2e/*.test.mjs",
@@ -22,6 +27,7 @@
     "verificar": "node scripts/verificar-despliegue.mjs"
   },
   "dependencies": {
+    "pg": "8.23.1",
     "qrcode-generator": "2.0.4",
     "socket.io": "4.8.4"
   },

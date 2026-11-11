@@ -26,11 +26,29 @@ jobs:
   checks:
     name: Live release checks
     runs-on: ubuntu-24.04
-    timeout-minutes: 30
+    timeout-minutes: 70
     permissions:
       contents: read
     outputs:
       sha: ${{ steps.identity.outputs.sha }}
+    # PostgreSQL REAL para las suites (motor oficial desde 0.4.0): misma versión y digest que el Compose.
+    # Credencial sintética, solo para este runner efímero; no es un secreto.
+    services:
+      postgres:
+        image: postgres:16.10-alpine@sha256:029660641a0cfc575b14f336ba448fb8a75fd595d42e1fa316b9fb4378742297
+        env:
+          POSTGRES_USER: interact_ci
+          POSTGRES_PASSWORD: synthetic-ci-only-postgres-password
+          POSTGRES_DB: interact_ci_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U interact_ci -d interact_ci_test"
+          --health-interval 5s --health-timeout 5s --health-retries 30
+    env:
+      INTERACT_TEST_DATABASE_URL: postgres://interact_ci:synthetic-ci-only-postgres-password@127.0.0.1:5432/interact_ci_test
+      INTERACT_TEST_REQUIRE_PG_TOOLS: '1'
+      PG_BIN: /usr/lib/postgresql/16/bin
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
@@ -55,8 +73,21 @@ jobs:
       - name: Payload aprobado, lockfile y Compose
         run: node services/openclass-live/scripts/verificar-gitops.mjs
       - run: npm ci --ignore-scripts --no-audit --no-fund
-      - name: Pruebas unitarias, integración y preparación
+      - name: Cliente PostgreSQL 16 (pg_dump/pg_restore para la prueba de restauración)
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install --yes --no-install-recommends postgresql-client-16
+          "$PG_BIN/pg_dump" --version
+          "$PG_BIN/pg_isready" -h 127.0.0.1 -p 5432 -U interact_ci -d interact_ci_test
+      - name: Pruebas unitarias, integración, PostgreSQL, respaldo/restauración y preparación
         run: npm --prefix services/openclass-live test
+      # Gate OBLIGATORIO de Interact (PR): redes/PostgreSQL dedicado y administrado simulado (DNS+TLS), migración y
+      # respaldo en ambos modos, cabeceras falsificadas, límites por IP y ausencia de puertos publicados. En secuencia;
+      # falla si Docker no está, si se omite una prueba o si cae una aserción. Recursos sintéticos con prefijo propio.
+      - name: Integración Docker obligatoria (redes, PostgreSQL administrado simulado, proxy y límites por IP)
+        run: node services/openclass-live/scripts/exigir-docker.mjs
       - name: Instalar y comprobar extractor PDF
         shell: bash
         run: |
@@ -74,7 +105,19 @@ jobs:
           SESSION_SECRET: synthetic-ci-only-secret-with-more-than-32-characters
           ADMIN_PASSWORD_HASH: synthetic-ci-compose-validation-only
           LIVE_REVISION: ${{ steps.identity.outputs.sha }}
-        run: docker compose -f services/openclass-live/docker-compose.gitops.yml config --quiet
+          COMPOSE_PROFILES: postgres-dedicado
+          POSTGRES_ADMIN_PASSWORD: synthetic-ci-compose-admin
+          INTERACT_DB_MIGRATOR_PASSWORD: synthetic-ci-compose-migrator-value
+          INTERACT_DB_APP_PASSWORD: synthetic-ci-compose-app-value-xxxxx
+          INTERACT_DB_BACKUP_PASSWORD: synthetic-ci-compose-backup-value-xx
+          DATABASE_ADMIN_URL: postgres://postgres:synthetic@interact-db:5432/postgres
+          DATABASE_MIGRATION_URL: postgres://interact_migrador:synthetic@interact-db:5432/interact
+          DATABASE_URL: postgres://interact_app:synthetic@interact-db:5432/interact
+          DATABASE_BACKUP_URL: postgres://interact_respaldo:synthetic@interact-db:5432/interact
+          BACKUP_HOST_DIR: /tmp/interact-respaldos-ci
+        run: |
+          docker compose -f services/openclass-live/docker-compose.gitops.yml config --quiet
+          docker compose -f services/openclass-live/docker-compose.yml -f services/openclass-live/docker-compose.respaldo.yml --profile respaldo config --quiet
 
   build:
     name: Live build único (OCI)
@@ -135,14 +178,25 @@ jobs:
           SMOKE_HASH=$(printf '%s' 'synthetic-ci-smoke-only' | node services/openclass-live/scripts/hash-password.mjs)
           ID=$(docker load -i "$RUNNER_TEMP/image.oci.tar" | sed -n 's/^Loaded image ID: //p')
           test -n "$ID"
-          docker run -d --name live-smoke --read-only --tmpfs /tmp --cap-drop ALL \
+          # Humo con PostgreSQL real: el mismo artefacto aplica las migraciones y arranca en modo producción (verificar).
+          docker network create live-smoke-net
+          docker run -d --name live-smoke-db --network live-smoke-net -e POSTGRES_PASSWORD=synthetic-ci-smoke-postgres \
+            postgres:16.10-alpine@sha256:029660641a0cfc575b14f336ba448fb8a75fd595d42e1fa316b9fb4378742297
+          for i in $(seq 1 30); do
+            docker exec live-smoke-db pg_isready -q -U postgres && break
+            test "$i" -lt 30; sleep 2
+          done
+          SMOKE_DB=postgres://postgres:synthetic-ci-smoke-postgres@live-smoke-db:5432/postgres
+          docker run --rm --network live-smoke-net --read-only --cap-drop ALL -e DATABASE_MIGRATION_URL="$SMOKE_DB" "$ID" node scripts/migrar.mjs
+          docker run -d --name live-smoke --network live-smoke-net --read-only --tmpfs /tmp --cap-drop ALL \
             -e APP_URL=https://live.example.invalid -e SESSION_SECRET="$SYNTHETIC_SECRET" \
-            -e ADMIN_PASSWORD_HASH="$SMOKE_HASH" "$ID"
+            -e ADMIN_PASSWORD_HASH="$SMOKE_HASH" -e DATABASE_URL="$SMOKE_DB" "$ID"
           for i in $(seq 1 20); do
             docker exec live-smoke node -e "fetch('http://127.0.0.1:3000/healthz').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))" && break
             test "$i" -lt 20; sleep 2
           done
-          docker rm -f live-smoke
+          docker rm -f live-smoke live-smoke-db
+          docker network rm live-smoke-net
           cp "$RUNNER_TEMP/image.oci.tar" live-build/image.oci.tar
           cp "services/openclass-live/releases/$(node -p "require('./services/openclass-live/package.json').version").json" live-build/payload.json
           printf '%s\n' "$GITHUB_SHA" > live-build/source-commit.txt

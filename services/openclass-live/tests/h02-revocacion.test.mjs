@@ -150,7 +150,7 @@ async function prepararVentana(t) {
   const { cookie: cookieLarga } = await srv.login();
   const { s: admin } = await srv.docente(cookieLarga);
   const r = await pedir(admin, 'sala:crear', { titulo: 'Ventana', preModeracion: false });
-  const sid = srv.app.sesiones.crear(1);
+  const sid = await srv.app.sesiones.crear(1);
   const cookie = `oclive_docente=${srv.app.firmador.firmar({ t: 'docente', sid }, 3600)}`;
   const { s: breve } = await srv.docente(cookie);
   await pedir(breve, 'sala:seguir', { salaId: r.sala.id });

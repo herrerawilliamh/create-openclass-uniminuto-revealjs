@@ -12,7 +12,14 @@ try {
   process.exit(1);
 }
 
-const app = crearApp(config, { log });
+let app;
+try {
+  app = await crearApp(config, { log });
+} catch (error) {
+  // Base no disponible o esquema desactualizado: se informa la causa genérica, nunca la URL ni la credencial.
+  log('arranque_fallido', { tipo: error.name, codigo: error.codigo ?? '', mensaje: error.name === 'ErrorBase' ? error.message : 'error interno' });
+  process.exit(1);
+}
 const direccion = await app.escuchar();
 log('inicio', { puerto: direccion.port, ttlMin: config.salaTtlMin, maxParticipantes: config.maxParticipantes });
 

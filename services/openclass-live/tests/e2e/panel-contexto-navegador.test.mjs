@@ -11,7 +11,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { abrirNavegador } from '../../../../scripts/lib/chrome.mjs';
-import { crearApp } from '../../src/app.mjs';
+import { crearAppPrueba, entornoPg } from '../ayuda.mjs';
 import { hashPassword } from '../../src/auth.mjs';
 import { leerConfig } from '../../src/config.mjs';
 
@@ -27,11 +27,11 @@ const vencerSesion = () => { desfase += 61 * 60_000; }; // TEACHER_SESSION_HOURS
 
 async function montar(t) {
   const env = { SESSION_SECRET: 'ctx'.repeat(20), ADMIN_PASSWORD_HASH: hashPassword(PASSWORD), TEACHER_SESSION_HOURS: '1', TRUST_PROXY: 'false' };
-  const sondeo = crearApp(leerConfig({ ...env, APP_URL: 'http://127.0.0.1:1' }), { log: () => {}, ahora: relojReal });
+  const sondeo = await crearAppPrueba(leerConfig({ ...entornoPg(),  ...env, APP_URL: 'http://127.0.0.1:1' }), { log: () => {}, ahora: relojReal });
   const { port } = await sondeo.escuchar(0, '127.0.0.1');
   await sondeo.cerrar();
   const APP = `http://127.0.0.1:${port}`;
-  const app = crearApp(leerConfig({ ...env, APP_URL: APP }), { log: () => {}, ahora: relojReal });
+  const app = await crearAppPrueba(leerConfig({ ...entornoPg(),  ...env, APP_URL: APP }), { log: () => {}, ahora: relojReal });
   await app.escuchar(port, '127.0.0.1');
   t.after(() => app.cerrar());
 
