@@ -2,8 +2,8 @@
   "version": "0.4.1",
   "protocol": 2,
   "archive": "openclass-live-0.4.1.tar.gz",
-  "archiveSha256": "8c86504253f8e84f1d29cb1063533bf9bd278d3e6b78ef3969bb61d7ba879941",
-  "sourceBase": "79e06b5b497b19b7a097040066d1e85d63c0ef77",
+  "archiveSha256": "d09642be515d8edc8cc50f5dc8683497c6656979d25ea17f54600bf9c5ffdd98",
+  "sourceBase": "fb472d0d45a0b62a4dcaf98c89d7d07e52fb1492",
   "files": [
     {
       "path": ".dockerignore",
@@ -17,13 +17,13 @@
     },
     {
       "path": "docker-compose.respaldo.yml",
-      "sha256": "80863c9381483bffec15c7f767d6c0b74b8094ca8ddb812ff545d2fb7a9518ef",
-      "gitSha256": "80863c9381483bffec15c7f767d6c0b74b8094ca8ddb812ff545d2fb7a9518ef"
+      "sha256": "acccdbb31cc21c1f373d3d2b2d162fdccb269fdcd297fc793fb8f7f3c7f4c1e4",
+      "gitSha256": "acccdbb31cc21c1f373d3d2b2d162fdccb269fdcd297fc793fb8f7f3c7f4c1e4"
     },
     {
       "path": "docker-compose.yml",
-      "sha256": "63745c87634f00b0d88fee9e218d0d0cc9ea54408e0b5a97fde5ee1497a07915",
-      "gitSha256": "63745c87634f00b0d88fee9e218d0d0cc9ea54408e0b5a97fde5ee1497a07915"
+      "sha256": "d9350457564a90f7760f13ea11dfed01c5a4d0bf9eb7d932cbbb6a59c23ea5af",
+      "gitSha256": "d9350457564a90f7760f13ea11dfed01c5a4d0bf9eb7d932cbbb6a59c23ea5af"
     },
     {
       "path": "Dockerfile",
@@ -32,13 +32,13 @@
     },
     {
       "path": "package-lock.json",
-      "sha256": "443bedf6d8f71df39a036b73f8c03e7203441f9e680d8b0d9f850075f48ca30f",
-      "gitSha256": "443bedf6d8f71df39a036b73f8c03e7203441f9e680d8b0d9f850075f48ca30f"
+      "sha256": "2e1895d91de9a922f3f58a44bdd889b815d79efbd0e5ef45922eeec155c48dfb",
+      "gitSha256": "2e1895d91de9a922f3f58a44bdd889b815d79efbd0e5ef45922eeec155c48dfb"
     },
     {
       "path": "package.json",
-      "sha256": "e81fc0d633d2f7ac2faa0f8ed0fbf79efcffbb10f7fee3802e8550bad6ed95b4",
-      "gitSha256": "e81fc0d633d2f7ac2faa0f8ed0fbf79efcffbb10f7fee3802e8550bad6ed95b4"
+      "sha256": "e0f82e5f5c790f5e7523fd3d2106eeada9812c7928f3710201cd914d81b7eb3f",
+      "gitSha256": "e0f82e5f5c790f5e7523fd3d2106eeada9812c7928f3710201cd914d81b7eb3f"
     },
     {
       "path": "public/assets/comun.mjs",

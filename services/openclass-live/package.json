@@ -1,6 +1,6 @@
 {
   "name": "openclass-live",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "private": true,
   "description": "Interact by WillEdTech: participación en tiempo real (encuestas y preguntas) para clases presentadas localmente con OpenClass Reveal.js",
   "author": "William Herrera",
