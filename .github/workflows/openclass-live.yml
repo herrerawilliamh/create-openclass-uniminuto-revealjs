@@ -138,6 +138,14 @@ jobs:
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: '22.23.1'
+      - name: Instalar Skopeo
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install --yes --no-install-recommends skopeo
+          command -v skopeo
+          skopeo --version
       - name: El commit construido es el commit probado
         env:
           TESTED_SHA: ${{ needs.checks.outputs.sha }}
@@ -176,7 +184,8 @@ jobs:
           echo "manifest_digest=$(node -p "require('./live-build/release-lock.json').manifestDigest")" >> "$GITHUB_OUTPUT"
           # Humo sobre los bytes construidos (no sobre una reconstrucción).
           SMOKE_HASH=$(printf '%s' 'synthetic-ci-smoke-only' | node services/openclass-live/scripts/hash-password.mjs)
-          ID=$(docker load -i "$RUNNER_TEMP/image.oci.tar" | sed -n 's/^Loaded image ID: //p')
+          skopeo copy "oci-archive:$RUNNER_TEMP/image.oci.tar" "docker-daemon:openclass-live-smoke:temp"
+          ID=$(docker images -q openclass-live-smoke:temp)
           test -n "$ID"
           # Humo con PostgreSQL real: el mismo artefacto aplica las migraciones y arranca en modo producción (verificar).
           docker network create live-smoke-net
