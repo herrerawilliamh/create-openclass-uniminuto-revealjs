@@ -198,25 +198,14 @@ jobs:
           SMOKE_DB=postgres://postgres:synthetic-ci-smoke-postgres@live-smoke-db:5432/postgres
           docker run --rm --network live-smoke-net --read-only --cap-drop ALL -e DATABASE_MIGRATION_URL="$SMOKE_DB" "$ID" node scripts/migrar.mjs
           docker run -d --name live-smoke --network live-smoke-net --read-only --tmpfs /tmp --cap-drop ALL \
-            -e TRUST_PROXY=false -e APP_URL=https://live.example.invalid -e SESSION_SECRET="$SYNTHETIC_SECRET" \
-            -e ADMIN_PASSWORD_HASH="$SMOKE_HASH" -e DATABASE_URL="$SMOKE_DB" "$ID"
-          trap "docker rm -f live-smoke live-smoke-db >/dev/null 2>&1 || true; docker network rm live-smoke-net >/dev/null 2>&1 || true" EXIT
-          LOG_FILE=$RUNNER_TEMP/live-smoke.log
-          STATUS=1
+            -e APP_URL=https://live.example.invalid -e SESSION_SECRET="$SYNTHETIC_SECRET" \
+            -e ADMIN_PASSWORD_HASH="$SMOKE_HASH" -e DATABASE_URL="$SMOKE_DB" -e TRUST_PROXY=false "$ID"
           for i in $(seq 1 20); do
-            if docker exec live-smoke node -e "fetch('http://127.0.0.1:3000/healthz').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))" > "$LOG_FILE" 2>&1; then
-              STATUS=0
-              break
-            fi
+            docker exec live-smoke node -e "fetch('http://127.0.0.1:3000/healthz').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))" && break
             test "$i" -lt 20; sleep 2
           done
-          if [ "$STATUS" -ne 0 ]; then
-            echo "::error::Smoke container health check failed after 20 attempts."
-            echo "::group::Live Smoke Container Logs"
-            cat "$LOG_FILE"
-            echo "::endgroup::"
-            exit 1
-          fi
+          docker rm -f live-smoke live-smoke-db
+          docker network rm live-smoke-net
           cp "$RUNNER_TEMP/image.oci.tar" live-build/image.oci.tar
           cp "services/openclass-live/releases/$(node -p "require('./services/openclass-live/package.json').version").json" live-build/payload.json
           printf '%s\n' "$GITHUB_SHA" > live-build/source-commit.txt
