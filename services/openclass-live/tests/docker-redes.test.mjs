@@ -22,6 +22,8 @@ import { fileURLToPath } from 'node:url';
 import { verificarSuma } from '../scripts/autenticidad-respaldo.mjs';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+// El gate Docker debe ejecutar la misma versión que Compose acaba de construir.
+const IMG = `openclass-live:${JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8')).version}`;
 const docker = (args, opciones = {}) => spawnSync('docker', args, { encoding: 'utf8', cwd: RAIZ, ...opciones });
 const hay = !docker(['info', '--format', '{{.ServerVersion}}']).status;
 const exigir = process.env.INTERACT_TEST_REQUIRE_DOCKER === '1';
@@ -59,8 +61,8 @@ const salida = (r) => `${r.stdout}\n${r.stderr}`;
 // todos y, tras cada respaldo, un contenedor efímero (root) devuelve el acceso de lectura/borrado al ejecutor.
 // Solo afecta a la carpeta temporal sintética de la prueba; el despliegue real exige 700 y propietario uid 1000.
 const abrirRespaldos = () => { if (process.platform === 'linux') chmodSync(respaldos, 0o777); };
-const liberarRespaldos = () => { if (process.platform === 'linux') docker(['run', '--rm', '--user', '0', '-v', `${respaldos}:/r`, '--entrypoint', 'chmod', 'openclass-live:0.4.0', '-R', 'a+rwX', '/r']); };
-const enRed = (red, js, extra = []) => docker(['run', '--rm', '--network', red, ...extra, '--entrypoint', 'node', 'openclass-live:0.4.0', '-e', js]);
+const liberarRespaldos = () => { if (process.platform === 'linux') docker(['run', '--rm', '--user', '0', '-v', `${respaldos}:/r`, '--entrypoint', 'chmod', IMG, '-R', 'a+rwX', '/r']); };
+const enRed = (red, js, extra = []) => docker(['run', '--rm', '--network', red, ...extra, '--entrypoint', 'node', IMG, '-e', js]);
 
 before(() => {
   if (omitir) return;
