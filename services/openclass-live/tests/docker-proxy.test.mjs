@@ -5,13 +5,14 @@
  *     ni con X-Real-Ip, y el acceso directo al servicio cuenta contra SU dirección real.
  *   - Producción sin TRUSTED_PROXY_CIDRS: el servicio no arranca (fallo seguro).
  * Es la validación del PROCEDIMIENTO propuesto en docs/PROXY-ENTRADA.md; no cambia ninguna configuración de la VPS.
- * Solo con INTERACT_TEST_DOCKER=1 (usa la imagen openclass-live:0.4.0, ya construida por docker-redes.test.mjs o
+ * Solo con INTERACT_TEST_DOCKER=1 (usa la imagen de la versión vigente, construida por docker-redes.test.mjs o
  * `docker compose build`). Proyecto efímero «oc-p-<aleatorio>».
  */
 import test, { after, before } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import { randomBytes } from 'node:crypto';
+import { readFileSync } from 'node:fs';
 
 const docker = (args) => spawnSync('docker', args, { encoding: 'utf8' });
 const hay = !docker(['info', '--format', '{{.ServerVersion}}']).status;
@@ -20,7 +21,7 @@ const activo = process.env.INTERACT_TEST_DOCKER === '1' || exigir;
 const omitir = !activo ? 'defina INTERACT_TEST_DOCKER=1 (integración Docker)' : (!hay && !exigir ? 'Docker no disponible' : false);
 
 const P = `oc-p-${randomBytes(3).toString('hex')}`;
-const IMG = 'openclass-live:0.4.0';
+const IMG = `openclass-live:${JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8')).version}`;
 const clave = randomBytes(18).toString('base64url');
 const BASE = `10.${100 + (Number.parseInt(P.slice(-6, -4), 16) % 150)}.77`; // subred de ensayo poco probable de colisionar
 const SUBRED = `${BASE}.0/24`;
