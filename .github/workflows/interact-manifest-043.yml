@@ -26,6 +26,9 @@ jobs:
           node scripts/empaquetar-despliegue.mjs
           node scripts/generar-manifiesto.mjs 561765012cd40a92003313440c6d23da6df9556b
           test -s releases/0.4.3.json
+          echo 'INTERACT_MANIFEST_BEGIN'
+          cat releases/0.4.3.json
+          echo 'INTERACT_MANIFEST_END'
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: interact-manifest-0.4.3
