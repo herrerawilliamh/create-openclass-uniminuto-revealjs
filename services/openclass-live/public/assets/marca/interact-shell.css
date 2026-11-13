@@ -95,3 +95,10 @@ body.docente .nota-historial {
   body.docente .secciones { padding: 6px 10px; }
   header.barra { flex-wrap: wrap; }
 }
+
+/* Filtro de usuarios: filtrado local sobre resultados autorizados por la API. */
+body.docente .usuario-busqueda { max-width: 440px; margin: 8px 0 16px; }
+body.docente .usuario-busqueda label { margin-top: 0; }
+body.docente .usuario-busqueda input { width: 100%; min-height: 44px; }
+body.docente .usuario-busqueda #resumen-usuarios { margin: 6px 0 0; }
+body.docente #tabla-usuarios tr[hidden] { display: none; }

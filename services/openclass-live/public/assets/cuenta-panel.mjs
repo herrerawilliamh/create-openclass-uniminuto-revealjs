@@ -118,6 +118,19 @@ export function crearPanelCuenta({ api, mostrar }) {
   }
 
   // ---------------- Administración ----------------
+  function filtrarUsuarios() {
+    const normalizar = (s) => String(s ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('es');
+    const q = normalizar($('buscar-usuarios').value.trim());
+    let encontrados = 0;
+    const filas = [...$('tabla-usuarios').querySelectorAll('tr')];
+    for (const fila of filas) {
+      const contenido = [fila.cells[0]?.textContent, fila.cells[1]?.textContent].join(' ');
+      const coincide = normalizar(contenido).includes(q);
+      fila.hidden = !coincide;
+      if (coincide) encontrados++;
+    }
+    $('resumen-usuarios').textContent = `${encontrados} de ${filas.length} usuarios`;
+  }
   async function cargarAdmin() {
     const [u, i, a] = await Promise.all([api('/api/admin/usuarios'), api('/api/admin/invitaciones'), api('/api/admin/auditoria')]);
     if (u.estado !== 200 || i.estado !== 200) { aviso('aviso-admin', mensajeHttp(u.estado !== 200 ? u : i), 'alerta'); return; }
@@ -131,6 +144,7 @@ export function crearPanelCuenta({ api, mostrar }) {
         type: 'button', clase: 'mini secundario', texto: x.estado === 'activo' ? 'Suspender' : 'Reactivar', 'aria-label': `${x.estado === 'activo' ? 'Suspender' : 'Reactivar'} a ${x.email}`,
         onclick: () => cambiarEstado(x),
       })))));
+    filtrarUsuarios();
     const lista = $('lista-invitaciones');
     lista.replaceChildren();
     if (!i.datos.invitaciones.length) lista.append(el('li', { clase: 'suave', texto: 'Aún no hay invitaciones.' }));
@@ -184,6 +198,7 @@ export function crearPanelCuenta({ api, mostrar }) {
   $('ir-salas').addEventListener('click', () => { pestana('salas'); mostrar('vista-salas'); });
   $('ir-historial').addEventListener('click', async () => { pestana('historial'); mostrar('vista-historial'); desplazamiento = 0; await cargarHistorial(); });
   $('ir-admin').addEventListener('click', async () => { pestana('admin'); mostrar('vista-admin'); await cargarAdmin(); });
+  $('buscar-usuarios').addEventListener('input', filtrarUsuarios);
   $('form-filtros').addEventListener('submit', (ev) => { ev.preventDefault(); desplazamiento = 0; cargarHistorial(); });
   $('hist-anterior').addEventListener('click', () => { desplazamiento = Math.max(0, desplazamiento - POR_PAGINA); cargarHistorial(); });
   $('hist-siguiente').addEventListener('click', () => { desplazamiento += POR_PAGINA; cargarHistorial(); });

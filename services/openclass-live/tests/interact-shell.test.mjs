@@ -34,3 +34,13 @@ test('navegación separada y controles conservados', () => {
   assert.doesNotMatch(html, /Qué se conserva y por cuánto tiempo/);
   assert.match(html, /La paginación no modifica el plazo de conservación/);
 });
+
+test('búsqueda de usuarios conserva permisos de suspensión y reactivación', () => {
+  const html = read('docente/index.html');
+  assert.match(html, /id="buscar-usuarios"/);
+  assert.match(html, /id="resumen-usuarios"/);
+  const panel = read('assets/cuenta-panel.mjs');
+  assert.match(panel, /function filtrarUsuarios/);
+  assert.match(panel, /'input', filtrarUsuarios/);
+  assert.match(panel, /onclick: \(\) => cambiarEstado\(x\)/);
+});

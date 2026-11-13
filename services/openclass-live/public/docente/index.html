@@ -133,7 +133,13 @@
           <ul id="lista-invitaciones" class="preguntas"></ul>
         </div>
       </div>
-      <div class="hoja"><h3>Usuarios</h3><div class="tabla-responsive">
+      <div class="hoja"><h3>Usuarios</h3>
+        <div class="usuario-busqueda">
+          <label for="buscar-usuarios">Buscar por nombre o correo</label>
+          <input type="search" id="buscar-usuarios" autocomplete="off" aria-controls="tabla-usuarios" placeholder="Nombre o correo electrónico">
+          <p class="suave" id="resumen-usuarios" role="status" aria-live="polite"></p>
+        </div>
+        <div class="tabla-responsive">
         <table class="salidas"><caption class="solo-lector">Usuarios</caption>
           <thead><tr><th scope="col">Nombre</th><th scope="col">Correo</th><th scope="col">Rol</th><th scope="col">Estado</th><th scope="col"><span class="solo-lector">Acciones</span></th></tr></thead>
           <tbody id="tabla-usuarios"></tbody></table></div></div>
