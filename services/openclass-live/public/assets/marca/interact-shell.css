@@ -103,3 +103,15 @@ body.docente .usuario-busqueda label { margin-top: 0; }
 body.docente .usuario-busqueda input { width: 100%; min-height: 44px; }
 body.docente .usuario-busqueda #resumen-usuarios { margin: 6px 0 0; }
 body.docente #tabla-usuarios tr[hidden] { display: none; }
+
+/* El selector del encabezado estudiantil original tenía mayor especificidad. */
+header.barra .marca .marca-cinta img.wt-monograma,
+header.barra .marca .marca-cinta img.interact-simbolo {
+  width: 52px; height: 52px; flex: 0 0 52px;
+}
+@media (max-width: 620px) {
+  header.barra .marca .marca-cinta img.wt-monograma,
+  header.barra .marca .marca-cinta img.interact-simbolo {
+    width: 38px; height: 38px; flex-basis: 38px;
+  }
+}
