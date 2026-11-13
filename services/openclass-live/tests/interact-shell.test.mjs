@@ -15,7 +15,7 @@ test('marca familiar W | Interact y favicon con el mismo símbolo', () => {
     const html = read(page);
     assert.match(html, /\/assets\/marca\/willedtech-w\.svg/);
     assert.match(html, /\/favicon\.svg/);
-    assert.match(html, /<span class="marca-nombre">Interact<\/span>/);
+    assert.match(html, /<h1 class="marca-nombre">Interact<\/h1>/);
     assert.match(html, /<span class="marca-firma">by WillEdTech<\/span>/);
     assert.match(html, /\/assets\/marca\/interact-shell\.css/);
   }

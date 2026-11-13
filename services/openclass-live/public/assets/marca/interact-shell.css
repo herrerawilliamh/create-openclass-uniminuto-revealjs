@@ -21,6 +21,7 @@ body.docente .marca-cinta:hover, header.barra .marca-cinta:hover {
 }
 .marca-cinta .marca-tipo { display: flex; flex-direction: column; align-items: flex-start; min-width: 0; }
 .marca-cinta .marca-nombre {
+  margin: 0;
   font-family: var(--wt-font-heading); font-size: clamp(1.32rem, 2vw, 1.65rem);
   line-height: 1.15; font-weight: 800; letter-spacing: -.025em;
 }
