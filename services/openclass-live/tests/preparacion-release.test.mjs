@@ -106,6 +106,6 @@ test('empaquetador oficial: dos empaquetados independientes dan el mismo SHA-256
       assert.equal(huellaGit(f.path, bytes), f.gitSha256, `gitSha256 interno: ${f.path}`);
     }
     const lista = spawnSync('tar', ['-tzvf', nombre], { cwd: a, encoding: 'utf8' }).stdout;
-    assert.match(lista, /root\/root/, 'propietarios normalizados');
+    assert.match(lista, /root[\s/]+root/, 'propietarios normalizados');
   } finally { rmSync(a, { recursive: true, force: true }); rmSync(b, { recursive: true, force: true }); }
 });

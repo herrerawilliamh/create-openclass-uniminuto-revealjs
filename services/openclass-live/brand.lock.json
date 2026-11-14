@@ -1,0 +1,123 @@
+{
+  "app": "interact",
+  "public": true,
+  "brand": {
+    "version": "3.1.0",
+    "manifestSha256": "1bc809ae5a4eb87e79aa1c1fa7ce18fb10063678fcb5c0aa2e2bccac5a211ce1"
+  },
+  "verifier": "scripts/brand-verify.mjs",
+  "files": [
+    {
+      "from": "products/interact/interact-marca.svg",
+      "to": "public/assets/marca/interact-marca.svg",
+      "sha256": "2eb33e3c9acea34db034c4b0f6e89e5d7d154eaec4f948f7c7062cb7b0e75f9e"
+    },
+    {
+      "from": "products/interact/interact-marca-negativo.svg",
+      "to": "public/assets/marca/interact-marca-negativo.svg",
+      "sha256": "eedccb83bfc696e05e1b03013ff47e1e346b0ccdc9d3651756070211266d6c6f"
+    },
+    {
+      "from": "products/interact/interact-horizontal.svg",
+      "to": "public/assets/marca/interact-horizontal.svg",
+      "sha256": "91c941090ffe46bc7a22144d19b77e95ceda0720644889b671582e1c03f57c60"
+    },
+    {
+      "from": "products/interact/interact-compacto.svg",
+      "to": "public/assets/marca/interact-compacto.svg",
+      "sha256": "6ac2461e9839c9ac35ce3865292c3b26076fbd9783096a1aeb81a4d886f474ac"
+    },
+    {
+      "from": "tokens/willedtech.css",
+      "to": "public/assets/marca/willedtech.css",
+      "sha256": "f0b8fc7f9ca7d1bb4f792d72d51615f70185fe0285bb70a65c66a8e60ac9b625"
+    },
+    {
+      "from": "tokens/willedtech-header.css",
+      "to": "public/assets/marca/willedtech-header.css",
+      "sha256": "be5904df426f7a8484b1a34c83ee2b73ceee0209665ab2dbe5a83416cf1c36e9"
+    },
+    {
+      "from": "tokens/willedtech-motion.css",
+      "to": "public/assets/marca/willedtech-motion.css",
+      "sha256": "03d8ecd143478aaeb0dfb56e7049c5991727267ef59e6d6421222c0f6c55660a"
+    },
+    {
+      "from": "logo/willedtech-isotipo-motion.svg",
+      "to": "public/assets/marca/willedtech-isotipo-motion.svg",
+      "sha256": "0b55062788f5d9ed9a681b4e31e2fc940b604ebd27a33df11feb361e2c2dfc55"
+    },
+    {
+      "from": "tokens/willedtech-view-transitions.css",
+      "to": "public/assets/marca/willedtech-view-transitions.css",
+      "sha256": "7237315097bd0f5e96134e945253fae32b393ea7e4de42f3cf6c3676af1c358c"
+    },
+    {
+      "from": "tools/brand-verify.mjs",
+      "to": "scripts/brand-verify.mjs",
+      "sha256": "08dfda00d5dc12c10893dc47a0fe89056b74fc126bdfa83d570760d1c174e1f1"
+    }
+  ],
+  "local": [
+    {
+      "path": "public/assets/marca/willedtech-w.svg",
+      "reason": "Isotipo W heredado de la cabecera 0.4.3; su contenido no coincide con ningún archivo de Brand 3.1.0. Sin uso desde la adopción del lockup oficial; se conserva sin borrar."
+    },
+    {
+      "path": "public/favicon.svg",
+      "reason": "Favicon de Interact de la aplicación; su contenido no coincide con logo/favicon.svg ni con products/interact/interact-app.svg de Brand 3.1.0."
+    },
+    {
+      "path": "public/assets/marca/fuentes.css",
+      "reason": "Declaración @font-face propia de la aplicación."
+    },
+    {
+      "path": "public/assets/marca/fuentes/AVISOS.txt",
+      "reason": "Avisos de fuentes de terceros (SIL OFL 1.1), propios de la aplicación."
+    },
+    {
+      "path": "public/assets/marca/fuentes/OFL-atkinson-hyperlegible.txt",
+      "reason": "Licencia de fuente de terceros, propia de la aplicación."
+    },
+    {
+      "path": "public/assets/marca/fuentes/OFL-merriweather-sans.txt",
+      "reason": "Licencia de fuente de terceros, propia de la aplicación."
+    },
+    {
+      "path": "public/assets/marca/fuentes/OFL-opendyslexic.txt",
+      "reason": "Licencia de fuente de terceros, propia de la aplicación."
+    },
+    {
+      "path": "public/assets/marca/fuentes/atkinson-hyperlegible-latin-400-normal.woff2",
+      "reason": "Fuente de terceros autoalojada, propia de la aplicación."
+    },
+    {
+      "path": "public/assets/marca/fuentes/atkinson-hyperlegible-latin-700-normal.woff2",
+      "reason": "Fuente de terceros autoalojada, propia de la aplicación."
+    },
+    {
+      "path": "public/assets/marca/fuentes/merriweather-sans-latin-800-normal.woff2",
+      "reason": "Fuente de terceros autoalojada, propia de la aplicación."
+    },
+    {
+      "path": "public/assets/marca/fuentes/opendyslexic-latin-400-normal.woff2",
+      "reason": "Fuente de terceros autoalojada, propia de la aplicación."
+    },
+    {
+      "path": "public/assets/marca/fuentes/opendyslexic-latin-700-normal.woff2",
+      "reason": "Fuente de terceros autoalojada, propia de la aplicación."
+    },
+    {
+      "path": "public/assets/marca/interact-shell.css",
+      "reason": "Capa de maquetación propia de Interact (barra de navegación y disposición); no es un recurso de Brand."
+    },
+    {
+      "path": "public/assets/marca/interact-espera.mjs",
+      "reason": "Enlace propio de Interact entre el texto real de conexión y la marca compacta de carga de Brand; no es un recurso de Brand."
+    },
+    {
+      "path": "public/assets/marca/ORIGEN.json",
+      "reason": "Registro de procedencia y autorización de publicación de la aplicación."
+    }
+  ]
+}

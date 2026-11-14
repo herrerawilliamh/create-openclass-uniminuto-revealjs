@@ -8,44 +8,49 @@
   <title>Interact by WillEdTech · Panel docente</title>
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="/assets/marca/willedtech.css">
+  <link rel="stylesheet" href="/assets/marca/willedtech-header.css">
+  <link rel="stylesheet" href="/assets/marca/willedtech-motion.css">
+  <link rel="stylesheet" href="/assets/marca/willedtech-view-transitions.css">
   <link rel="stylesheet" href="/assets/marca/fuentes.css">
   <link rel="stylesheet" href="/assets/estilos.css">
   <link rel="stylesheet" href="/assets/docente.css">
   <link rel="stylesheet" href="/assets/cuenta.css">
+  <link rel="stylesheet" href="/assets/marca/interact-shell.css">
   <script src="/socket.io/socket.io.min.js" defer></script>
+  <script src="/assets/marca/interact-espera.mjs" defer></script>
   <script type="module" src="/assets/docente.mjs"></script>
 </head>
 <body class="docente">
   <a class="salto" href="#contenido">Saltar al contenido</a>
   <header class="cinta">
     <div class="cinta-fila">
-      <div class="marca-cinta">
-        <img src="/assets/marca/interact-marca-negativo.svg" alt="" width="32" height="32">
-        <div>
-          <h1>Interact by WillEdTech <span class="marca-rol">Panel docente</span></h1>
-          <div class="sub" id="titulo-panel">Encuestas y preguntas en vivo</div>
-        </div>
-      </div>
+      <a class="wt-header__brand" href="/docente/" aria-label="WillEdTech Interact, ir al inicio">
+        <img class="wt-lockup wt-lockup--full" src="/assets/marca/interact-horizontal.svg" alt="">
+        <img class="wt-lockup wt-lockup--compact" src="/assets/marca/interact-compacto.svg" alt="">
+      </a>
       <p class="cinta-codigo oculto" id="cinta-codigo-caja"><span>Código de la sala</span> <strong id="cinta-codigo"></strong></p>
-      <div class="fila">
+      <div class="fila barra-usuario">
+        <span class="espera-marca" hidden></span>
         <span class="estado-conexion" id="conexion" role="status" aria-live="polite"></span>
         <span class="chip-usuario oculto" id="chip-usuario"></span>
         <button type="button" class="mini secundario oculto" id="btn-salir">Cerrar sesión</button>
       </div>
     </div>
-    <nav class="vistas oculto" id="nav-vistas" aria-label="Áreas del panel">
-      <button type="button" class="mini secundario" id="ir-salas" aria-current="page">Salas</button>
-      <button type="button" class="mini secundario" id="ir-historial">Mis sesiones</button>
-      <button type="button" class="mini secundario oculto" id="ir-admin">Administración</button>
-    </nav>
-    <nav class="secciones oculto" id="nav-secciones" aria-label="Secciones de la sala">
-      <a href="#encuesta">Encuesta</a>
-      <a href="#preguntas">Preguntas <span class="contador oculto" id="cuenta-pendientes"></span></a>
-      <a href="#compartir">Compartir</a>
-      <a href="#cierre">Cierre</a>
-    </nav>
+    <p class="sala-contexto" id="titulo-panel" aria-live="polite"></p>
   </header>
+  <nav class="vistas oculto" id="nav-vistas" aria-label="Áreas del panel">
+    <button type="button" class="mini secundario" id="ir-salas" aria-current="page">Salas</button>
+    <button type="button" class="mini secundario" id="ir-historial">Mis sesiones</button>
+    <button type="button" class="mini secundario oculto" id="ir-admin">Administración</button>
+  </nav>
+  <nav class="secciones oculto" id="nav-secciones" aria-label="Secciones de la sala">
+    <a href="#encuesta">Encuesta</a>
+    <a href="#preguntas">Preguntas <span class="contador oculto" id="cuenta-pendientes"></span></a>
+    <a href="#compartir">Compartir</a>
+    <a href="#cierre">Cierre</a>
+  </nav>
   <main class="ancho" id="contenido" tabindex="-1">
+    <h1 class="solo-lector">Panel docente</h1>
     <section class="acceso oculto" id="vista-login" aria-labelledby="t-login">
       <h2 id="t-login">Entrar al panel docente</h2>
       <form id="form-login" autocomplete="on">
@@ -107,13 +112,7 @@
         <div class="fila entre"><h3 id="t-detalle">Detalle</h3><button type="button" class="mini secundario" id="cerrar-detalle">Cerrar detalle</button></div>
         <div id="cuerpo-detalle"></div>
       </section>
-      <details class="hoja plegable"><summary><b>Qué se conserva y por cuánto tiempo</b></summary>
-        <ul class="suave">
-          <li>Se guarda: título, fechas, estado, número de participantes y de preguntas, y por actividad el enunciado, las opciones y los recuentos por ronda.</li>
-          <li>No se guarda: alias, respuestas individuales, textos de preguntas de estudiantes, notas privadas, soluciones sin revelar ni diapositivas.</li>
-          <li>Si crea la sala sin «Conservar resultados», solo quedan título, fechas y recuentos generales.</li>
-          <li>El historial se elimina automáticamente transcurrido el plazo de conservación del servicio; usted puede eliminar cualquiera de sus sesiones cerradas en cualquier momento.</li>
-        </ul></details>
+      <p class="suave nota-historial">El historial se muestra por páginas. La paginación no modifica el plazo de conservación del servicio; exporte CSV si necesita una copia de los resultados disponibles.</p>
     </section>
 
     <section id="vista-admin" class="oculto" aria-labelledby="t-admin">
@@ -138,7 +137,13 @@
           <ul id="lista-invitaciones" class="preguntas"></ul>
         </div>
       </div>
-      <div class="hoja"><h3>Usuarios</h3><div class="tabla-responsive">
+      <div class="hoja"><h3>Usuarios</h3>
+        <div class="usuario-busqueda">
+          <label for="buscar-usuarios">Buscar por nombre o correo</label>
+          <input type="search" id="buscar-usuarios" autocomplete="off" aria-controls="tabla-usuarios" placeholder="Nombre o correo electrónico">
+          <p class="suave" id="resumen-usuarios" role="status" aria-live="polite"></p>
+        </div>
+        <div class="tabla-responsive">
         <table class="salidas"><caption class="solo-lector">Usuarios</caption>
           <thead><tr><th scope="col">Nombre</th><th scope="col">Correo</th><th scope="col">Rol</th><th scope="col">Estado</th><th scope="col"><span class="solo-lector">Acciones</span></th></tr></thead>
           <tbody id="tabla-usuarios"></tbody></table></div></div>

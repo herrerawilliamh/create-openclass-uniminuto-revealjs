@@ -67,7 +67,7 @@ services:
   interact-db-preparar:
     <<: *endurecido
     profiles: ["postgres-dedicado"]
-    image: openclass-live:0.4.2-${LIVE_REVISION:?Full approved Git SHA required}
+    image: openclass-live:0.4.5-${LIVE_REVISION:?Full approved Git SHA required}
     pull_policy: never
     restart: "no"
     user: "1000:1000"
@@ -90,7 +90,7 @@ services:
   interact-migrar:
     <<: *endurecido
     profiles: ["postgres-dedicado"]
-    image: openclass-live:0.4.2-${LIVE_REVISION:?Full approved Git SHA required}
+    image: openclass-live:0.4.5-${LIVE_REVISION:?Full approved Git SHA required}
     pull_policy: never
     restart: "no"
     user: "1000:1000"
@@ -114,7 +114,7 @@ services:
   interact-migrar-administrado:
     <<: *endurecido
     profiles: ["postgres-administrado"]
-    image: openclass-live:0.4.2-${LIVE_REVISION:?Full approved Git SHA required}
+    image: openclass-live:0.4.5-${LIVE_REVISION:?Full approved Git SHA required}
     pull_policy: never
     restart: "no"
     user: "1000:1000"
@@ -136,7 +136,7 @@ services:
   interact-db-preparar-administrado:
     <<: *endurecido
     profiles: ["postgres-preparar-administrado"]
-    image: openclass-live:0.4.2-${LIVE_REVISION:?Full approved Git SHA required}
+    image: openclass-live:0.4.5-${LIVE_REVISION:?Full approved Git SHA required}
     pull_policy: never
     restart: "no"
     user: "1000:1000"
@@ -161,10 +161,10 @@ services:
       context: .
       dockerfile: Dockerfile
       labels:
-        org.opencontainers.image.version: "0.4.2"
+        org.opencontainers.image.version: "0.4.5"
         org.opencontainers.image.revision: ${LIVE_REVISION:?Full approved Git SHA required}
         org.opencontainers.image.source: https://github.com/herrerawilliamh/create-openclass-uniminuto-revealjs
-    image: openclass-live:0.4.2-${LIVE_REVISION:?Full approved Git SHA required}
+    image: openclass-live:0.4.5-${LIVE_REVISION:?Full approved Git SHA required}
     pull_policy: never
     container_name: openclass-live
     restart: unless-stopped
