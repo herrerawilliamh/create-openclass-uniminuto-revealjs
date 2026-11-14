@@ -4,7 +4,7 @@
  * Requiere Node >= 22 (WebSocket global).
  */
 import { spawn } from 'node:child_process';
-import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { accessSync, constants, existsSync, mkdtempSync, readFileSync, rmSync, statSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 
@@ -16,11 +16,40 @@ const CANDIDATOS_FIJOS = [
   '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
 ];
 
-export function rutaChrome() {
+/** Un ejecutable válido es una ruta absoluta a un archivo regular con permiso de ejecución. */
+function ejecutableValido(c) {
+  try {
+    if (typeof c !== 'string' || !path.isAbsolute(c) || c.includes('\0')) return false;
+    if (!statSync(c).isFile()) return false;
+    if (process.platform !== 'win32') accessSync(c, constants.X_OK);
+    return true;
+  } catch { return false; }
+}
+
+/**
+ * Resuelve el binario. `ejecutable` (inyección explícita, usada por las pruebas con binarios sintéticos)
+ * tiene prioridad y NO cae a otros candidatos: si no es válido, falla en lugar de sustituirse por otra ruta.
+ */
+export function rutaChrome(ejecutable) {
+  if (ejecutable !== undefined) {
+    if (!ejecutableValido(ejecutable)) throw new Error('El ejecutable indicado no es una ruta absoluta a un archivo ejecutable.');
+    return ejecutable;
+  }
   const candidatos = [process.env.CHROME_PATH, ...CANDIDATOS_FIJOS].filter(Boolean);
-  const ruta = candidatos.find((c) => existsSync(c));
-  if (!ruta) throw new Error('No se encontró Chrome/Edge. Define CHROME_PATH.');
+  const ruta = candidatos.find(ejecutableValido);
+  if (!ruta) throw new Error('No se encontró Chrome/Edge. Define CHROME_PATH con una ruta absoluta ejecutable.');
   return ruta;
+}
+
+// stderr acotado y saneado: sin rutas locales (perfil, home, tmp) ni credenciales en los mensajes de error.
+const LIMITE_STDERR = 4096;
+function sanear(texto, perfil) {
+  let t = texto;
+  for (const r of [perfil, os.homedir(), os.tmpdir()]) if (r && r.length > 1) t = t.split(r).join('<ruta>');
+  return t
+    .replace(/(token|secret|password|passwd|apikey|api_key|authorization)(\s*[=:]\s*)\S+/gi, '$1$2<oculto>')
+    .replace(/[\x00-\x08\x0b-\x1f\x7f]/g, '')
+    .trim().slice(0, 500);
 }
 
 const esperar = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -124,17 +153,21 @@ export class Pagina {
   }
 }
 
-async function _lanzarNavegador({ ancho, alto }) {
+async function _lanzarNavegador({ ancho, alto, ejecutable }) {
+  const bin = rutaChrome(ejecutable); // antes de crear el perfil: un binario inválido no deja residuos
   const perfil = mkdtempSync(path.join(os.tmpdir(), 'oc-chrome-'));
-  const stderrTrozos = [];
-  const proc = spawn(rutaChrome(), [
+  let stderrBuf = '', errorSpawn = null;
+  const proc = spawn(bin, [
     '--headless=new', '--remote-debugging-port=0', `--user-data-dir=${perfil}`,
     '--no-first-run', '--no-default-browser-check', '--disable-gpu', '--hide-scrollbars',
     '--disable-extensions', '--mute-audio', '--autoplay-policy=no-user-gesture-required',
     `--window-size=${ancho},${alto}`, 'about:blank',
   ], { stdio: ['ignore', 'ignore', 'pipe'] });
-  proc.stderr.on('data', (b) => stderrTrozos.push(b));
-  const salida = new Promise((r) => proc.once('exit', r));
+  proc.stderr.on('data', (b) => { if (stderrBuf.length < LIMITE_STDERR) stderrBuf = (stderrBuf + b.toString('utf8')).slice(0, LIMITE_STDERR); });
+  proc.on('error', (e) => { errorSpawn = e; }); // ENOENT/EACCES: evita 'error' sin manejar
+  const salida = new Promise((r) => proc.once('close', r));
+  const terminado = () => errorSpawn !== null || proc.exitCode !== null || proc.signalCode !== null;
+  const detalle = () => { const t = sanear(stderrBuf, perfil); return t ? `\n${t}` : ''; };
   let ws, cdp, cerrado = false;
   // Cierre idempotente y acotado: Browser.close, después kill si el proceso sigue vivo; el perfil se borra al final.
   async function cerrar() {
@@ -144,7 +177,7 @@ async function _lanzarNavegador({ ancho, alto }) {
       try { await (cdp ?? new Conexion(ws)).send('Browser.close', {}, undefined, { timeout: 5000 }); } catch { /* ya cerrado */ }
       ws.close();
     }
-    const vivo = proc.exitCode === null && proc.signalCode === null;
+    const vivo = !terminado();
     if (vivo && await Promise.race([salida.then(() => false), esperar(3000).then(() => true)])) {
       proc.kill();
       await Promise.race([salida, esperar(3000)]);
@@ -157,17 +190,13 @@ async function _lanzarNavegador({ ancho, alto }) {
     let puerto;
     // 600 × 50 ms = 30 s: margen suficiente en CI bajo carga.
     for (let i = 0; i < 600 && !puerto; i++) {
-      if (proc.exitCode !== null) {
-        const stderr = Buffer.concat(stderrTrozos).toString('utf8').trim().slice(0, 500);
-        throw new Error(`Chrome terminó al iniciar (código ${proc.exitCode})${stderr ? `\n${stderr}` : ''}`);
+      if (terminado()) {
+        throw new Error(`Chrome terminó al iniciar (${errorSpawn ? `error ${errorSpawn.code ?? 'spawn'}` : `código ${proc.exitCode ?? proc.signalCode}`})${detalle()}`);
       }
       puerto = existsSync(archivo) && readFileSync(archivo, 'utf8').split('\n')[0].trim();
       if (!puerto) await esperar(50);
     }
-    if (!puerto) {
-      const stderr = Buffer.concat(stderrTrozos).toString('utf8').trim().slice(0, 500);
-      throw new Error(`Chrome no publicó DevToolsActivePort en 30 s${stderr ? `\n${stderr}` : ''}`);
-    }
+    if (!puerto) throw new Error(`Chrome no publicó DevToolsActivePort en 30 s${detalle()}`);
     const { webSocketDebuggerUrl } = await (await fetch(`http://127.0.0.1:${puerto}/json/version`, { signal: AbortSignal.timeout(10000) })).json();
     ws = new WebSocket(webSocketDebuggerUrl);
     await new Promise((resolve, reject) => {
@@ -197,10 +226,11 @@ async function _lanzarNavegador({ ancho, alto }) {
  * de arranque (DevToolsActivePort ausente o proceso terminado al inicio); no reintenta errores
  * funcionales ni fallos de CDP.
  */
-export async function abrirNavegador({ ancho = 1920, alto = 1080, reintentos = 1 } = {}) {
+export async function abrirNavegador({ ancho = 1920, alto = 1080, reintentos = 1, ejecutable } = {}) {
+  reintentos = Math.min(Math.max(Number(reintentos) || 0, 0), 3); // tope duro de reintentos
   for (let intento = 0; intento <= reintentos; intento++) {
     try {
-      return await _lanzarNavegador({ ancho, alto });
+      return await _lanzarNavegador({ ancho, alto, ejecutable });
     } catch (e) {
       const esArranque = /DevToolsActivePort|Chrome terminó al iniciar/.test(e.message);
       if (intento >= reintentos || !esArranque) throw e;
