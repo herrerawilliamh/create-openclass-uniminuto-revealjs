@@ -17,7 +17,11 @@ Comportamiento verificado por pruebas (`tests/dominio-transicion.test.mjs`):
 - Enlaces y QR se generan siempre con `APP_URL`.
 - **Sesiones**: la cookie es *host-only* (sin `Domain`), por lo que **no viaja entre dominios**. Quien ya tiene sesión en el
   dominio anterior la conserva allí (el secreto de firma `SESSION_SECRET` no cambia); en el dominio nuevo debe iniciar sesión.
-  Las salas activas y los enlaces/QR ya impresos con el dominio anterior siguen funcionando mientras `APP_HOST_ALT` exista.
+  Los enlaces de **cuenta** (invitaciones, recuperación) del dominio anterior siguen resolviendo mientras ese dominio exista.
+- **Salas NO persistentes**: las salas, encuestas y códigos de sala viven en memoria del proceso (`src/salas.mjs`; `src/app.mjs`
+  arranca con almacén vacío y marca el historial como interrumpido). **Recrear el contenedor las pierde** aunque la sesión de
+  cuenta persista (la cuenta sí está en PostgreSQL). Los QR de sala impresos o proyectados dejan de servir tras el
+  despliegue: desplegar sin salas activas (fuera de clase), avisar a docentes y **generar salas/QR nuevos** después.
 - Invitaciones/recuperaciones ya enviadas con enlaces del dominio anterior siguen válidas (el token vive en el fragmento y
   se valida contra la base, no contra el host) mientras el dominio anterior esté activo.
 - No cambiar `SESSION_SECRET` en esta versión (invalidaría sesiones y claves de sala).
@@ -44,29 +48,43 @@ presente no es un respaldo restaurable hasta haberlo restaurado. Procedimiento (
 2. Copiar `docker-compose.respaldo.yml` (viene en el paquete 0.4.7) junto al Compose efectivo y ejecutar
    `docker compose -f docker-compose.yml -f docker-compose.respaldo.yml --profile respaldo-dedicado run --rm interact-respaldo`
    (`pg_dump` consistente, `.sha256`, `pg_restore --list`).
-3. Copia **externa independiente del servidor** (otro proveedor/objeto con versionado, cifrada); firmar el manifiesto fuera
-   del host con `scripts/autenticidad-respaldo.mjs`.
+3. Copia **externa independiente del servidor** (otro proveedor/objeto con versionado, cifrada). Llevar el `.dump` y su
+   `.sha256` a un equipo firmante de confianza, firmar allí con `scripts/autenticidad-respaldo.mjs firmar` (la clave privada
+   no sale de ese equipo) y devolver al host `<copia>.manifiesto.json` y `<copia>.firma` junto al `.dump`; la **clave pública** se monta aparte.
 4. **Ensayo de restauración aislado**: base nueva `interact_simulacro_restauracion` con `scripts/restaurar.mjs` (exige `.sha256`,
-   firma y destino vacío); el ensayo debe terminar con migraciones íntegras y recuentos por tabla. Sin ensayo exitoso: **NO desplegar**.
+   firma y clave pública de confianza, destino vacío; comando completo en `RESPALDO-RESTAURACION.md`); el ensayo debe terminar con migraciones íntegras y recuentos por tabla. Sin ensayo exitoso: **NO desplegar**.
 5. Programar el respaldo (cron del host cada 6 h y antes de cada despliegue). Conservar el último respaldo anterior a 0.4.7.
 
-## 4. Migración por Dockhand/GitOps (orden exacto)
+## 4. Migración por Dockhand/GitOps (dos fases, orden exacto)
+Principio: el dominio anterior sigue siendo **canónico** (`APP_HOST`/`APP_URL`: enlaces, QR, correos) y conserva su router y
+certificado hasta que el nuevo dominio tenga HTTPS válido y validado. Solo entonces se promueve el nuevo.
+
+**Fase 0 — Preparación**
 1. (Local, hecho) Rama con 0.4.7 revisada; el operador publica y fija la revisión aprobada (SHA de 40 hex) → `LIVE_REVISION`.
 2. Respaldo + ensayo de restauración (sección 3) **completos**.
-3. En Dockhand, en las variables del stack: `APP_HOST=interact.apps.willedtech.io`, `APP_URL=https://interact.apps.willedtech.io`,
-   `APP_HOST_ALT=<dominio anterior>`, `APP_ALT_URLS=https://<dominio anterior>`, `LIVE_REVISION=<sha>`. **Nunca** poner el
-   dominio anterior en `APP_HOST` sin `APP_HOST_ALT`, ni quitar `APP_HOST_ALT` antes del paso 6.
-4. Sincronizar el stack con `docker-compose.gitops.yml` (imagen `openclass-live:0.4.7-<sha>`, `pull_policy: never`: se construye
+3. Ventana **sin salas activas** (fuera de clase) y aviso a docentes: recrear el contenedor borra las salas en memoria.
+
+**Fase 1 — Añadir el dominio nuevo como alterno (canónico sin cambios)**
+4. Variables del stack en Dockhand: `APP_HOST=<dominio anterior>`, `APP_URL=https://<dominio anterior>`,
+   `APP_HOST_ALT=interact.apps.willedtech.io`, `APP_ALT_URLS=https://interact.apps.willedtech.io`, `LIVE_REVISION=<sha>`.
+   (`.env.example` muestra el estado final de la fase 2; no lo copie tal cual en esta fase.)
+5. Sincronizar con `docker-compose.gitops.yml` (imagen `openclass-live:0.4.7-<sha>`, `pull_policy: never`: se construye
    localmente). Las migraciones corren antes (`interact-migrar`, sin cambios de esquema en 0.4.7).
-5. Validar: `/healthz` en ambos dominios; HTTPS válido en el nuevo (`openssl s_client` arriba); inicio de sesión docente,
-   crear sala, escanear QR, unión de un participante y WebSocket en el dominio nuevo; sesión previa del dominio anterior intacta.
-6. Solo con HTTPS válido y validado en el nuevo dominio, después de un periodo acordado (p. ej. una semana lectiva), retirar
-   `APP_HOST_ALT` y `APP_ALT_URLS` en una versión/sincronización posterior.
+6. Validar el dominio nuevo **sin cambiar el canónico**: `/healthz` en ambos; certificado válido (`openssl s_client` de la
+   sección 2); inicio de sesión, crear sala y WebSocket (WSS) en el nuevo dominio. Si falla ACME/TLS: **PARAR aquí**; el
+   dominio anterior y sus enlaces siguen intactos (no avanzar a la fase 2).
+
+**Fase 2 — Promover el nuevo (solo con HTTPS válido y fase 1 validada, fuera de clase)**
+7. Intercambiar: `APP_HOST=interact.apps.willedtech.io`, `APP_URL=https://interact.apps.willedtech.io`,
+   `APP_HOST_ALT=<dominio anterior>`, `APP_ALT_URLS=https://<dominio anterior>`. Sincronizar (recrea el contenedor: salas/QR nuevos).
+8. Validar de nuevo en ambos dominios; enlaces, QR y correos ya apuntan al nuevo. Los usuarios inician sesión en el nuevo.
+9. Tras un periodo acordado (p. ej. una semana lectiva), retirar `APP_HOST_ALT` y `APP_ALT_URLS` en una sincronización posterior.
+   **Nunca** quitar el alterno antes del paso 9 ni dejar el dominio anterior sin router.
 
 ## 5. Reversión y condiciones de parada
 **Detener (no continuar) si**: no hay respaldo verificado y ensayo de restauración; `docker compose config` falla;
-`LIVE_REVISION` no es el SHA aprobado; el contenedor nuevo no queda `healthy`; HTTPS del dominio nuevo no valida y el
-anterior deja de responder; aparecen errores `origen` masivos; fallan las migraciones.
+`LIVE_REVISION` no es el SHA aprobado; el contenedor nuevo no queda `healthy`; **el HTTPS del dominio nuevo no valida
+(no se promueve a canónico: se detiene en la fase 1)**; el anterior deja de responder; hay salas activas; aparecen errores `origen` masivos; fallan las migraciones.
 **Reversión** (sin borrar volúmenes ni la base): en Dockhand restaurar la variable `LIVE_REVISION` y el Compose de 0.4.6
 (la imagen `openclass-live:0.4.6-<sha>` sigue en el host: no se elimina), mantener `APP_HOST` anterior y quitar el router
 nuevo. 0.4.7 no cambia el esquema ni los datos: no se requiere restaurar la base. Solo si una migración fallida dañó datos:

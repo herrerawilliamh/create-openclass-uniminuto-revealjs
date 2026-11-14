@@ -33,3 +33,12 @@ test('Compose: router nuevo y router alterno independientes con myresolver; GitO
   }
   assert.match(leer('.env.example'), /APP_HOST=interact\.apps\.willedtech\.io/);
 });
+
+test('runbook: fase 1 conserva canónico antiguo; salas en memoria y restauración con clave pública', () => {
+  const d = leer('docs/DOMINIO-Y-DESPLIEGUE-0.4.7.md');
+  assert.match(d, /Fase 1[^\n]*canónico sin cambios/);
+  assert.match(d, /APP_HOST=<dominio anterior>[\s\S]*Fase 2/);
+  assert.match(d, /NO persistentes/);
+  assert.doesNotMatch(d, /salas activas[^\n]*siguen funcionando/);
+  assert.match(leer('docs/RESPALDO-RESTAURACION.md'), /--clave-publica \/confianza\/respaldo\.pub/);
+});

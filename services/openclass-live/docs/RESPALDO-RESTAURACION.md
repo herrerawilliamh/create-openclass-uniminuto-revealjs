@@ -35,10 +35,17 @@ docker compose -f docker-compose.yml -f docker-compose.respaldo.yml --profile re
 ```bash
 # 1) Base de destino NUEVA y VACÍA, con nombre terminado en _restauracion (o _prueba / _test)
 docker compose exec interact-db psql -U postgres -c "CREATE DATABASE interact_simulacro_restauracion"
-# 2) Restaurar y verificar (imagen de herramientas, en la red interna)
-docker run --rm --network openclass-live_interact-db -v /home/openclass-live/respaldos:/respaldos:ro \
-  -e DATABASE_RESTORE_URL='postgres://postgres:…@interact-db:5432/interact_simulacro_restauracion' -e DB_SCHEMA=interact \
-  openclass-live-herramientas:0.4.7 node scripts/restaurar.mjs --copia /respaldos/interact-AAAAMMDDTHHMMSSZ.dump
+# 2) En la carpeta de respaldos deben estar juntos: interact-….dump, .dump.sha256, .dump.manifiesto.json y .dump.firma
+#    (los dos últimos devueltos por el equipo firmante). La clave pública de confianza va en OTRA ruta.
+# 3) Restaurar con la imagen de herramientas. La red es la del proyecto efectivo de Dockhand: no la suponga, descúbrala:
+RED=$(docker inspect "$(docker compose ps -q interact-db)" --format '{{range $k,$v := .NetworkSettings.Networks}}{{println $k}}{{end}}' | head -1)
+docker run --rm --network "$RED" \
+  -v /home/openclass-live/respaldos:/respaldos:ro -v /home/openclass-live/confianza/respaldo.pub:/confianza/respaldo.pub:ro \
+  --env-file /home/openclass-live/restauracion.env -e DB_SCHEMA=interact \
+  openclass-live-herramientas:0.4.7 node scripts/restaurar.mjs --copia /respaldos/interact-AAAAMMDDTHHMMSSZ.dump \
+  --clave-publica /confianza/respaldo.pub
+# restauracion.env (chmod 600, fuera del repositorio) solo contiene DATABASE_RESTORE_URL=postgres://…@interact-db:5432/interact_simulacro_restauracion
+# Sin --clave-publica (o INTERACT_BACKUP_PUBLIC_KEY_FILE) restaurar.mjs rechaza siempre. Pendiente de validar en un entorno con Docker/PostgreSQL.
 ```
 
 Salvaguardas de `scripts/restaurar.mjs`:
