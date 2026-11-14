@@ -11,6 +11,7 @@ import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, statS
 import path from 'node:path';
 import { construirTar, comprimirDeterminista } from './tar-determinista.mjs';
 import { PAYLOAD } from './compose-gitops.mjs';
+import { esBinario } from './huella.mjs';
 import { fileURLToPath } from 'node:url';
 
 const raiz = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -54,7 +55,11 @@ const tar = path.join(salida, `${nombre}.tar.gz`);
 // Formato canónico: USTAR + gzip deterministas escritos por scripts/tar-determinista.mjs (independiente del `tar` del sistema).
 lista.sort();
 for (const f of lista) { chmodSync(path.join(carpeta, f), 0o644); utimesSync(path.join(carpeta, f), 0, 0); }
-const tarBytes = construirTar(lista.map((f) => ({ ruta: `${nombre}/${f}`, bytes: readFileSync(path.join(carpeta, f)) })));
+const tarBytes = construirTar(lista.map((f) => {
+  const raw = readFileSync(path.join(carpeta, f));
+  const bytes = esBinario(f) ? raw : Buffer.from(raw.toString('utf8').replace(/\r\n/g, '\n'));
+  return { ruta: `${nombre}/${f}`, bytes };
+}));
 writeFileSync(tar, comprimirDeterminista(tarBytes));
 const suma = createHash('sha256').update(readFileSync(tar)).digest('hex');
 writeFileSync(path.join(salida, 'SHA256SUMS'), `${suma}  ${nombre}.tar.gz\n`);

@@ -67,7 +67,7 @@ services:
   interact-db-preparar:
     <<: *endurecido
     profiles: ["postgres-dedicado"]
-    image: openclass-live:0.4.4
+    image: openclass-live:0.4.5
     restart: "no"
     user: "1000:1000"
     command: ["node", "scripts/preparar-roles.mjs"]
@@ -89,7 +89,7 @@ services:
   interact-migrar:
     <<: *endurecido
     profiles: ["postgres-dedicado"]
-    image: openclass-live:0.4.4
+    image: openclass-live:0.4.5
     restart: "no"
     user: "1000:1000"
     command: ["node", "scripts/migrar.mjs"]
@@ -112,7 +112,7 @@ services:
   interact-migrar-administrado:
     <<: *endurecido
     profiles: ["postgres-administrado"]
-    image: openclass-live:0.4.4
+    image: openclass-live:0.4.5
     restart: "no"
     user: "1000:1000"
     command: ["node", "scripts/migrar.mjs"]
@@ -133,7 +133,7 @@ services:
   interact-db-preparar-administrado:
     <<: *endurecido
     profiles: ["postgres-preparar-administrado"]
-    image: openclass-live:0.4.4
+    image: openclass-live:0.4.5
     restart: "no"
     user: "1000:1000"
     command: ["node", "scripts/preparar-roles.mjs"]
@@ -156,7 +156,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    image: openclass-live:0.4.4
+    image: openclass-live:0.4.5
     container_name: openclass-live
     restart: unless-stopped
     environment:

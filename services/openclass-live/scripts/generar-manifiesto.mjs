@@ -6,7 +6,7 @@
 import { existsSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { huellaGit, sha256 as sha } from './huella.mjs';
+import { huellaGit, sha256 as sha, esBinario } from './huella.mjs';
 
 const raiz = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const base = process.argv[2];
@@ -24,7 +24,8 @@ const files = [];
     if (statSync(p).isDirectory()) { walk(p); continue; }
     const rel = path.relative(carpeta, p).split(path.sep).join('/');
     const bytes = readFileSync(p);
-    files.push({ path: rel, sha256: sha(bytes), gitSha256: huellaGit(rel, bytes) });
+    const bytesArchivo = esBinario(rel) ? bytes : Buffer.from(bytes.toString('utf8').replace(/\r\n/g, '\n'));
+    files.push({ path: rel, sha256: sha(bytesArchivo), gitSha256: huellaGit(rel, bytes) });
   }
 })(carpeta);
 files.sort((a, b) => a.path.localeCompare(b.path, 'en'));
