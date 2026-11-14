@@ -67,7 +67,7 @@ services:
   interact-db-preparar:
     <<: *endurecido
     profiles: ["postgres-dedicado"]
-    image: openclass-live:0.4.6
+    image: openclass-live:0.4.7
     restart: "no"
     user: "1000:1000"
     command: ["node", "scripts/preparar-roles.mjs"]
@@ -89,7 +89,7 @@ services:
   interact-migrar:
     <<: *endurecido
     profiles: ["postgres-dedicado"]
-    image: openclass-live:0.4.6
+    image: openclass-live:0.4.7
     restart: "no"
     user: "1000:1000"
     command: ["node", "scripts/migrar.mjs"]
@@ -112,7 +112,7 @@ services:
   interact-migrar-administrado:
     <<: *endurecido
     profiles: ["postgres-administrado"]
-    image: openclass-live:0.4.6
+    image: openclass-live:0.4.7
     restart: "no"
     user: "1000:1000"
     command: ["node", "scripts/migrar.mjs"]
@@ -133,7 +133,7 @@ services:
   interact-db-preparar-administrado:
     <<: *endurecido
     profiles: ["postgres-preparar-administrado"]
-    image: openclass-live:0.4.6
+    image: openclass-live:0.4.7
     restart: "no"
     user: "1000:1000"
     command: ["node", "scripts/preparar-roles.mjs"]
@@ -156,7 +156,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    image: openclass-live:0.4.6
+    image: openclass-live:0.4.7
     container_name: openclass-live
     restart: unless-stopped
     environment:
@@ -164,6 +164,8 @@ services:
       PORT: "3000"
       TZ: ${TZ:-America/Bogota}
       APP_URL: ${APP_URL:?APP_URL is required}
+      # Transición de dominio: orígenes adicionales (separados por coma) aceptados para CSRF/Socket.IO; vacío = solo APP_URL.
+      APP_ALT_URLS: ${APP_ALT_URLS:-}
       SESSION_SECRET: ${SESSION_SECRET:?SESSION_SECRET is required}
       # Opcional (acceso heredado 0.3.0). Vacío = solo cuentas personales.
       ADMIN_PASSWORD_HASH: ${ADMIN_PASSWORD_HASH:-}
@@ -221,11 +223,18 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=web"
-      - "traefik.http.routers.openclass-live.rule=Host(`${APP_HOST}`)"
+      - "traefik.http.routers.openclass-live.rule=Host(`${APP_HOST:?APP_HOST is required}`)"
       - "traefik.http.routers.openclass-live.entrypoints=websecure"
       - "traefik.http.routers.openclass-live.tls=true"
       - "traefik.http.routers.openclass-live.tls.certresolver=myresolver"
       - "traefik.http.routers.openclass-live.service=openclass-live-svc"
+      # Transición de dominio: segundo router (certificado ACME independiente) para el dominio anterior. Si APP_HOST_ALT
+      # no se define, repite APP_HOST (sin efecto). No retirar el dominio anterior hasta validar HTTPS en el nuevo.
+      - "traefik.http.routers.openclass-live-alt.rule=Host(`${APP_HOST_ALT:-${APP_HOST}}`)"
+      - "traefik.http.routers.openclass-live-alt.entrypoints=websecure"
+      - "traefik.http.routers.openclass-live-alt.tls=true"
+      - "traefik.http.routers.openclass-live-alt.tls.certresolver=myresolver"
+      - "traefik.http.routers.openclass-live-alt.service=openclass-live-svc"
       - "traefik.http.services.openclass-live-svc.loadbalancer.server.port=3000"
 
 volumes:

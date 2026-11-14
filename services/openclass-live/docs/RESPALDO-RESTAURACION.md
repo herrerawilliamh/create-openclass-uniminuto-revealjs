@@ -38,7 +38,7 @@ docker compose exec interact-db psql -U postgres -c "CREATE DATABASE interact_si
 # 2) Restaurar y verificar (imagen de herramientas, en la red interna)
 docker run --rm --network openclass-live_interact-db -v /home/openclass-live/respaldos:/respaldos:ro \
   -e DATABASE_RESTORE_URL='postgres://postgres:…@interact-db:5432/interact_simulacro_restauracion' -e DB_SCHEMA=interact \
-  openclass-live-herramientas:0.4.0 node scripts/restaurar.mjs --copia /respaldos/interact-AAAAMMDDTHHMMSSZ.dump
+  openclass-live-herramientas:0.4.7 node scripts/restaurar.mjs --copia /respaldos/interact-AAAAMMDDTHHMMSSZ.dump
 ```
 
 Salvaguardas de `scripts/restaurar.mjs`:
@@ -118,3 +118,5 @@ Requisito para producción institucional: **RPO ≤ 5 min**.
   credenciales del almacenamiento y la evaluación de su superficie de ataque. Queda fuera de 0.4.0 por alcance y
   porque requiere infraestructura fuera del repositorio.
 - Mientras no exista, el RPO real es el de las copias lógicas (≤ 6 h si se programan).
+
+> 0.4.7: el stack de Dockhand debe incluir `docker-compose.respaldo.yml` y `BACKUP_HOST_DIR`; ver `DOMINIO-Y-DESPLIEGUE-0.4.7.md` §3 (ensayo de restauración obligatorio antes de desplegar).

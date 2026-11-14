@@ -96,16 +96,16 @@ export async function sesionDesdeCookie(cabeceraCookie, { firmador, sesiones }) 
 }
 
 /** Peticiones de cambio de estado: mismo origen exacto (Origin o Sec-Fetch-Site) además del token CSRF. */
-function mismoOrigen(req, appUrl) {
+function mismoOrigen(req, origenes) {
   const origen = req.headers.origin;
-  if (origen) return origen === appUrl;
+  if (origen) return origenes.includes(origen);
   return req.headers['sec-fetch-site'] === 'same-origin';
 }
 
 export function crearManejadorHttp({ config, estaticos, firmador, sesiones, limitadorLogin, limitadorLoginGlobal, log, cuentas, historial, correo, almacen, limitadorCuenta, limitadorTokens, db = null }) {
   const apiCuentas = crearApiCuentas({ config, firmador, sesiones, cuentas, historial, correo, almacen, log, limitadorCuenta, limitadorTokens,
     util: { enviar, leerJson, ipCliente: (req) => ipCliente(req.headers, req.socket.remoteAddress, config.confiarProxy),
-      mismoOrigen: (req) => mismoOrigen(req, config.appUrl), sesionDesdeCookie: (c) => sesionDesdeCookie(c, { firmador, sesiones }),
+      mismoOrigen: (req) => mismoOrigen(req, config.origenesApp), sesionDesdeCookie: (c) => sesionDesdeCookie(c, { firmador, sesiones }),
       cookieSesion: (valor, segundos) => cookieDocente(valor, { segura: config.cookieSegura, segundos }) } });
   const segundosSesion = config.sesionDocenteHoras * 3600;
   const pagina = (ruta) => estaticos.get(ruta);
@@ -153,7 +153,7 @@ export function crearManejadorHttp({ config, estaticos, firmador, sesiones, limi
       }
 
       if (req.method === 'POST' && ruta === '/api/docente/login' && config.hashDocente) {
-        if (!mismoOrigen(req, config.appUrl)) return enviar(res, 403, { error: 'origen' });
+        if (!mismoOrigen(req, config.origenesApp)) return enviar(res, 403, { error: 'origen' });
         const ip = ipCliente(req.headers, req.socket.remoteAddress, config.confiarProxy);
         if (!limitadorLogin.permitir(ip) || !limitadorLoginGlobal.permitir('global')) {
           log('login_limitado');
@@ -174,7 +174,7 @@ export function crearManejadorHttp({ config, estaticos, firmador, sesiones, limi
       }
 
       if (req.method === 'POST' && ruta === '/api/docente/logout') {
-        if (!mismoOrigen(req, config.appUrl)) return enviar(res, 403, { error: 'origen' });
+        if (!mismoOrigen(req, config.origenesApp)) return enviar(res, 403, { error: 'origen' });
         const s = await sesionDesdeCookie(req.headers.cookie, { firmador, sesiones });
         if (s) {
           if (req.headers['x-oc-csrf'] !== firmador.csrf(s.sid)) return enviar(res, 403, { error: 'csrf' });
