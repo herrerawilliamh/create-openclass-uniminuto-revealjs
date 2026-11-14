@@ -8,25 +8,25 @@
   <title>Interact by WillEdTech</title>
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="/assets/marca/willedtech.css">
+  <link rel="stylesheet" href="/assets/marca/willedtech-header.css">
+  <link rel="stylesheet" href="/assets/marca/willedtech-motion.css">
+  <link rel="stylesheet" href="/assets/marca/willedtech-view-transitions.css">
   <link rel="stylesheet" href="/assets/marca/fuentes.css">
   <link rel="stylesheet" href="/assets/estilos.css">
   <link rel="stylesheet" href="/assets/marca/interact-shell.css">
   <script src="/socket.io/socket.io.min.js" defer></script>
+  <script src="/assets/marca/interact-espera.mjs" defer></script>
   <script type="module" src="/assets/estudiante.mjs"></script>
 </head>
 <body>
   <header class="barra">
-    <div class="marca">
-      <a class="marca-cinta" href="/" aria-label="Interact by WillEdTech, inicio">
-        <img class="wt-monograma" src="/assets/marca/willedtech-w.svg" alt="" width="52" height="52">
-        <span class="marca-divisor" aria-hidden="true"></span>
-        <img class="interact-simbolo" src="/favicon.svg" alt="" width="52" height="52">
-        <span class="marca-tipo"><h1 class="marca-nombre">Interact</h1><span class="marca-firma">by WillEdTech</span></span>
-      </a>
-    </div>
-    <span class="estado-conexion" id="conexion" aria-live="polite"></span>
+    <a class="wt-header__brand" href="/" aria-label="WillEdTech Interact, ir al inicio">
+      <img class="wt-lockup wt-lockup--full" src="/assets/marca/interact-horizontal.svg" alt="">
+      <img class="wt-lockup wt-lockup--compact" src="/assets/marca/interact-compacto.svg" alt="">
+    </a>
+    <span class="conexion-grupo"><span class="espera-marca" hidden></span><span class="estado-conexion" id="conexion" aria-live="polite"></span></span>
   </header>
-  <p class="titulo-participacion" id="titulo-sala">Participación en clase</p>
+  <h1 class="titulo-participacion" id="titulo-sala">Participación en clase</h1>
   <main>
     <section class="tarjeta" id="vista-union" aria-labelledby="t-union">
       <h2 id="t-union">Unirse a la clase</h2>

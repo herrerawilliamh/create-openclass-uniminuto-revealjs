@@ -1,6 +1,6 @@
 {
   "name": "openclass-live",
-  "version": "0.4.3",
+  "version": "0.4.4",
   "private": true,
   "description": "Interact by WillEdTech: participación en tiempo real (encuestas y preguntas) para clases presentadas localmente con OpenClass Reveal.js",
   "author": "William Herrera",
@@ -24,7 +24,8 @@
     "test:navegador": "node --test --test-concurrency=1 tests/e2e/*.test.mjs",
     "audit": "npm audit --omit=dev",
     "empaquetar": "node scripts/empaquetar-despliegue.mjs",
-    "verificar": "node scripts/verificar-despliegue.mjs"
+    "verificar": "node scripts/verificar-despliegue.mjs",
+    "brand:verify": "node scripts/brand-verify.mjs"
   },
   "dependencies": {
     "pg": "8.23.1",

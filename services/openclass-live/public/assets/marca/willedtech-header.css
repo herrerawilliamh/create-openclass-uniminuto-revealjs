@@ -1,0 +1,165 @@
+/* WillEdTech · contrato de cabecera corporativa (Brand 3.1).
+   Requiere tokens/willedtech.css. La especificación está en BRAND.md §7.
+
+   Composición:  [W] | [monograma] Nombre del producto
+                                   by WillEdTech
+   La composición entera es UN archivo oficial: products/<app>/<app>-horizontal.svg.
+   En pantallas estrechas se cambia por products/<app>/<app>-compacto.svg (W | monograma).
+   Aquí solo se decide el tamaño: nunca se recorta, se deforma ni se recompone a mano.
+
+   <header class="wt-header">
+     <a class="wt-header__brand" href="/" aria-label="WillEdTech Learning, ir al inicio">
+       <img class="wt-lockup wt-lockup--full" src="…/learning-horizontal.svg" alt="" width="590" height="116">
+       <img class="wt-lockup wt-lockup--compact" src="…/learning-compacto.svg" alt="" width="263" height="116">
+     </a>
+     <div class="wt-header__context">…dónde está la persona (opcional)…</div>
+     <div class="wt-header__actions">…acciones…</div>
+   </header>
+*/
+
+:root {
+  /* Nivel amplio: 1121 px o más */
+  --wt-header-h: 72px;
+  --wt-lockup-h: 52px;
+  --wt-header-pad: 24px;
+  --wt-header-gap: 16px;
+}
+
+/* Nivel medio: 641 a 1120 px */
+@media (max-width: 1120px) {
+  :root {
+    --wt-header-h: 64px;
+    --wt-lockup-h: 44px;
+    --wt-header-pad: 20px;
+  }
+}
+
+/* Nivel compacto: 640 px o menos */
+@media (max-width: 640px) {
+  :root {
+    --wt-header-h: 56px;
+    --wt-lockup-h: 36px;
+    --wt-header-pad: 12px;
+    --wt-header-gap: 8px;
+  }
+}
+
+.wt-header {
+  display: flex;
+  align-items: center;
+  gap: var(--wt-header-gap);
+  min-height: var(--wt-header-h);
+  padding-inline: var(--wt-header-pad);
+  background: rgb(var(--wt-surface));
+  color: rgb(var(--wt-ink));
+  border-bottom: 1px solid rgb(var(--wt-line));
+}
+
+/* La marca es un solo control: enlace o botón que lleva al inicio del producto. */
+.wt-header__brand {
+  display: inline-flex;
+  align-items: center;
+  flex: none;
+  min-height: 44px;
+  /* Área de protección: 25 % de la altura del isotipo antes del siguiente elemento. */
+  margin-inline-end: calc(var(--wt-lockup-h) * 0.25);
+  padding: 0;
+  border: 0;
+  border-radius: 0.25rem 0.75rem 0.25rem 0.75rem;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.wt-header__brand:focus-visible {
+  outline: 2px solid rgb(var(--wt-focus));
+  outline-offset: 4px;
+}
+
+/* El lockup manda por altura. El ancho es el que resulte: no se limita. */
+.wt-lockup {
+  display: block;
+  flex: none;
+  height: var(--wt-lockup-h);
+  width: auto;
+  max-width: none;
+}
+
+.wt-lockup--compact {
+  display: none;
+}
+
+@media (max-width: 640px) {
+  .wt-lockup--full {
+    display: none;
+  }
+  .wt-lockup--compact {
+    display: block;
+  }
+}
+
+/* Forzar una variante cuando el contenedor no es la ventana (paneles, vistas previas). */
+[data-wt-lockup='compact'] .wt-lockup--full {
+  display: none;
+}
+[data-wt-lockup='compact'] .wt-lockup--compact {
+  display: block;
+}
+[data-wt-lockup='full'] .wt-lockup--full {
+  display: block;
+}
+[data-wt-lockup='full'] .wt-lockup--compact {
+  display: none;
+}
+
+/* Contexto: dónde está la persona. Cede espacio antes que la marca o las acciones. */
+.wt-header__context {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  font-family: var(--wt-font-body);
+  font-size: 0.9375rem;
+  color: rgb(var(--wt-ink-soft));
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.wt-header__actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: none;
+  margin-inline-start: auto;
+}
+
+/* Marca con etiqueta de modo debajo (por ejemplo "Vista previa"). Una sola, sin insignias extra.
+   <div class="wt-header__identity"><a class="wt-header__brand">…</a><span class="wt-header__mode">Vista previa</span></div> */
+.wt-header__identity {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  flex: none;
+  padding-block: 6px;
+}
+
+.wt-header__mode {
+  display: block;
+  margin-top: 2px;
+  font-family: var(--wt-font-body);
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: rgb(var(--wt-ink-soft));
+}
+
+/* Cabecera sobre fondo oscuro fijo: usa los archivos -negativo o el SVG en línea. */
+.wt-header[data-wt-surface='dark'] {
+  background: rgb(var(--wt-violet-950));
+  color: #fff;
+  border-bottom-color: rgb(255 255 255 / 0.12);
+}
+.wt-header[data-wt-surface='dark'] .wt-header__context,
+.wt-header[data-wt-surface='dark'] .wt-header__mode {
+  color: rgb(255 255 255 / 0.78);
+}

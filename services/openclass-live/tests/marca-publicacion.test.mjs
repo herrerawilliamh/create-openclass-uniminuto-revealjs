@@ -11,8 +11,8 @@ const leer = (f) => readFileSync(path.join(raiz, f), 'utf8');
 test('la marca está clasificada, autorizada por el propietario y sin metadatos internos del repositorio de origen', () => {
   const origen = JSON.parse(leer('public/assets/marca/ORIGEN.json'));
   assert.equal(origen.BRAND_PUBLICATION_AUTHORIZED, 'YES');
-  assert.equal(origen.autorizacionExpresaDelPropietario.fecha, '2026-11-08');
-  assert.equal(Object.keys(origen.recursos).length, 4);
+  assert.equal(origen.autorizacionExpresaDelPropietario.fecha, '2026-11-13');
+  assert.equal(Object.keys(origen.recursos).length, 11);
   for (const r of Object.values(origen.recursos)) assert.equal(r.redistribucionPublica, 'SI');
   for (const f of ['public/assets/marca/ORIGEN.json', 'docs/BRANDING-0.3.0.md', 'docs/BRAND-PUBLICACION.md',
     'public/assets/marca/willedtech.css', 'public/favicon.svg']) {

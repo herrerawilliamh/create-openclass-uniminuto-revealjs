@@ -5,18 +5,17 @@ import { readFileSync } from 'node:fs';
 const root = new URL('../public/', import.meta.url);
 const read = (path) => readFileSync(new URL(path, root), 'utf8');
 
-test('marca familiar W | Interact y favicon con el mismo símbolo', () => {
-  const favicon = read('favicon.svg');
-  const logo = read('assets/marca/willedtech-w.svg');
-  assert.match(logo, /viewBox="0 0 810 810"/);
-  assert.match(favicon, /viewBox="0 0 810 810"/);
-  assert.match(favicon, /#F27405/);
+test('estructura de cabecera y elementos de marca 3.1.0', () => {
   for (const page of ['docente/index.html', 'cuenta/index.html', 'vincular/index.html', 'index.html']) {
     const html = read(page);
-    assert.match(html, /\/assets\/marca\/willedtech-w\.svg/);
     assert.match(html, /\/favicon\.svg/);
-    assert.match(html, /<h1 class="marca-nombre">Interact<\/h1>/);
-    assert.match(html, /<span class="marca-firma">by WillEdTech<\/span>/);
+    assert.match(html, /<a class="wt-header__brand" href="[^"]+" aria-label="WillEdTech Interact, ir al inicio">/);
+    assert.match(html, /class="wt-lockup wt-lockup--full" src="\/assets\/marca\/interact-horizontal\.svg" alt=""/);
+    assert.match(html, /class="wt-lockup wt-lockup--compact" src="\/assets\/marca\/interact-compacto\.svg" alt=""/);
+    assert.match(html, /\/assets\/marca\/willedtech-header\.css/);
+    assert.match(html, /\/assets\/marca\/willedtech-motion\.css/);
+    assert.equal((html.match(/<h1[\s>]/g) ?? []).length, 1, 'un solo h1');
+    assert.doesNotMatch(html, /marca-nombre|marca-firma|marca-divisor|wt-monograma|interact-simbolo/);
     assert.match(html, /\/assets\/marca\/interact-shell\.css/);
   }
 });

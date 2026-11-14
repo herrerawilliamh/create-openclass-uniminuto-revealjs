@@ -10,8 +10,9 @@ import { servir } from '../../../../scripts/lib/servidor.mjs';
 
 test('el modo accesible aplica interlineado, espaciado y OpenDyslexic en estilos computados', async () => {
   const estatico = await servir(new URL('../../public', import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '$1'), { base: '/' });
-  const nav = await abrirNavegador({ ancho: 1280, alto: 800 });
+  let nav;
   try {
+    nav = await abrirNavegador({ ancho: 1280, alto: 800 });
     const pag = await nav.pagina();
     await pag.ir(`${estatico.url}index.html`);
     const leer = `(() => { const cs = getComputedStyle(document.documentElement), cb = getComputedStyle(document.body); return {
@@ -30,5 +31,5 @@ test('el modo accesible aplica interlineado, espaciado y OpenDyslexic en estilos
     // La fuente accesible realmente se descarga (autoalojada), no cae a la de respaldo.
     const cargada = await pag.evaluar(`document.fonts.load('400 16px OpenDyslexic').then((f) => f.length > 0 && f[0].status === 'loaded')`);
     assert.equal(cargada, true);
-  } finally { await nav.cerrar(); await estatico.cerrar(); }
+  } finally { await nav?.cerrar(); await estatico.cerrar(); }
 });

@@ -1,34 +1,17 @@
-/* Interact 0.4.3: identidad familiar WillEdTech, sin alterar los IDs del panel. */
+/* Interact: maquetación propia sobre la cabecera corporativa de Brand 3.1 (willedtech-header.css).
+   La marca es el archivo oficial interact-horizontal.svg / interact-compacto.svg; aquí solo hay disposición. */
 body.docente .cinta, header.barra {
-  position: relative; top: auto; padding: 10px clamp(16px, 3vw, 36px);
+  position: relative; top: auto; min-height: var(--wt-header-h); padding: 0 var(--wt-header-pad);
   background: rgb(var(--wt-surface)); color: rgb(var(--wt-ink));
   border-bottom: 1px solid rgb(var(--wt-line)); box-shadow: none;
+  view-transition-name: wt-header;
 }
-body.docente .cinta-fila { max-width: 1440px; margin-inline: auto; gap: 12px 28px; }
-body.docente .marca-cinta, header.barra .marca-cinta {
-  display: inline-flex; align-items: center; gap: 13px; min-width: 0;
-  color: rgb(var(--wt-ink)); text-decoration: none;
-}
-body.docente .marca-cinta:hover, header.barra .marca-cinta:hover {
-  color: rgb(var(--wt-primary-ink)); text-decoration: none;
-}
-.marca-cinta .wt-monograma, .marca-cinta .interact-simbolo {
-  display: block; width: 52px; height: 52px; object-fit: contain; flex: 0 0 52px;
-}
-.marca-cinta .marca-divisor {
-  width: 2px; height: 48px; border-radius: 2px;
-  background: rgb(var(--wt-line-strong)); flex: none;
-}
-.marca-cinta .marca-tipo { display: flex; flex-direction: column; align-items: flex-start; min-width: 0; }
-.marca-cinta .marca-nombre {
-  margin: 0;
-  font-family: var(--wt-font-heading); font-size: clamp(1.32rem, 2vw, 1.65rem);
-  line-height: 1.15; font-weight: 800; letter-spacing: -.025em;
-}
-.marca-cinta .marca-firma {
-  color: rgb(var(--wt-ink-soft)); font-family: var(--wt-font-body);
-  font-size: .85rem; line-height: 1.4; font-weight: 700;
-}
+header.barra { display: flex; align-items: center; justify-content: space-between; gap: var(--wt-header-gap); }
+body.docente .cinta-fila { max-width: 1440px; min-height: var(--wt-header-h); margin-inline: auto; gap: 8px 28px; }
+.espera-marca { color: rgb(var(--wt-ink-soft)); display: inline-flex; align-items: center; }
+.espera-marca[hidden] { display: none; }
+.conexion-grupo { display: inline-flex; align-items: center; gap: 6px; }
+.solo-lector { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 body.docente .cinta .estado-conexion, header.barra .estado-conexion {
   color: rgb(var(--wt-success-ink)); font-size: .875rem;
 }
@@ -71,25 +54,15 @@ body.docente .secciones {
 body.docente .secciones a { color: rgb(var(--wt-primary-ink)); padding-inline: 12px; }
 body.docente .secciones a:hover { background: rgb(var(--wt-primary-soft)); }
 body.docente .secciones a:focus-visible { outline-color: rgb(var(--wt-ink)); }
-header.barra { gap: 14px; }
-header.barra .marca { gap: 10px; }
 .titulo-participacion {
   max-width: 720px; margin: 14px auto 0; padding: 0 16px;
-  color: rgb(var(--wt-ink-soft)); font-size: .9rem;
+  color: rgb(var(--wt-ink-soft)); font-family: var(--wt-font-body); font-size: .9rem; font-weight: 400; letter-spacing: normal;
 }
 body.docente .nota-historial {
   max-width: 1360px; margin: 12px auto 0; line-height: 1.5; font-size: .9rem;
 }
 @media (max-width: 620px) {
-  body.docente .cinta, header.barra { padding: 10px 14px; }
   body.docente .cinta-fila { align-items: flex-start; }
-  .marca-cinta .wt-monograma, .marca-cinta .interact-simbolo {
-    width: 38px; height: 38px; flex-basis: 38px;
-  }
-  .marca-cinta .marca-divisor { height: 36px; }
-  .marca-cinta .marca-nombre { font-size: 1.26rem; }
-  .marca-cinta .marca-firma { font-size: .75rem; }
-  body.docente .marca-cinta, header.barra .marca-cinta { gap: 8px; }
   body.docente .barra-usuario { width: 100%; justify-content: flex-start; }
   body.docente .vistas { flex-wrap: nowrap; overflow-x: auto; padding-inline: 10px; }
   body.docente .vistas button { padding-inline: 12px; }
@@ -103,15 +76,3 @@ body.docente .usuario-busqueda label { margin-top: 0; }
 body.docente .usuario-busqueda input { width: 100%; min-height: 44px; }
 body.docente .usuario-busqueda #resumen-usuarios { margin: 6px 0 0; }
 body.docente #tabla-usuarios tr[hidden] { display: none; }
-
-/* El selector del encabezado estudiantil original tenía mayor especificidad. */
-header.barra .marca .marca-cinta img.wt-monograma,
-header.barra .marca .marca-cinta img.interact-simbolo {
-  width: 52px; height: 52px; flex: 0 0 52px;
-}
-@media (max-width: 620px) {
-  header.barra .marca .marca-cinta img.wt-monograma,
-  header.barra .marca .marca-cinta img.interact-simbolo {
-    width: 38px; height: 38px; flex-basis: 38px;
-  }
-}

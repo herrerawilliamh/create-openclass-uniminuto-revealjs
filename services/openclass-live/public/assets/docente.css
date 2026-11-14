@@ -27,8 +27,6 @@ main:focus { outline: none; }
 .cinta { position: sticky; top: 0; z-index: 4; padding: var(--e2) var(--e4); background: var(--anil); color: #fff; }
 .cinta-fila { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--e1) var(--e4); max-width: 1360px; margin: 0 auto; }
 .cinta h1 { margin: 0; font-size: 1.05rem; }
-.marca-cinta { display: flex; align-items: center; gap: var(--e3); }
-.marca-cinta img { width: 32px; height: 32px; flex: none; }
 .marca-rol { font-weight: 400; opacity: .9; }
 .cinta .sub { font-size: var(--t-nota); opacity: 1; }
 .cinta-codigo { display: flex; align-items: baseline; gap: var(--e2); margin: 0; font-size: var(--t-nota); }

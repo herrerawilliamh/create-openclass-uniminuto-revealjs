@@ -1,0 +1,326 @@
+/* WillEdTech Motion Identity (Brand 3.1). Requiere tokens/willedtech.css.
+   La especificación está en BRAND.md §8.
+
+   Idea: Will · Ed · Tech. La W oficial se lee como tres pilares que se levantan
+   desde la línea base y coinciden en un solo corte ascendente de 20,3°.
+   La geometría no cambia nunca: solo se traslada, se recorta y varía su opacidad.
+
+   Piezas:
+     A. Presentación  .wt-mark[data-wt-motion="reveal"]   y  .wt-lk[data-wt-motion="reveal"]
+     B. Carga         .wt-loader  +  .wt-mark[data-wt-motion="loading"]
+     C. Transición    .wt-enter, .wt-swap  (y tokens/willedtech-view-transitions.css)
+     D. Compacta      .wt-mark--compact[data-wt-motion="loading"]
+     E. Estática      sin atributo, data-wt-motion="static" o prefers-reduced-motion
+*/
+
+:root {
+  --wt-ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --wt-ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+  --wt-dur-press: 140ms;
+  --wt-dur-fast: 160ms;
+  --wt-dur-ui: 220ms;
+  --wt-dur-pillar: 520ms;
+  --wt-stagger-pillar: 90ms;
+  --wt-dur-wave: 1200ms;
+}
+
+/* ── La marca en movimiento ─────────────────────────────────────────── */
+
+.wt-mark {
+  display: block;
+  width: 1em;
+  height: 1em;
+  flex: none;
+  color: inherit;
+  overflow: hidden;
+}
+
+/* Cuánto baja cada pilar para quedar oculto bajo la línea base (810 − su cima). */
+.wt-mark__band:nth-of-type(1) .wt-mark__pillar {
+  --wt-rise: 400px;
+  --wt-i: 0;
+}
+.wt-mark__band:nth-of-type(2) .wt-mark__pillar {
+  --wt-rise: 545px;
+  --wt-i: 1;
+}
+.wt-mark__band:nth-of-type(3) .wt-mark__pillar {
+  --wt-rise: 665px;
+  --wt-i: 2;
+}
+
+@keyframes wt-pillar-rise {
+  from {
+    transform: translateY(var(--wt-rise));
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+@keyframes wt-pillar-wave {
+  0%,
+  55%,
+  100% {
+    opacity: 1;
+  }
+  25% {
+    opacity: 0.28;
+  }
+}
+
+@keyframes wt-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* A. Presentación del isotipo: una vez, al entrar. */
+[data-wt-motion='reveal'] .wt-mark__pillar {
+  animation: wt-pillar-rise var(--wt-dur-pillar) var(--wt-ease-out) both;
+  animation-delay: calc(var(--wt-i) * var(--wt-stagger-pillar) + var(--wt-delay, 0ms));
+}
+
+/* B y D. Carga: una onda de opacidad recorre los tres pilares. No indica avance. */
+[data-wt-motion='loading'] .wt-mark__pillar {
+  animation: wt-pillar-wave var(--wt-dur-wave) ease-in-out infinite;
+  animation-delay: calc(var(--wt-i) * 150ms);
+}
+
+.wt-mark--compact {
+  display: inline-block;
+  width: 1.15em;
+  height: 1.15em;
+  vertical-align: -0.2em;
+}
+.wt-mark--compact[data-wt-motion='loading'] .wt-mark__pillar {
+  animation-duration: 900ms;
+  animation-delay: calc(var(--wt-i) * 110ms);
+}
+
+/* ── A. Presentación del lockup de producto ─────────────────────────── */
+
+.wt-lk {
+  display: block;
+  height: var(--wt-lockup-h, 52px);
+  width: auto;
+  color: inherit;
+  overflow: hidden;
+}
+
+.wt-lk__rule {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+.wt-lk__dot {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+@keyframes wt-rule-draw {
+  from {
+    opacity: 0;
+    transform: scaleY(0.2);
+  }
+  to {
+    opacity: 0.35;
+    transform: scaleY(1);
+  }
+}
+@keyframes wt-letter-rise {
+  from {
+    transform: translateY(720px);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+@keyframes wt-dot-in {
+  from {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+@keyframes wt-name-in {
+  from {
+    opacity: 0;
+    transform: translateX(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.wt-lk[data-wt-motion='reveal'] .wt-lk__rule {
+  animation: wt-rule-draw 260ms var(--wt-ease-out) 380ms both;
+}
+.wt-lk[data-wt-motion='reveal'] .wt-lk__letter {
+  animation: wt-letter-rise 460ms var(--wt-ease-out) 460ms both;
+}
+.wt-lk[data-wt-motion='reveal'] .wt-lk__dot {
+  animation: wt-dot-in 280ms var(--wt-ease-out) 780ms both;
+}
+.wt-lk[data-wt-motion='reveal'] .wt-lk__name {
+  animation: wt-name-in 320ms var(--wt-ease-out) 620ms both;
+}
+.wt-lk[data-wt-motion='reveal'] .wt-lk__by {
+  animation: wt-fade-in 280ms ease 780ms both;
+}
+
+/* ── B. Carga ───────────────────────────────────────────────────────── */
+
+.wt-loader {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 24px;
+  font-family: var(--wt-font-body);
+  color: rgb(var(--wt-ink));
+  text-align: center;
+  transition: opacity var(--wt-dur-fast) ease;
+}
+.wt-loader[hidden] {
+  display: none;
+}
+.wt-loader .wt-mark {
+  font-size: 48px;
+}
+.wt-loader__label {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+}
+.wt-loader__hint {
+  margin: 0;
+  max-width: 36ch;
+  font-size: 0.9375rem;
+  color: rgb(var(--wt-ink-soft));
+}
+.wt-loader__retry {
+  min-height: 44px;
+  padding: 0 16px;
+  border: 1px solid rgb(var(--wt-line-strong));
+  border-radius: 0.25rem 0.75rem 0.25rem 0.75rem;
+  background: rgb(var(--wt-surface));
+  color: rgb(var(--wt-ink));
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform var(--wt-dur-press) var(--wt-ease-out);
+}
+.wt-loader__retry:active {
+  transform: scale(0.97);
+}
+.wt-loader__retry:focus-visible {
+  outline: 2px solid rgb(var(--wt-focus));
+  outline-offset: 2px;
+}
+
+/* Estados: loading → slow → done | error. La onda solo corre mientras hay trabajo real. */
+.wt-loader[data-wt-state='loading'] .wt-mark__pillar,
+.wt-loader[data-wt-state='slow'] .wt-mark__pillar {
+  animation: wt-pillar-wave var(--wt-dur-wave) ease-in-out infinite;
+  animation-delay: calc(var(--wt-i) * 150ms);
+}
+.wt-loader[data-wt-state='error'] .wt-mark,
+.wt-loader[data-wt-state='error'] .wt-loader__label {
+  color: rgb(var(--wt-error-ink));
+}
+.wt-loader[data-wt-state='done'] {
+  opacity: 0;
+}
+.wt-loader:not([data-wt-state='slow']):not([data-wt-state='error']) .wt-loader__hint,
+.wt-loader:not([data-wt-state='error']) .wt-loader__retry {
+  display: none;
+}
+
+/* En línea, para un panel o una fila: marca a la izquierda, texto a la derecha. */
+.wt-loader--inline {
+  flex-direction: row;
+  justify-content: flex-start;
+  padding: 8px 0;
+  text-align: start;
+}
+.wt-loader--inline .wt-mark {
+  font-size: 24px;
+}
+
+/* ── C. Transición ──────────────────────────────────────────────────── */
+
+/* Contenido que entra tras un cambio de estado o de pantalla. La salida no se anima:
+   lo que se va, se va de inmediato. */
+@keyframes wt-enter {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.wt-enter {
+  animation: wt-enter var(--wt-dur-ui) var(--wt-ease-out) both;
+}
+
+/* Cambio de producto dentro de un mismo marco: la W se queda, cambia lo demás. */
+.wt-swap {
+  transition:
+    opacity var(--wt-dur-fast) ease,
+    filter var(--wt-dur-fast) ease;
+}
+.wt-swap[data-wt-swapping] {
+  opacity: 0;
+  filter: blur(2px);
+}
+
+/* Respuesta al pulsar, para cualquier control que la quiera. */
+.wt-press {
+  transition: transform var(--wt-dur-press) var(--wt-ease-out);
+}
+.wt-press:active {
+  transform: scale(0.97);
+}
+
+/* ── E. Estática y movimiento reducido ──────────────────────────────── */
+
+/* Interruptor: en el propio elemento o en cualquier contenedor, deja la marca quieta. */
+[data-wt-motion='static'],
+[data-wt-motion='static'] * {
+  animation: none !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* Sin desplazamientos ni bucles. Se conserva un fundido corto donde ayuda a entender. */
+  .wt-mark__pillar,
+  .wt-loader[data-wt-state] .wt-mark__pillar,
+  [data-wt-motion] .wt-mark__pillar,
+  .wt-lk[data-wt-motion] .wt-lk__rule,
+  .wt-lk[data-wt-motion] .wt-lk__letter,
+  .wt-lk[data-wt-motion] .wt-lk__dot,
+  .wt-lk[data-wt-motion] .wt-lk__name,
+  .wt-lk[data-wt-motion] .wt-lk__by {
+    animation: none;
+  }
+  .wt-mark[data-wt-motion='reveal'],
+  .wt-lk[data-wt-motion='reveal'],
+  .wt-enter {
+    animation: wt-fade-in 200ms ease both;
+  }
+  .wt-swap[data-wt-swapping] {
+    filter: none;
+  }
+  .wt-press:active,
+  .wt-loader__retry:active {
+    transform: none;
+  }
+}

@@ -17,7 +17,6 @@
 .enlace-boton { display: inline-flex; align-items: center; min-height: var(--toque, 2.75rem); }
 .cuenta-pagina { max-width: 480px; margin: var(--e6) auto; padding: var(--e4); }
 .cuenta-pagina .acceso { margin: 0; max-width: none; }
-.cuenta-pagina .marca-cinta { margin-bottom: var(--e4); }
 .vinculo-codigo { font-size: 2rem; letter-spacing: .15em; font-family: ui-monospace, monospace; }
 @media (max-width: 40rem) { .chip-usuario { max-width: 10rem; } }
 
