@@ -113,19 +113,22 @@ jobs:
           chmod 600 "$RUNNER_TEMP/ssh/key" "$RUNNER_TEMP/ssh/known_hosts"
           ssh -i "$RUNNER_TEMP/ssh/key" -o IdentitiesOnly=yes -o BatchMode=yes -o StrictHostKeyChecking=yes \
             -o UserKnownHostsFile="$RUNNER_TEMP/ssh/known_hosts" "$DEPLOY_USER@$DEPLOY_HOST" \
-            "deploy $SHA $DIGEST" < live-release/docker-compose.candidate.yml
+            "deploy $SHA $DIGEST" < /dev/null
       - name: Comprobar /healthz público
         shell: bash
         run: |
           set -euo pipefail
           [[ "$PUBLIC_URL" == https://* ]]
           curl --fail --silent --show-error --retry 10 --retry-delay 6 --retry-all-errors "${PUBLIC_URL%/}/healthz" > /dev/null
-      - name: Rollback inmediato si falla el healthz público tras actualizar
+      - name: Rollback inmediato si falla el healthz público tras actualizar (solo si sigue desplegado este SHA/digest)
         if: failure() && steps.vps.conclusion == 'success'
+        env:
+          SHA: ${{ steps.origen.outputs.sha }}
+          DIGEST: ${{ steps.paquete.outputs.digest }}
         shell: bash
         run: |
           ssh -i "$RUNNER_TEMP/ssh/key" -o IdentitiesOnly=yes -o BatchMode=yes -o StrictHostKeyChecking=yes \
-            -o UserKnownHostsFile="$RUNNER_TEMP/ssh/known_hosts" "$DEPLOY_USER@$DEPLOY_HOST" rollback
+            -o UserKnownHostsFile="$RUNNER_TEMP/ssh/known_hosts" "$DEPLOY_USER@$DEPLOY_HOST" "rollback $SHA $DIGEST"
       - name: Registrar lo desplegado
         env:
           SHA: ${{ steps.origen.outputs.sha }}
