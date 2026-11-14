@@ -1,7 +1,7 @@
 name: OpenClass Live Deploy
 
-# Despliegue de Interact a la VPS. Solo consume lo ya probado, aprobado y publicado por "OpenClass Live" (tag
-# openclass-live-v*, rama release/openclass-live): nunca construye. Inactivo hasta que la variable de repositorio
+# Despliegue de Interact a la VPS. Solo consume lo ya probado, aprobado y publicado por "OpenClass Live" (push a
+# release/openclass-live tras CI, o tag openclass-live-v* manual): nunca construye. Inactivo hasta que la variable de repositorio
 # INTERACT_AUTODEPLOY sea 'true' y existan los secretos/variables de docs/DESPLIEGUE-AUTOMATICO.md.
 on:
   workflow_run:
@@ -28,8 +28,10 @@ jobs:
       vars.INTERACT_AUTODEPLOY == 'true' &&
       (github.event_name == 'workflow_dispatch' ||
       (github.event.workflow_run.conclusion == 'success' &&
-      github.event.workflow_run.event == 'workflow_dispatch' &&
-      startsWith(github.event.workflow_run.head_branch, 'openclass-live-v')))
+      ((github.event.workflow_run.event == 'push' &&
+      github.event.workflow_run.head_branch == 'release/openclass-live') ||
+      (github.event.workflow_run.event == 'workflow_dispatch' &&
+      startsWith(github.event.workflow_run.head_branch, 'openclass-live-v')))))
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     environment: interact-production
@@ -49,7 +51,7 @@ jobs:
           ref: ${{ github.sha }}
           fetch-depth: 0
           persist-credentials: false
-      - name: Verificar la ejecución origen (publicada desde tag, commit en release/openclass-live)
+      - name: Verificar la ejecución origen (push a release o tag; el commit es de release/openclass-live)
         id: origen
         shell: bash
         run: |
@@ -58,14 +60,24 @@ jobs:
           RUN=$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$RUN_ID")
           test "$(jq -r .conclusion <<<"$RUN")" = success
           test "$(jq -r .path <<<"$RUN")" = .github/workflows/openclass-live.yml
-          test "$(jq -r .event <<<"$RUN")" = workflow_dispatch
-          TAG=$(jq -r .head_branch <<<"$RUN")
-          [[ "$TAG" == openclass-live-v* ]]
+          EVENTO=$(jq -r .event <<<"$RUN")
+          REF=$(jq -r .head_branch <<<"$RUN")
           SHA=$(jq -r .head_sha <<<"$RUN")
           [[ "$SHA" =~ ^[0-9a-f]{40}$ ]]
-          git fetch --no-tags origin "refs/tags/$TAG:refs/tags/$TAG" "+refs/heads/release/openclass-live:refs/remotes/origin/release/openclass-live"
-          test "$(git rev-parse "refs/tags/$TAG^{commit}")" = "$SHA"
-          git merge-base --is-ancestor "$SHA" origin/release/openclass-live
+          git fetch --no-tags origin "+refs/heads/release/openclass-live:refs/remotes/origin/release/openclass-live"
+          if [ "$EVENTO" = push ]; then
+            # Solo la punta vigente de release: un commit antiguo no puede revertir una versión más nueva.
+            test "$REF" = release/openclass-live
+            test "$(git rev-parse origin/release/openclass-live)" = "$SHA"
+            TAG="release/openclass-live@$SHA"
+          else
+            test "$EVENTO" = workflow_dispatch
+            [[ "$REF" == openclass-live-v* ]]
+            git fetch --no-tags origin "refs/tags/$REF:refs/tags/$REF"
+            test "$(git rev-parse "refs/tags/$REF^{commit}")" = "$SHA"
+            git merge-base --is-ancestor "$SHA" origin/release/openclass-live
+            TAG="$REF"
+          fi
           echo "sha=$SHA" >> "$GITHUB_OUTPUT"
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
       - name: Descargar y verificar el paquete aprobado

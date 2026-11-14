@@ -65,9 +65,9 @@ test('2. mutaciones del workflow se detectan (acción móvil, permisos, credenci
   mut('persist-credentials: false', 'persist-credentials: true', /credenciales persistentes/);
   mut('  pull_request:\n', '  pull_request_target:\n', /no confiable/);
   mut('needs: [build, approval]', 'needs: [build]', /publish exige/);
-  mut("if: github.event_name == 'workflow_dispatch' && startsWith(github.ref, 'refs/tags/openclass-live-v')",
-    "if: github.event_name == 'workflow_dispatch'", /tag de release/);
-  mut("    if: github.event_name == 'workflow_dispatch'\n    needs: checks\n    runs-on", '    needs: checks\n    runs-on', /exclusivo/);
+  mut("(github.event_name == 'push' && github.ref == 'refs/heads/release/openclass-live')",
+    "(github.event_name == 'push')", /condición del job publish/);
+  mut("    if: github.event_name == 'workflow_dispatch' || github.event_name == 'push'\n    needs: checks\n    runs-on", '    needs: checks\n    runs-on', /excluir pull_request|condición/);
   mut('docker://$IMAGE@$DIGEST', 'docker://$IMAGE:latest', /latest/);
   mut('node $S mismos --a', 'echo skip --a', /bytes aprobados y publicados/);
 });
@@ -79,9 +79,9 @@ test('2b. mutaciones del informe Codex: aprobación omitida, fuente cambiada, in
     assert.ok(problemas.length > 0 && problemas.some(p => esperado.test(p)), `${desde} → ${problemas.join('|')}`);
   };
   // A. approval se omite con una condición falsa y publish continúa con always().
-  const dispatch = "if: github.event_name == 'workflow_dispatch'";
+  const dispatch = "if: github.event_name == 'workflow_dispatch' || github.event_name == 'push'";
   const aprobacion = `  approval:\n    name: Live aprobación humana\n    ${dispatch}`;
-  const publicacion = "if: github.event_name == 'workflow_dispatch' && startsWith(github.ref, 'refs/tags/openclass-live-v')";
+  const publicacion = "if: (github.event_name == 'workflow_dispatch' && startsWith(github.ref, 'refs/tags/openclass-live-v')) || (github.event_name == 'push' && github.ref == 'refs/heads/release/openclass-live')";
   let a = workflow.replace(aprobacion, aprobacion.replace(dispatch, 'if: ${{ false }}'));
   assert.notEqual(a, workflow);
   a = a.replace(publicacion, `if: always() && ${publicacion.slice(4)}`);
@@ -140,8 +140,7 @@ test('2c. P2: validación canónica del paso de integridad rechaza toda forma de
     '      - name: Bytes aprobados (hash del tar, lock y layout) sin reconstruir\n',
     "      - name: Bytes aprobados (hash del tar, lock y layout) sin reconstruir\n        if: ${{ false }}\n"));
   rechaza('git archive main', w => w.replace('git archive "$GITHUB_SHA" services/openclass-live', 'git archive main services/openclass-live'));
-  rechaza('always() en publish', w => w.replace("if: github.event_name == 'workflow_dispatch' && startsWith(github.ref, 'refs/tags/openclass-live-v')",
-    "if: always() && github.event_name == 'workflow_dispatch' && startsWith(github.ref, 'refs/tags/openclass-live-v')"));
+  rechaza('always() en publish', w => w.replace("    if: (github.event_name == 'workflow_dispatch' && startsWith", "    if: always() && (github.event_name == 'workflow_dispatch' && startsWith"));
   rechaza('approval omitida con always()', w => w.replace('needs: [build, approval]', 'needs: [build]'));
   rechaza('retirada del paso canónico', w => w.replace(CHECK + '\n', ''));
   rechaza('paso canónico renombrado', w => w.replace('Bytes aprobados (hash del tar, lock y layout) sin reconstruir', 'Verificar'));
@@ -237,6 +236,17 @@ test('3. identidad: tag, ref, SHA, HEAD y rama de release deben coincidir exacta
     workflow: { githubSha: otros.b }, head: { head: otros.b }, tagMovida: { tagCommit: otros.b },
     rama2: { branchTip: otros.b }, corto: { head: 'abc123', githubSha: 'abc123' },
   })) assert.throws(() => verificarIdentidad(ident(o)), undefined, caso);
+});
+
+test('3b. identidad por push: solo la punta de release/openclass-live; ramas, PR y commits antiguos fallan', () => {
+  const push = (o = {}) => ({ event: 'push', refType: 'branch', ref: 'refs/heads/release/openclass-live',
+    refName: 'release/openclass-live', githubSha: SHA, head: SHA, branchTip: SHA, ...o });
+  assert.equal(verificarIdentidad(push()), SHA);
+  const b = 'b'.repeat(40);
+  for (const [caso, o] of Object.entries({
+    main: { ref: 'refs/heads/main', refName: 'main' }, experimental: { ref: 'refs/heads/fix/x', refName: 'fix/x' },
+    tag: { refType: 'tag' }, antiguo: { branchTip: b }, checkout: { head: b }, pr: { event: 'pull_request' },
+  })) assert.throws(() => verificarIdentidad(push(o)), undefined, caso);
 });
 
 test('4. layout real → lock con evidencia → verificación OCI; digest/plataforma/multiarch fallan', () => conTmp(dir => {

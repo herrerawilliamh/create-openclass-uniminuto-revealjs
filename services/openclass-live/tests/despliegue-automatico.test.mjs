@@ -169,3 +169,10 @@ test('hash de PostgreSQL distinto con el override => abortado sin pull ni up', (
   assert.equal(ups(e).length, 0);
   assert.ok(!e.calls().some((c) => c.a.includes('pull')));
 });
+
+test('el workflow de deploy solo acepta push a release/openclass-live o tag, y exige la punta vigente', () => {
+  assert.match(wf, /workflow_run\.event == 'push' &&\s+github\.event\.workflow_run\.head_branch == 'release\/openclass-live'/);
+  assert.match(wf, /test "\$\(git rev-parse origin\/release\/openclass-live\)" = "\$SHA"/);
+  assert.match(wf, /vars\.INTERACT_AUTODEPLOY == 'true'/);
+  assert.doesNotMatch(wf, /docker (buildx )?build/);
+});

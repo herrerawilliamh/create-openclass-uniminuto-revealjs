@@ -20,18 +20,25 @@ export const sha256Hex = bytes => createHash('sha256').update(bytes).digest('hex
 
 /** Tag, ref, SHA del workflow, HEAD, commit de la tag y punta de la rama estable: un único commit. */
 export function verificarIdentidad(e) {
-  assert.equal(e.event, 'workflow_dispatch', 'La promoción solo se inicia manualmente');
-  assert.equal(e.refType, 'tag', 'El workflow debe ejecutarse desde una tag, no desde una rama');
+  for (const campo of ['githubSha', 'head', 'branchTip']) {
+    assert.match(String(e[campo]), sha40, `${campo} no es un SHA completo`);
+  }
+  assert.equal(e.githubSha, e.head, 'El checkout no es el commit del workflow');
+  assert.equal(e.head, e.branchTip, 'El commit no es la punta de la rama de release');
+  if (e.event === 'push') { // integración aprobada en la rama protegida de release
+    assert.equal(e.refType, 'branch', 'El push debe ser de una rama');
+    assert.equal(e.ref, 'refs/heads/release/openclass-live', 'Solo la rama de release publica automáticamente');
+    assert.equal(e.refName, 'release/openclass-live');
+    return e.head;
+  }
+  assert.equal(e.event, 'workflow_dispatch', 'La promoción solo se inicia por push a release o manualmente');
+  assert.equal(e.refType, 'tag', 'El workflow manual debe ejecutarse desde una tag, no desde una rama');
   assert.match(e.version, /^\d+\.\d+\.\d+$/);
   assert.equal(e.releaseTag, `openclass-live-v${e.version}`, 'La tag no corresponde a la versión del paquete');
   assert.equal(e.ref, `refs/tags/${e.releaseTag}`, 'GITHUB_REF no es la tag aprobada');
   assert.equal(e.refName, e.releaseTag);
-  for (const campo of ['githubSha', 'head', 'tagCommit', 'branchTip']) {
-    assert.match(String(e[campo]), sha40, `${campo} no es un SHA completo`);
-  }
-  assert.equal(e.githubSha, e.head, 'El checkout no es el commit del workflow');
+  assert.match(String(e.tagCommit), sha40, 'tagCommit no es un SHA completo');
   assert.equal(e.head, e.tagCommit, 'HEAD no es el commit de la tag');
-  assert.equal(e.head, e.branchTip, 'La tag no es la punta de la rama de release');
   return e.head;
 }
 
@@ -111,7 +118,7 @@ export function auditarWorkflow(text) {
   const blocks = {};
   const parts = t.slice(jobsAt + 7).split(/^  (?=[a-z][\w-]*:\n)/m);
   for (const p of parts) { const n = p.match(/^([\w-]+):\n/); if (n) blocks[n[1]] = p; }
-  const dispatchOnly = /if:\s*github\.event_name == 'workflow_dispatch'/;
+  const dispatchOnly = /if:\s*\(?github\.event_name == 'workflow_dispatch'/;
   const sensible = /GITHUB_TOKEN|github\.token|secrets\.|skopeo login|docker\/login-action|attest-build-provenance|packages:|id-token|attestations:/;
   for (const nombre of ['checks', 'build', 'approval', 'publish']) bad(blocks[nombre], `Falta el job ${nombre}`);
   for (const [nombre, b] of Object.entries(blocks)) {
@@ -121,7 +128,7 @@ export function auditarWorkflow(text) {
     for (const c of b.matchAll(/actions\/checkout@[a-f0-9]{40}[^\n]*\n(?: {8}.*\n)*/g)) {
       bad(/persist-credentials: false/.test(c[0]), `Checkout con credenciales persistentes en ${nombre}`);
     }
-    if (nombre !== 'checks') bad(dispatchOnly.test(b), `El job ${nombre} debe ser exclusivo de workflow_dispatch`);
+    if (nombre !== 'checks') bad(dispatchOnly.test(b), `El job ${nombre} debe excluir pull_request (solo workflow_dispatch o push a release)`);
   }
   const { checks = '', build = '', approval = '', publish = '' } = blocks;
   bad(!/docker (buildx )?build|compose[^\n]* build/.test(checks), 'Los tests no deben construir la imagen');
@@ -129,7 +136,8 @@ export function auditarWorkflow(text) {
   bad(/permissions:\s*\{\}/.test(approval) && /environment:\s*openclass-live-release/.test(approval),
     'approval exige entorno revisado y permisos vacíos');
   bad(/needs:\s*\[\s*build\s*,\s*approval\s*\]/.test(publish), 'publish exige build y approval');
-  bad(/refs\/tags\/openclass-live-v/.test(publish), 'publish debe comprobar la tag de release');
+  bad(/refs\/tags\/openclass-live-v/.test(publish) && /refs\/heads\/release\/openclass-live/.test(publish),
+    'publish debe comprobar la tag de release o la rama release/openclass-live');
   bad(!/docker (buildx )?build|compose[^\n]* build/.test(publish), 'publish no puede reconstruir la imagen');
   bad(!/pull_request/.test(publish.replace(/^\s*#.*$/gm, '')), 'publish no puede depender de PR');
   const w = new Set([...publish.matchAll(/^ {6}([\w-]+): *write/gm)].map(m => m[1]));
@@ -140,8 +148,9 @@ export function auditarWorkflow(text) {
   /* ---- Comprobaciones estructurales por job y por paso ---- */
   const pasos = b => b.split(/^ {6}- /m).slice(1);
   const cond = b => (b.match(/^ {4}if:[ 	]*(.*)$/m) || [])[1]?.trim().replace(/\s+/g, ' ');
-  const EXIGIDO = { build: "github.event_name == 'workflow_dispatch'", approval: "github.event_name == 'workflow_dispatch'",
-    publish: "github.event_name == 'workflow_dispatch' && startsWith(github.ref, 'refs/tags/openclass-live-v')" };
+  const ORIGEN = "github.event_name == 'workflow_dispatch' || github.event_name == 'push'";
+  const EXIGIDO = { build: ORIGEN, approval: ORIGEN,
+    publish: "(github.event_name == 'workflow_dispatch' && startsWith(github.ref, 'refs/tags/openclass-live-v')) || (github.event_name == 'push' && github.ref == 'refs/heads/release/openclass-live')" };
   // A. La aprobación debe ser efectiva: sin condición alterada, sin always()/failure()/cancelled(), sin continue-on-error.
   for (const [nombre, esperado] of Object.entries(EXIGIDO)) {
     bad(cond(blocks[nombre] ?? '') === esperado, `La condición del job ${nombre} no es la aprobada (no puede omitirse ni forzarse)`);
@@ -275,7 +284,7 @@ function main(args) {
       const sha = verificarIdentidad({ event: env.GITHUB_EVENT_NAME, refType: env.GITHUB_REF_TYPE,
         ref: env.GITHUB_REF, refName: env.GITHUB_REF_NAME, releaseTag: env.RELEASE_TAG,
         githubSha: env.GITHUB_SHA, head: git('rev-parse', 'HEAD'),
-        tagCommit: git('rev-parse', `refs/tags/${env.RELEASE_TAG}^{commit}`),
+        tagCommit: env.GITHUB_EVENT_NAME === 'push' ? undefined : git('rev-parse', `refs/tags/${env.RELEASE_TAG}^{commit}`),
         branchTip: git('rev-parse', 'origin/release/openclass-live'), version: pkg.version });
       console.log(`IDENTITY=PASS SHA=${sha} VERSION=${pkg.version}`);
       break;
