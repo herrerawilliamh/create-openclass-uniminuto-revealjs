@@ -8,17 +8,17 @@ import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 
-const CANDIDATOS = [
-  process.env.CHROME_PATH,
+const CANDIDATOS_FIJOS = [
   'C:/Program Files/Google/Chrome/Application/chrome.exe',
   'C:/Program Files (x86)/Google/Chrome/Application/chrome.exe',
   'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe',
   '/usr/bin/google-chrome', '/usr/bin/google-chrome-stable', '/usr/bin/chromium', '/usr/bin/chromium-browser',
   '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
-].filter(Boolean);
+];
 
 export function rutaChrome() {
-  const ruta = CANDIDATOS.find((c) => existsSync(c));
+  const candidatos = [process.env.CHROME_PATH, ...CANDIDATOS_FIJOS].filter(Boolean);
+  const ruta = candidatos.find((c) => existsSync(c));
   if (!ruta) throw new Error('No se encontró Chrome/Edge. Define CHROME_PATH.');
   return ruta;
 }
@@ -124,14 +124,16 @@ export class Pagina {
   }
 }
 
-export async function abrirNavegador({ ancho = 1920, alto = 1080 } = {}) {
+async function _lanzarNavegador({ ancho, alto }) {
   const perfil = mkdtempSync(path.join(os.tmpdir(), 'oc-chrome-'));
+  const stderrTrozos = [];
   const proc = spawn(rutaChrome(), [
     '--headless=new', '--remote-debugging-port=0', `--user-data-dir=${perfil}`,
     '--no-first-run', '--no-default-browser-check', '--disable-gpu', '--hide-scrollbars',
     '--disable-extensions', '--mute-audio', '--autoplay-policy=no-user-gesture-required',
     `--window-size=${ancho},${alto}`, 'about:blank',
-  ], { stdio: 'ignore' });
+  ], { stdio: ['ignore', 'ignore', 'pipe'] });
+  proc.stderr.on('data', (b) => stderrTrozos.push(b));
   const salida = new Promise((r) => proc.once('exit', r));
   let ws, cdp, cerrado = false;
   // Cierre idempotente y acotado: Browser.close, después kill si el proceso sigue vivo; el perfil se borra al final.
@@ -153,12 +155,19 @@ export async function abrirNavegador({ ancho = 1920, alto = 1080 } = {}) {
   try {
     const archivo = path.join(perfil, 'DevToolsActivePort');
     let puerto;
-    for (let i = 0; i < 300 && !puerto; i++) {
-      if (proc.exitCode !== null) throw new Error(`Chrome terminó al iniciar (código ${proc.exitCode})`);
+    // 600 × 50 ms = 30 s: margen suficiente en CI bajo carga.
+    for (let i = 0; i < 600 && !puerto; i++) {
+      if (proc.exitCode !== null) {
+        const stderr = Buffer.concat(stderrTrozos).toString('utf8').trim().slice(0, 500);
+        throw new Error(`Chrome terminó al iniciar (código ${proc.exitCode})${stderr ? `\n${stderr}` : ''}`);
+      }
       puerto = existsSync(archivo) && readFileSync(archivo, 'utf8').split('\n')[0].trim();
       if (!puerto) await esperar(50);
     }
-    if (!puerto) throw new Error('Chrome no publicó DevToolsActivePort en 15 s');
+    if (!puerto) {
+      const stderr = Buffer.concat(stderrTrozos).toString('utf8').trim().slice(0, 500);
+      throw new Error(`Chrome no publicó DevToolsActivePort en 30 s${stderr ? `\n${stderr}` : ''}`);
+    }
     const { webSocketDebuggerUrl } = await (await fetch(`http://127.0.0.1:${puerto}/json/version`, { signal: AbortSignal.timeout(10000) })).json();
     ws = new WebSocket(webSocketDebuggerUrl);
     await new Promise((resolve, reject) => {
@@ -181,4 +190,21 @@ export async function abrirNavegador({ ancho = 1920, alto = 1080 } = {}) {
     },
     cerrar,
   };
+}
+
+/**
+ * Abre una instancia de Chrome/Edge headless. `reintentos` limita los reintentos en caso de fallo
+ * de arranque (DevToolsActivePort ausente o proceso terminado al inicio); no reintenta errores
+ * funcionales ni fallos de CDP.
+ */
+export async function abrirNavegador({ ancho = 1920, alto = 1080, reintentos = 1 } = {}) {
+  for (let intento = 0; intento <= reintentos; intento++) {
+    try {
+      return await _lanzarNavegador({ ancho, alto });
+    } catch (e) {
+      const esArranque = /DevToolsActivePort|Chrome terminó al iniciar/.test(e.message);
+      if (intento >= reintentos || !esArranque) throw e;
+      await esperar(500);
+    }
+  }
 }

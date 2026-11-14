@@ -34,6 +34,33 @@ const CAPTURAS = process.env.OPENCLASS_CAPTURAS;
 const NOTAS_PRIVADAS = ['PASO-CERO', 'PASO-UNO', 'ANCLA-DIAGRAMA', 'NOTA-VIDEO', 'NOTA-YOUTUBE', 'NOTA-ENCUESTA', 'INYECCION-NEUTRA'];
 const esperar = (ms) => new Promise((r) => setTimeout(r, ms));
 
+// Código del reproductor simulado que se inyecta en la ventana de la presentación
+// cuando OPENCLASS_BT_YOUTUBE=mock. Simula la API IFrame de YouTube sin conectividad externa.
+const MOCK_YT_PLAYER = `(function(){
+  if(window.__mockYtInstalado)return;
+  window.__mockYtInstalado=true;
+  function MockPlayer(elem,opts){
+    this._estado=-1;this._vol=100;this._silenciado=false;this._tiempo=0;this._duracion=90;
+    this._ev=(opts&&opts.events)||{};
+    var self=this;
+    setTimeout(function(){if(self._ev.onReady)self._ev.onReady({target:self});},20);
+  }
+  MockPlayer.prototype.playVideo=function(){this._estado=1;if(this._ev.onStateChange)this._ev.onStateChange({data:1});};
+  MockPlayer.prototype.pauseVideo=function(){this._estado=2;if(this._ev.onStateChange)this._ev.onStateChange({data:2});};
+  MockPlayer.prototype.stopVideo=function(){this._estado=0;if(this._ev.onStateChange)this._ev.onStateChange({data:0});};
+  MockPlayer.prototype.seekTo=function(t){this._tiempo=t;};
+  MockPlayer.prototype.setVolume=function(v){this._vol=v;};
+  MockPlayer.prototype.mute=function(){this._silenciado=true;};
+  MockPlayer.prototype.unMute=function(){this._silenciado=false;};
+  MockPlayer.prototype.getVolume=function(){return this._vol;};
+  MockPlayer.prototype.isMuted=function(){return this._silenciado;};
+  MockPlayer.prototype.getPlayerState=function(){return this._estado;};
+  MockPlayer.prototype.getCurrentTime=function(){return this._tiempo;};
+  MockPlayer.prototype.getDuration=function(){return this._duracion;};
+  window.YT={Player:MockPlayer};
+  if(window.onYouTubeIframeAPIReady)window.onYouTubeIframeAPIReady();
+})();`;
+
 function prepararCurso(servidorLive) {
   if (process.env.OPENCLASS_BT_DIST) return { dist: process.env.OPENCLASS_BT_DIST, limpiar: () => {} };
   const temporal = realpathSync.native(mkdtempSync(path.join(os.tmpdir(), 'openclass-bt-e2e-')));
@@ -279,9 +306,21 @@ test('Build Tech en Chrome: cabina privada, notas, relojes, multimedia, En vivo 
   await deck.esperarA(`document.querySelector('#bt-video video').paused`);
   await capturar(bt, '21-build-tech-video');
 
+  // Inyectar el reproductor simulado ANTES de navegar a la diapositiva; así el plugin encuentra
+  // window.YT.Player ya disponible y no intenta conectarse a YouTube.
+  if (process.env.OPENCLASS_BT_YOUTUBE === 'mock') await D(MOCK_YT_PLAYER);
   await irA('bt-youtube');
   assert.match(await D(`document.querySelector('#bt-youtube iframe').src`), /enablejsapi=1/, 'el iframe de YouTube acepta la API oficial');
-  if (process.env.OPENCLASS_BT_YOUTUBE !== 'omitir') {
+  if (process.env.OPENCLASS_BT_YOUTUBE === 'mock') {
+    // Verificar detección, habilitación, reproducción, pausa y privacidad sin conectividad externa.
+    await bt.esperarA(`/YouTube/.test(document.querySelector('.bt-medios [data-medio="m0"] .bt-tipo')?.textContent ?? '') && document.querySelector('.bt-medios [data-medio="m0"] .bt-play:not(:disabled)')`, { timeout: 5000 });
+    await B(`document.querySelector('.bt-medios [data-medio="m0"] .bt-play').click()`);
+    await bt.esperarA(`/Reproduciendo/.test(document.querySelector('.bt-medios .bt-medio-estado')?.textContent ?? '')`, { timeout: 5000 });
+    assert.equal(await B(`[...document.querySelectorAll('.bt-marco iframe')].every((f) => ![...f.contentDocument.querySelectorAll('iframe')].some((x) => /youtube/.test(x.src)))`), true, 'las vistas previas no cargan YouTube (mock)');
+    await B(`document.querySelector('.bt-medios .bt-pausa').click()`);
+    await bt.esperarA(`/En pausa/.test(document.querySelector('.bt-medios .bt-medio-estado')?.textContent ?? '')`, { timeout: 5000 });
+  } else if (process.env.OPENCLASS_BT_YOUTUBE !== 'omitir') {
+    // Integración real: requiere conectividad con YouTube.
     await bt.esperarA(`/YouTube/.test(document.querySelector('.bt-medios [data-medio="m0"] .bt-tipo')?.textContent ?? '') && document.querySelector('.bt-medios [data-medio="m0"] .bt-play:not(:disabled)')`, { timeout: 30000 });
     await B(`document.querySelector('.bt-medios [data-medio="m0"] .bt-play').click()`);
     await bt.esperarA(`/Reproduciendo/.test(document.querySelector('.bt-medios .bt-medio-estado')?.textContent ?? '')`, { timeout: 30000 });

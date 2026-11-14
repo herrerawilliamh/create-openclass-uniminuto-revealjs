@@ -97,6 +97,8 @@ jobs:
           command -v pdftotext
           pdftotext -v
       - name: Navegador, privacidad y protocolo
+        env:
+          OPENCLASS_BT_YOUTUBE: mock
         run: npm --prefix services/openclass-live run test:navegador
       - name: Validar Compose GitOps (sin construir)
         env:
