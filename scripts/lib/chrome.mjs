@@ -47,7 +47,9 @@ function sanear(texto, perfil) {
   let t = texto;
   for (const r of [perfil, os.homedir(), os.tmpdir()]) if (r && r.length > 1) t = t.split(r).join('<ruta>');
   return t
-    .replace(/(token|secret|password|passwd|apikey|api_key|authorization)(\s*[=:]\s*)\S+/gi, '$1$2<oculto>')
+    .replace(/\b(authorization|proxy-authorization)(\s*[=:]\s*)[^\r\n]*/gi, '$1$2<oculto>') // valor completo, incl. esquema (Bearer/Basic)
+    .replace(/\b(bearer|basic)\s+[\w.~+\/=-]+/gi, '$1 <oculto>')
+    .replace(/(token|secret|password|passwd|apikey|api_key)(\s*[=:]\s*)\S+/gi, '$1$2<oculto>')
     .replace(/[\x00-\x08\x0b-\x1f\x7f]/g, '')
     .trim().slice(0, 500);
 }
