@@ -15,7 +15,7 @@ services:
       context: .
       dockerfile: Dockerfile
       target: herramientas
-    image: openclass-live-herramientas:0.4.7
+    image: openclass-live-herramientas:0.4.8
     restart: "no"
     init: true
     read_only: true
@@ -48,7 +48,7 @@ services:
       context: .
       dockerfile: Dockerfile
       target: herramientas
-    image: openclass-live-herramientas:0.4.7
+    image: openclass-live-herramientas:0.4.8
     restart: "no"
     init: true
     read_only: true

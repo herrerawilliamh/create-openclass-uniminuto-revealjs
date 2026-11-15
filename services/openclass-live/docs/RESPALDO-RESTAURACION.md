@@ -42,7 +42,7 @@ RED=$(docker inspect "$(docker compose ps -q interact-db)" --format '{{range $k,
 docker run --rm --network "$RED" \
   -v /home/openclass-live/respaldos:/respaldos:ro -v /home/openclass-live/confianza/respaldo.pub:/confianza/respaldo.pub:ro \
   --env-file /home/openclass-live/restauracion.env -e DB_SCHEMA=interact \
-  openclass-live-herramientas:0.4.7 node scripts/restaurar.mjs --copia /respaldos/interact-AAAAMMDDTHHMMSSZ.dump \
+  openclass-live-herramientas:0.4.8 node scripts/restaurar.mjs --copia /respaldos/interact-AAAAMMDDTHHMMSSZ.dump \
   --clave-publica /confianza/respaldo.pub
 # restauracion.env (chmod 600, fuera del repositorio) solo contiene DATABASE_RESTORE_URL=postgres://…@interact-db:5432/interact_simulacro_restauracion
 # Sin --clave-publica (o INTERACT_BACKUP_PUBLIC_KEY_FILE) restaurar.mjs rechaza siempre. Pendiente de validar en un entorno con Docker/PostgreSQL.
