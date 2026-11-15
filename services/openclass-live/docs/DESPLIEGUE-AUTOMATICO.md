@@ -14,12 +14,13 @@ Registro: `deploy.log` y `deployed.current` en el directorio de estado de la VPS
 No toca volúmenes, no recrea PostgreSQL, no usa `prune`/`down -v`, no usa Watchtower, no actúa sobre otros stacks. La imagen anterior permanece en Docker.
 
 ## Modelo efectivo en la VPS (0.4.8 operativa)
-Stack `/home/apps/dockhand/stacks/VPS Principal/openclass-live`; estado `/home/apps/dockhand/interact-deploy`. Todas las operaciones Compose del script usan, **en este orden**: `docker-compose.yml` (stack, nunca se modifica) → `override.yaml` (solo `image: ghcr.io/herrerawilliamh/openclass-live@sha256:…`) → `domain.yaml` (dominio oficial: `APP_URL`, `APP_ALT_URLS`, routers Traefik; root-owned, solo lectura para el script). Antes de actuar el script exige que el candidato difiera del modelo vigente **solo** en la imagen de la app (dominio y demás servicios idénticos), `APP_URL` = `https://interact.apps.willedtech.io` (`INTERACT_EXPECTED_APP_URL`), dominio presente en los routers, sin `build`, hash de PostgreSQL igual. Salud interna y pública en **ambos** dominios (`INTERACT_PUBLIC_URLS`). Rechaza (exit 66) archivos con symlink, propietario fuera de `INTERACT_TRUSTED_UIDS` (por defecto root y el usuario que ejecuta) o escritura de grupo/otros; rechaza (exit 70) un `override.yaml` con forma inesperada o que no coincide con `deployed.current`. Comando de solo lectura: `check` (permisos, modelo efectivo, salud y si Dockhand solo con `docker-compose.yml` reproduciría lo vigente).
+Stack `/home/apps/dockhand/stacks/VPS Principal/openclass-live`; estado `/home/apps/dockhand/interact-deploy`. Todas las operaciones Compose del script usan, **en este orden**: `docker-compose.yml` (stack, nunca se modifica) → `override.yaml` (solo `image: ghcr.io/herrerawilliamh/openclass-live@sha256:…`) → `domain.yaml` (dominio oficial: `APP_URL`, `APP_ALT_URLS`, routers Traefik; root-owned, solo lectura para el script). El directorio de estado es `root:interact-deploy` modo `1770` (sticky): el usuario de despliegue crea/reemplaza **sus** archivos (`override.yaml`, `deployed.current`, `lock`, `deploy.log`) pero no puede borrar, renombrar ni reemplazar `domain.yaml`. Antes de actuar el script exige que el candidato difiera del modelo vigente **solo** en la imagen de la app (dominio y demás servicios idénticos), `APP_URL` = `https://interact.apps.willedtech.io` (`INTERACT_EXPECTED_APP_URL`), dominio presente en los routers, sin `build`, hash de PostgreSQL igual. Salud interna y pública en **ambos** dominios (`INTERACT_PUBLIC_URLS`). Rechaza (exit 66) archivos con symlink, propietario fuera de `INTERACT_TRUSTED_UIDS` (por defecto root y el usuario que ejecuta) o escritura de grupo/otros; y exige que el directorio de estado y `domain.yaml` pertenezcan a `INTERACT_DOMAIN_UIDS` (por defecto solo root), que el directorio no sea escribible por «otros» y que la escritura de grupo exista solo con sticky; rechaza (exit 70) un `override.yaml` con forma inesperada o que no coincide con `deployed.current`. Comando de solo lectura: `check` (permisos, modelo efectivo, salud y si un `compose up` sin `-f` —lo que haría Dockhand— reproduciría el modelo efectivo completo: servicios, imagen, entorno y routers; `dockhand-solo=ALINEADO|DERIVA` con las claves que difieren).
 
 ## Dockhand: autoridad única (procedimiento definitivo)
-- Autoridad de despliegue = **este flujo** (script en la VPS). Dockhand queda como visor/inventario del stack: **auto-sync, build y actualizaciones automáticas desactivados** y sin «redeploy/pull & up» desde su interfaz para este stack.
-- Persistencia tras reinicios: `override.yaml`, `domain.yaml` y `deployed.current` viven **fuera** del directorio del stack (`interact-deploy`), así que ninguna sincronización de Dockhand los toca. Un reinicio de Docker o de Dockhand no ejecuta `compose up` por sí mismo: los contenedores siguen con la imagen y labels con que fueron creados (política `restart`).
-- Riesgo residual **NO VERIFICADO**: si alguien redespliega desde Dockhand, usaría solo `docker-compose.yml` y perdería digest y dominio. Cierre: tras cada promoción, alinear por PR el `docker-compose.yml` de Git con el digest vigente y el dominio oficial; `ssh interact-deploy@VPS check` imprime `dockhand-solo=ALINEADO|DERIVA`. No confíe en ninguna función de Dockhand sin probarla en el ensayo (paso 6).
+- Autoridad de despliegue = **este flujo** (script en la VPS). Dockhand queda como visor/inventario: **auto-sync, build y actualizaciones automáticas desactivados** para este stack (no se asume ninguna función de Dockhand: se comprueba con `check`).
+- Persistencia sin alineación manual posterior (configuración inicial única, paso 3b de abajo): en el `.env` **local** del stack se fija `COMPOSE_FILE=docker-compose.yml:/home/apps/dockhand/interact-deploy/override.yaml:/home/apps/dockhand/interact-deploy/domain.yaml`. Docker Compose lee `COMPOSE_FILE` del `.env` del proyecto, de modo que cualquier `compose up` **sin `-f`** (redespliegue, reinicio de Dockhand, sincronización de Git que no pise `.env`) usa los tres archivos en el orden correcto. `override.yaml`, `domain.yaml` y `deployed.current` viven fuera del directorio del stack, así que una sincronización no los toca; el script nunca modifica `docker-compose.yml`, por lo que las promociones no exigen tocar Git ni Dockhand. Precondición: `override.yaml` debe existir (ya existe en 0.4.8; el script no lo borra salvo que el estado previo no tuviera override).
+- Verificación concreta, sin producción desde Crew44: `ssh interact-deploy@VPS check` imprime `COMPOSE_FILE=configurado-en-.env` y `dockhand-solo=ALINEADO` (modelo implícito idéntico al efectivo).
+- **NO VERIFICADO (puerta del ensayo, paso 6)**: si Dockhand invoca Compose con `-f` explícito o reescribe el `.env`, `COMPOSE_FILE` se ignora/pierde y `check` mostrará `DERIVA`. En ese caso no active `INTERACT_AUTODEPLOY`; alternativa documentada: dejar a Dockhand sin permiso de «redeploy» para este stack, o (solo si hace falta) llevar a Git un `docker-compose.yml` ya alineado. Ninguna de las dos se aplica automáticamente.
 
 ## Configuración inicial única (ejecutar en la VPS como root; nada de esto lo ejecuta Crew44)
 ```bash
@@ -34,9 +35,14 @@ id interact-deploy >/dev/null 2>&1 || useradd --system --create-home --shell /bi
 usermod -aG docker interact-deploy
 # 3) Lectura del stack y escritura SOLO en el estado
 setfacl -m u:interact-deploy:rX "$STACK" "$STACK/docker-compose.yml" "$STACK/.env"
-chown interact-deploy:interact-deploy "$STATE" && chmod 750 "$STATE"
+# STATE: root:interact-deploy 1770 (sticky). domain.yaml de root dentro de él NO puede ser borrado/reemplazado por el usuario.
+chown root:interact-deploy "$STATE" && chmod 1770 "$STATE"
 chown root:root "$STATE/domain.yaml" && chmod 644 "$STATE/domain.yaml"
-for f in override.yaml deployed.current; do [ -f "$STATE/$f" ] && chown interact-deploy:interact-deploy "$STATE/$f" && chmod 600 "$STATE/$f"; done
+for f in override.yaml deployed.current previous.override previous.deployed lock deploy.log; do
+  if [ -e "$STATE/$f" ]; then chown interact-deploy:interact-deploy "$STATE/$f" && chmod 600 "$STATE/$f"; fi
+done
+# 3b) Persistencia para Dockhand: COMPOSE_FILE en el .env LOCAL del stack (una sola vez; no entra en Git)
+grep -q '^COMPOSE_FILE=' "$STACK/.env" || printf 'COMPOSE_FILE=docker-compose.yml:%s/override.yaml:%s/domain.yaml\n' "$STATE" "$STATE" >> "$STACK/.env"
 # 4) Clave Ed25519 NUEVA (la privada va solo a GitHub; borrar la copia local tras cargarla)
 install -d -m 700 /root/interact-deploy-key
 ssh-keygen -t ed25519 -N '' -C interact-deploy -f /root/interact-deploy-key/id_ed25519
@@ -54,13 +60,18 @@ Comprobaciones (deben cumplirse antes del primer despliegue):
 sudo -u interact-deploy test -r "$STACK/docker-compose.yml" && sudo -u interact-deploy test -r "$STACK/.env"
 sudo -u interact-deploy test ! -w "$STACK/docker-compose.yml" && sudo -u interact-deploy test ! -w "$STATE/domain.yaml"
 sudo -u interact-deploy test -w "$STATE"
+# el directorio es escribible por el grupo, así que lo decisivo es que NO pueda borrar/renombrar domain.yaml (sticky + propiedad de root)
+[ "$(stat -c '%U:%G %a' "$STATE")" = 'root:interact-deploy 1770' ]
+if sudo -u interact-deploy mv "$STATE/domain.yaml" "$STATE/domain.yaml.x" 2>/dev/null; then mv "$STATE/domain.yaml.x" "$STATE/domain.yaml"; echo 'FALLA: el usuario pudo renombrar domain.yaml'; false; fi
+if sudo -u interact-deploy rm -f "$STATE/domain.yaml" 2>/dev/null && [ ! -e "$STATE/domain.yaml" ]; then echo 'FALLA: el usuario pudo borrar domain.yaml (restaurar desde copia)'; false; fi
+[ "$(stat -c '%U %a' "$STATE/domain.yaml")" = 'root 644' ]
 stat -c '%U:%G %a %n' /usr/local/sbin/interact-actualizar "$STATE"/*      # script root 755; domain.yaml root 644
 sshd -T -C user=interact-deploy | grep -Ei 'allowtcpforwarding|permitttyuser|passwordauthentication'
 # desde otra máquina con la clave: un comando arbitrario es rechazado (exit 64) y 'check' funciona
 ssh -i KEY -o IdentitiesOnly=yes interact-deploy@VPS "id"        # esperado: 'Comando no admitido'
 ssh -i KEY -o IdentitiesOnly=yes interact-deploy@VPS "check"     # esperado: APP_URL oficial, salud=OK
 ```
-Restricciones: pertenecer al grupo `docker` **no elimina** el riesgo (quien controle esa clave o ese usuario puede escalar a root); por eso la clave solo admite el comando forzado con `restrict`, el script es root-owned e inmutable para el usuario, valida SHA/digest/comando con expresiones estrictas, no acepta Compose externo, y la clave es exclusiva y rotable (`authorized_keys` + secreto). Opcional más estricto: prefijo `from="IPs de GitHub"` (rangos cambiantes: no recomendado) o ejecutar el script vía `sudo` con regla única en sudoers sin pertenecer a `docker` (no probado aquí). El usuario no puede modificar `docker-compose.yml` ni `domain.yaml` (comprobado arriba), pero sí escribe `override.yaml`: por eso el script valida su forma y digest en cada ejecución.
+Restricciones: pertenecer al grupo `docker` **no elimina** el riesgo (quien controle esa clave o ese usuario puede escalar a root); por eso la clave solo admite el comando forzado con `restrict`, el script es root-owned e inmutable para el usuario, valida SHA/digest/comando con expresiones estrictas, no acepta Compose externo, y la clave es exclusiva y rotable (`authorized_keys` + secreto). Opcional más estricto: prefijo `from="IPs de GitHub"` (rangos cambiantes: no recomendado) o ejecutar el script vía `sudo` con regla única en sudoers sin pertenecer a `docker` (no probado aquí). El usuario no puede modificar, borrar ni renombrar `docker-compose.yml` ni `domain.yaml` (comprobado arriba: propiedad de root + directorio sticky; el script, además, rechaza el estado si el directorio o el archivo dejan de ser de root), pero sí escribe `override.yaml`: por eso el script valida su forma y digest en cada ejecución. **Límite real**: quien obtenga una shell con `docker` (no con esta clave restringida) equivale a root y puede alterar todo; esta separación protege contra errores, contra el propio flujo automatizado y contra un comando forzado manipulado, no contra root.
 
 ## Configuración de GitHub
 - Environment `interact-production` (revisores requeridos; la aprobación humana de publicación sigue en `openclass-live-release`, intacta).
@@ -93,8 +104,8 @@ El workflow referencia por nombre `OpenClass Live`; ese flujo y `ops/vps/interac
 2. Con `INTERACT_AUTODEPLOY=false`: Actions → *OpenClass Live Deploy* → Run workflow con el `run_id` de la publicación aprobada (misma imagen 0.4.8 o la siguiente aprobada). Se ejecutan: verificación de origen, paquete, attestation, `check`, `deploy`, healthz público, registro en el resumen (tag, SHA, digest).
 3. En la VPS: `cat $STATE/deployed.current` (SHA y digest), `tail $STATE/deploy.log`, `docker compose -p openclass-live --project-directory "$STACK" --env-file "$STACK/.env" -f "$STACK/docker-compose.yml" -f "$STATE/override.yaml" -f "$STATE/domain.yaml" config | grep -E 'APP_URL|image:'`, `docker ps` (PostgreSQL con el mismo `Created`/uptime).
 4. Ensayo de rollback: repetir con un digest anterior aprobado, o `ssh interact-deploy@VPS "rollback <sha> <digest>"` con lo vigente.
-5. Solo entonces `gh variable set INTERACT_AUTODEPLOY --body true`.
-6. Dockhand: tras el ensayo, reiniciar Dockhand y confirmar (`check`) que `override.yaml`/`domain.yaml` siguen y que la app no se recreó.
+5. Dockhand (puerta obligatoria antes de activar el paso 6): reiniciar Dockhand, forzar una sincronización y, si procede, un redespliegue desde su interfaz; luego `check` debe seguir mostrando `COMPOSE_FILE=configurado-en-.env` y `dockhand-solo=ALINEADO`, y `docker inspect` debe mostrar el mismo digest. Si muestra `DERIVA`, siga la alternativa de la sección Dockhand y no active el autodespliegue.
+6. Solo entonces `gh variable set INTERACT_AUTODEPLOY --body true`.
 
 ## Rollback
 - Automático: fallo de pull/up/healthz en la VPS o de `/healthz` público.

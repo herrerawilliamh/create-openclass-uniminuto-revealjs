@@ -5,6 +5,8 @@
 #   1. $STACK_DIR/docker-compose.yml  (plantilla del stack; NUNCA se modifica)
 #   2. $STATE_DIR/override.yaml       (solo la imagen exacta <INTERACT_IMAGE_REPO>@<digest> del servicio de la app)
 #   3. $STATE_DIR/domain.yaml         (dominio oficial: APP_URL, APP_ALT_URLS, routers Traefik; root-owned, solo lectura aquí)
+# $STATE_DIR es root:<grupo-deploy> con modo 1770 (sticky): el usuario de despliegue escribe sus propios archivos de estado
+# pero NO puede borrar, renombrar ni reemplazar domain.yaml (propiedad de root).
 # Un solo despliegue a la vez (flock); nunca build, prune, down -v ni volúmenes; solo el servicio de la app (--no-deps):
 # PostgreSQL y servicios de migración no se tocan.
 set -euo pipefail
@@ -22,6 +24,8 @@ HEALTH_SLEEP=${INTERACT_HEALTH_SLEEP:-5}
 PUBLIC_URLS=${INTERACT_PUBLIC_URLS:-https://interact.apps.willedtech.io https://openclass-live.apps.willedtech.io}
 EXPECTED_APP_URL=${INTERACT_EXPECTED_APP_URL:-https://interact.apps.willedtech.io}
 TRUSTED_UIDS=${INTERACT_TRUSTED_UIDS:-0 $(id -u)}
+# Autoridad de la configuración protegida (domain.yaml y el directorio de estado que lo contiene): SOLO root por defecto.
+DOMAIN_UIDS=${INTERACT_DOMAIN_UIDS:-0}
 CURRENT="$STACK_DIR/$COMPOSE_NAME"
 OVERRIDE="$STATE_DIR/override.yaml"
 DOMAIN="${INTERACT_DOMAIN_FILE:-$STATE_DIR/domain.yaml}"
@@ -45,10 +49,29 @@ confiable() {
   case " $TRUSTED_UIDS " in *" $o "*) ;; *) return 1 ;; esac
   (( (8#$m & 8#022) == 0 ))
 }
+# Directorio de estado: propietario = autoridad de dominio (root); sin escritura de otros; escritura de grupo solo con sticky,
+# de modo que un archivo de root dentro no pueda ser borrado ni reemplazado por el usuario de despliegue.
+estado_protegido() {
+  local o m b
+  [ -d "$STATE_DIR" ] && [ ! -L "$STATE_DIR" ] || return 1
+  read -r o m < <(stat -c '%u %a' "$STATE_DIR") || return 1
+  case " $DOMAIN_UIDS " in *" $o "*) ;; *) return 1 ;; esac
+  b=$((8#$m))
+  (( (b & 8#002) == 0 )) || return 1
+  (( (b & 8#020) == 0 || (b & 8#1000) != 0 ))
+}
+dominio_protegido() {
+  local o
+  confiable "$DOMAIN" f || return 1
+  o=$(stat -c %u "$DOMAIN")
+  case " $DOMAIN_UIDS " in *" $o "*) ;; *) return 1 ;; esac
+}
 verificar_permisos() {
   local p
-  for p in "$STACK_DIR" "$STATE_DIR"; do confiable "$p" d || { echo "Directorio no confiable (propietario/permisos): $p" >&2; return 1; }; done
-  for p in "$CURRENT" "$ENV_FILE" "$DOMAIN"; do confiable "$p" f || { echo "Archivo no confiable o ausente (propietario/permisos/symlink): $p" >&2; return 1; }; done
+  confiable "$STACK_DIR" d || { echo "Directorio no confiable (propietario/permisos): $STACK_DIR" >&2; return 1; }
+  estado_protegido || { echo "Directorio de estado no protegido (debe ser de root, sin escritura de otros y con sticky si el grupo escribe): $STATE_DIR" >&2; return 1; }
+  dominio_protegido || { echo "domain.yaml no protegido (debe ser archivo regular de root, sin escritura de grupo/otros): $DOMAIN" >&2; return 1; }
+  for p in "$CURRENT" "$ENV_FILE"; do confiable "$p" f || { echo "Archivo no confiable o ausente (propietario/permisos/symlink): $p" >&2; return 1; }; done
   for p in "$OVERRIDE" "$STATE_DIR/deployed.current" "$STATE_DIR/previous.override" "$STATE_DIR/previous.deployed"; do
     [ ! -e "$p" ] && [ ! -L "$p" ] || confiable "$p" f || { echo "Archivo de estado no confiable: $p" >&2; return 1; }
   done
@@ -152,12 +175,28 @@ e = a.get("environment") or {}
 print("imagen=%s\nAPP_URL=%s\nAPP_ALT_URLS=%s" % (a.get("image"), e.get("APP_URL"), e.get("APP_ALT_URLS")))
 if e.get("APP_URL") != sys.argv[3]: sys.exit(65)
 ' "$EFF" "$SERVICE" "$EXPECTED_APP_URL" || exit 65
-  if docker compose --project-name openclass-live --project-directory "$STACK_DIR" --env-file "$ENV_FILE" -f "$CURRENT" config --format json 2>/dev/null \
-       | python3 -I -c 'import json,sys; sys.exit(0 if json.load(sys.stdin)["services"]["'"$SERVICE"'"].get("image","").endswith("@'"$DIGEST"'") else 1)' 2>/dev/null; then
-    echo "dockhand-solo=ALINEADO (docker-compose.yml por si solo ya apunta al digest desplegado)"
-  else
-    echo "dockhand-solo=DERIVA (un redespliegue solo con docker-compose.yml no reproduciría el digest/dominio vigentes)"
-  fi
+  # Deriva: lo que reproduciría un «compose up» SIN -f (Compose lee COMPOSE_FILE de $ENV_FILE) frente al modelo efectivo
+  # completo (servicios, imagen, entorno, labels, redes, volúmenes).
+  if grep -qE '^COMPOSE_FILE=' "$ENV_FILE" 2>/dev/null; then echo "COMPOSE_FILE=configurado-en-.env"; else echo "COMPOSE_FILE=AUSENTE-en-.env"; fi
+  IMPL=$(docker compose --project-name openclass-live --project-directory "$STACK_DIR" --env-file "$ENV_FILE" config --format json 2>/dev/null || true)
+  python3 -I -c '
+import json, sys
+try: impl = json.loads(sys.argv[1])
+except Exception: print("dockhand-solo=DERIVA (el modelo implícito no se pudo calcular)"); sys.exit(0)
+eff = json.loads(sys.argv[2])
+diffs = []
+for k in sorted(set(impl) | set(eff)):
+    if k == "name": continue
+    if k == "services":
+        for n in sorted(set(impl.get(k, {})) | set(eff.get(k, {}))):
+            a, b = impl.get(k, {}).get(n), eff.get(k, {}).get(n)
+            if a != b:
+                keys = sorted({x for x in set(a or {}) | set(b or {}) if (a or {}).get(x) != (b or {}).get(x)}) or ["(servicio ausente)"]
+                diffs.append("%s: %s" % (n, ",".join(keys)))
+    elif impl.get(k) != eff.get(k): diffs.append(k)
+if diffs: print("dockhand-solo=DERIVA (un redespliegue sin -f diferiría del modelo vigente en: %s)" % "; ".join(diffs))
+else: print("dockhand-solo=ALINEADO (el modelo implícito es idéntico al efectivo: imagen, dominio y routers)")
+' "$IMPL" "$EFF"
   salud_interna && salud_publica && echo "salud=OK" || { echo "salud=FALLA" >&2; exit 1; }
   exit 0
 fi

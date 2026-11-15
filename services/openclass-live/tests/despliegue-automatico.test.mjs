@@ -53,6 +53,9 @@ const fs=require('fs');const d=${JSON.stringify(d)};const a=process.argv.slice(2
 fs.appendFileSync(d+'/calls.log',JSON.stringify({a,cwd:process.cwd()})+'\\n');
 const cfg=JSON.parse(fs.readFileSync(d+'/cfg.json','utf8'));const has=n=>fs.existsSync(d+'/'+n);
 const files=[];for(let i=0;i<a.length;i++)if(a[i]==='-f')files.push(a[++i]);
+const implicit=!files.length;
+if(!files.length){const ei=a.indexOf('--env-file');const m=ei>=0&&fs.existsSync(a[ei+1])?fs.readFileSync(a[ei+1],'utf8').match(/^COMPOSE_FILE=(.*)$/m):null;if(m)files.push(...m[1].split(':'));}
+const drift=has('drift')&&implicit;
 const ov=files.find(f=>/override\.yaml$|candidate\./.test(f));const dom=files.some(f=>/domain\.yaml$/.test(f));
 const imgOf=()=>{if(ov){const m=fs.readFileSync(ov,'utf8').match(/image: (\\S+)/);if(m)return m[1];}return cfg.baseImage;};
 if(a[0]==='inspect'){if(has('noinspect'))process.exit(1);console.log(fs.readFileSync(d+'/running','utf8').trim());process.exit(0);}
@@ -61,7 +64,7 @@ const i=a.indexOf(a.find(x=>['config','pull','up'].includes(x)));const c=a[i];
 if(c==='config'){
   if(a.includes('--services')){console.log('openclass-live\\ninteract-db');process.exit(0);}
   if(a.includes('--hash')){console.log(fs.readFileSync(d+'/dbhash','utf8'));process.exit(0);}
-  if(a.includes('--format')){const s={'openclass-live':{image:imgOf(),environment:{APP_URL:dom?'https://interact.apps.willedtech.io':'https://openclass-live.apps.willedtech.io',APP_ALT_URLS:'https://openclass-live.apps.willedtech.io'},labels:{'traefik.http.routers.interact.rule':'Host('+(dom?'interact':'openclass-live')+'.apps.willedtech.io)'}},'interact-db':{image:'postgres:17'}};
+  if(a.includes('--format')){const s={'openclass-live':{image:imgOf(),environment:{APP_URL:dom&&!drift?'https://interact.apps.willedtech.io':'https://openclass-live.apps.willedtech.io',APP_ALT_URLS:'https://openclass-live.apps.willedtech.io'},labels:{'traefik.http.routers.interact.rule':'Host('+(dom?'interact':'openclass-live')+'.apps.willedtech.io)'}},'interact-db':{image:'postgres:17'}};
     if(has('build'))s['openclass-live']={...s['openclass-live'],build:{context:'.'}};
     for(const[k,v]of Object.entries(cfg.extraImages))s[k]={image:v};
     console.log(JSON.stringify({services:s}));process.exit(0);}
@@ -79,7 +82,7 @@ process.exit(fs.existsSync(d+'/publicfail')&&fs.readFileSync(d+'/running','utf8'
 `);
   chmodSync(join(bin, 'curl'), 0o755);
   writeFileSync(join(d, 'running'), `${REPO}@${D1}\n`);
-  const env = { ...process.env, PATH: `${bin}:${process.env.PATH}`, INTERACT_STACK_DIR: stack, INTERACT_STATE_DIR: state, INTERACT_HEALTH_TRIES: '1', INTERACT_HEALTH_SLEEP: '0' };
+  const env = { ...process.env, PATH: `${bin}:${process.env.PATH}`, INTERACT_STACK_DIR: stack, INTERACT_STATE_DIR: state, INTERACT_DOMAIN_UIDS: String(process.getuid()), INTERACT_HEALTH_TRIES: '1', INTERACT_HEALTH_SLEEP: '0' };
   const run = (cmd) => spawnSync('bash', [sh], { env: { ...env, SSH_ORIGINAL_COMMAND: cmd }, input: '', encoding: 'utf8' });
   const calls = () => (existsSync(join(d, 'calls.log')) ? readFileSync(join(d, 'calls.log'), 'utf8').trim().split('\n').map((l) => JSON.parse(l)) : []);
   const flag = (n) => writeFileSync(join(d, n), '1');
@@ -262,14 +265,14 @@ test('sin domain.yaml o con permisos inseguros: abortado sin efectos (exit 66)',
 
 test('un propietario no confiable se rechaza', () => {
   const e = entorno();
-  const r = spawnSync('bash', [sh], { env: { ...process.env, PATH: `${e.d}/bin:${process.env.PATH}`, INTERACT_STACK_DIR: e.stack, INTERACT_STATE_DIR: e.state, INTERACT_TRUSTED_UIDS: '999999', SSH_ORIGINAL_COMMAND: `deploy ${SHA1} ${D2}` }, encoding: 'utf8' });
+  const r = spawnSync('bash', [sh], { env: { ...process.env, PATH: `${e.d}/bin:${process.env.PATH}`, INTERACT_STACK_DIR: e.stack, INTERACT_STATE_DIR: e.state, INTERACT_TRUSTED_UIDS: '999999', INTERACT_DOMAIN_UIDS: String(process.getuid()), SSH_ORIGINAL_COMMAND: `deploy ${SHA1} ${D2}` }, encoding: 'utf8' });
   assert.equal(r.status, 66);
   assert.equal(ups(e).length, 0);
 });
 
 test('modelo sin domain.yaml efectivo (APP_URL no oficial) => abortado', () => {
   const e = entorno();
-  const r = spawnSync('bash', [sh], { env: { ...process.env, PATH: `${e.d}/bin:${process.env.PATH}`, INTERACT_STACK_DIR: e.stack, INTERACT_STATE_DIR: e.state, INTERACT_EXPECTED_APP_URL: 'https://otro.example.org', SSH_ORIGINAL_COMMAND: `deploy ${SHA1} ${D2}` }, encoding: 'utf8' });
+  const r = spawnSync('bash', [sh], { env: { ...process.env, PATH: `${e.d}/bin:${process.env.PATH}`, INTERACT_STACK_DIR: e.stack, INTERACT_STATE_DIR: e.state, INTERACT_DOMAIN_UIDS: String(process.getuid()), INTERACT_EXPECTED_APP_URL: 'https://otro.example.org', SSH_ORIGINAL_COMMAND: `deploy ${SHA1} ${D2}` }, encoding: 'utf8' });
   assert.equal(r.status, 65, r.stderr);
   assert.match(r.stderr, /APP_URL/);
   assert.equal(ups(e).length, 0);
@@ -313,6 +316,45 @@ test('check: solo lectura, informa estado y no hace up/pull', () => {
   assert.match(r.stdout, /salud=OK/);
   assert.equal(ups(e).length, n);
   assert.notEqual(e.run('check extra').status, 0);
+});
+
+test('check: ALINEADO solo si el modelo implícito (COMPOSE_FILE en .env) es idéntico al efectivo; mismo digest con dominio distinto => DERIVA', () => {
+  const e = entorno();
+  assert.equal(e.run(`deploy ${SHA1} ${D1}`).status, 0);
+  // Sin COMPOSE_FILE: Dockhand reproduciría solo docker-compose.yml (digest base = D1, pero dominio distinto) => DERIVA
+  let r = e.run('check');
+  assert.equal(r.status, 0, r.stderr);
+  assert.match(r.stdout, /COMPOSE_FILE=AUSENTE/);
+  assert.match(r.stdout, /dockhand-solo=DERIVA/);
+  assert.match(r.stdout, /openclass-live: [^\n]*(environment|labels)/);
+  assert.doesNotMatch(r.stdout, /ALINEADO/);
+  // Con COMPOSE_FILE de los tres archivos en .env => ALINEADO
+  writeFileSync(join(e.stack, '.env'), `COMPOSE_FILE=docker-compose.yml:${join(e.state, 'override.yaml')}:${join(e.state, 'domain.yaml')}\n`);
+  r = e.run('check');
+  assert.match(r.stdout, /COMPOSE_FILE=configurado/);
+  assert.match(r.stdout, /dockhand-solo=ALINEADO/);
+  // Mismo digest, dominio/routers incorrectos en el modelo implícito => DERIVA (no basta con coincidir el digest)
+  e.flag('drift');
+  r = e.run('check');
+  assert.match(r.stdout, /dockhand-solo=DERIVA/);
+  assert.doesNotMatch(r.stdout, /ALINEADO/);
+});
+
+test('directorio de estado: debe ser de la autoridad de dominio; escritura de grupo solo con sticky; nunca de otros', () => {
+  let e = entorno();
+  chmodSync(e.state, 0o770);
+  let r = e.run(`deploy ${SHA1} ${D2}`);
+  assert.equal(r.status, 66); assert.match(r.stderr, /estado no protegido/);
+  assert.equal(ups(e).length, 0);
+  e = entorno(); chmodSync(e.state, 0o1770);
+  assert.equal(e.run(`deploy ${SHA1} ${D2}`).status, 0);
+  e = entorno(); chmodSync(e.state, 0o1777);
+  assert.equal(e.run(`deploy ${SHA1} ${D2}`).status, 66);
+  // propietario del directorio y de domain.yaml distinto de la autoridad (p. ej. el propio usuario de despliegue) => rechazado
+  e = entorno();
+  r = spawnSync('bash', [sh], { env: { ...process.env, PATH: `${e.d}/bin:${process.env.PATH}`, INTERACT_STACK_DIR: e.stack, INTERACT_STATE_DIR: e.state, INTERACT_DOMAIN_UIDS: '999999', SSH_ORIGINAL_COMMAND: 'check' }, encoding: 'utf8' });
+  assert.equal(r.status, 66); assert.match(r.stderr, /no protegido/);
+  assert.equal(ups(e).length, 0);
 });
 
 test('workflow: ensayo manual posible con INTERACT_AUTODEPLOY desactivado; automático solo con true; solo desde main', () => {
