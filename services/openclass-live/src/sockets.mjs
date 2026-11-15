@@ -51,8 +51,8 @@ export function crearSockets(servidorHttp, { config, almacen, firmador, sesiones
     pingTimeout: 20_000,
     connectTimeout: 15_000,
     transports: ['websocket', 'polling'],
-    cors: { origin: [config.appUrl, ...config.origenesPresentador], credentials: false, methods: ['GET', 'POST'] },
-    allowRequest: (req, callback) => callback(null, origenAdmitido(req.headers, [config.appUrl, ...config.origenesPresentador])),
+    cors: { origin: [...config.origenesApp, ...config.origenesPresentador], credentials: false, methods: ['GET', 'POST'] },
+    allowRequest: (req, callback) => callback(null, origenAdmitido(req.headers, [...config.origenesApp, ...config.origenesPresentador])),
   });
 
   // Uniones: una clase entera puede compartir IP (wifi del campus); solo los intentos FALLIDOS se limitan
@@ -162,7 +162,7 @@ export function crearSockets(servidorHttp, { config, almacen, firmador, sesiones
   // ======================= Participantes =======================
   participantes.use((socket, next) => {
     const { headers, address } = socket.handshake;
-    if (!origenAdmitido(headers, [config.appUrl])) return next(new Error('origen'));
+    if (!origenAdmitido(headers, config.origenesApp)) return next(new Error('origen'));
     const ip = ipCliente(headers, address, config.confiarProxy);
     if (!limiteFallidos.disponible(ip) || !limiteUniones.permitir(ip)) return next(new Error('frecuencia'));
     try {
@@ -249,7 +249,7 @@ export function crearSockets(servidorHttp, { config, almacen, firmador, sesiones
     if (!limiteConexionDocente.permitir(ip)) return next(new Error('frecuencia'));
 
     if (auth?.clave) {
-      if (!origenAdmitido(headers, [config.appUrl, ...config.origenesPresentador])) return next(new Error('origen'));
+      if (!origenAdmitido(headers, [...config.origenesApp, ...config.origenesPresentador])) return next(new Error('origen'));
       // Antes de mirar la clave: un adaptador de otra versión no llega a crear encuestas. Solo se
       // informa la versión y las capacidades que el servicio espera.
       if (!presentadorCompatible(auth)) {
@@ -262,7 +262,7 @@ export function crearSockets(servidorHttp, { config, almacen, firmador, sesiones
       return next();
     }
     // La cookie solo vale desde el propio panel: otro origen no puede reutilizarla.
-    if (!origenAdmitido(headers, [config.appUrl])) return next(new Error('origen'));
+    if (!origenAdmitido(headers, config.origenesApp)) return next(new Error('origen'));
     const s = await sesionDesdeCookie(headers.cookie, { firmador, sesiones });
     if (!s) return next(new Error('no_autenticado'));
     // H02: se conserva el exp VERIFICADO de la cookie (nunca un valor del cliente) para revalidarlo en cada envío.

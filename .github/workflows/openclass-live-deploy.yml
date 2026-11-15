@@ -1,0 +1,155 @@
+name: OpenClass Live Deploy
+
+# Despliegue de Interact a la VPS. Solo consume lo ya probado, aprobado y publicado por "OpenClass Live" (push a
+# release/openclass-live tras CI, o tag openclass-live-v* manual): nunca construye. Inactivo hasta que la variable de repositorio
+# INTERACT_AUTODEPLOY sea 'true' y existan los secretos/variables de docs/DESPLIEGUE-AUTOMATICO.md.
+on:
+  workflow_run:
+    workflows: ['OpenClass Live']
+    types: [completed]
+  workflow_dispatch:
+    inputs:
+      run_id:
+        description: 'ID de la ejecución de OpenClass Live (publicación exitosa) a desplegar'
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: interact-production-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Interact desplegar digest aprobado
+    if: >-
+      vars.INTERACT_AUTODEPLOY == 'true' &&
+      (github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' &&
+      ((github.event.workflow_run.event == 'push' &&
+      github.event.workflow_run.head_branch == 'release/openclass-live') ||
+      (github.event.workflow_run.event == 'workflow_dispatch' &&
+      startsWith(github.event.workflow_run.head_branch, 'openclass-live-v')))))
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    environment: interact-production
+    permissions:
+      contents: read
+      actions: read
+      packages: read
+    env:
+      GH_TOKEN: ${{ github.token }}
+      RUN_ID: ${{ github.event.workflow_run.id || inputs.run_id }}
+      DEPLOY_HOST: ${{ vars.INTERACT_DEPLOY_HOST }}
+      DEPLOY_USER: ${{ vars.INTERACT_DEPLOY_USER }}
+      PUBLIC_URL: ${{ vars.INTERACT_PUBLIC_URL }}
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Verificar la ejecución origen (push a release o tag; el commit es de release/openclass-live)
+        id: origen
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$RUN_ID" =~ ^[0-9]+$ ]]
+          RUN=$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$RUN_ID")
+          test "$(jq -r .conclusion <<<"$RUN")" = success
+          test "$(jq -r .path <<<"$RUN")" = .github/workflows/openclass-live.yml
+          EVENTO=$(jq -r .event <<<"$RUN")
+          REF=$(jq -r .head_branch <<<"$RUN")
+          SHA=$(jq -r .head_sha <<<"$RUN")
+          [[ "$SHA" =~ ^[0-9a-f]{40}$ ]]
+          git fetch --no-tags origin "+refs/heads/release/openclass-live:refs/remotes/origin/release/openclass-live"
+          if [ "$EVENTO" = push ]; then
+            # Solo la punta vigente de release: un commit antiguo no puede revertir una versión más nueva.
+            test "$REF" = release/openclass-live
+            test "$(git rev-parse origin/release/openclass-live)" = "$SHA"
+            TAG="release/openclass-live@$SHA"
+          else
+            test "$EVENTO" = workflow_dispatch
+            [[ "$REF" == openclass-live-v* ]]
+            git fetch --no-tags origin "refs/tags/$REF:refs/tags/$REF"
+            test "$(git rev-parse "refs/tags/$REF^{commit}")" = "$SHA"
+            git merge-base --is-ancestor "$SHA" origin/release/openclass-live
+            TAG="$REF"
+          fi
+          echo "sha=$SHA" >> "$GITHUB_OUTPUT"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+      - name: Descargar y verificar el paquete aprobado
+        id: paquete
+        env:
+          SHA: ${{ steps.origen.outputs.sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh run download "$RUN_ID" --name "openclass-live-release-$SHA" --dir live-release
+          (cd live-release && sha256sum --check SHA256SUMS)
+          test "$(cat live-release/source-commit.txt)" = "$SHA"
+          IMAGE=$(jq -r .imageRepository live-release/release-lock.json)
+          DIGEST=$(jq -r .manifestDigest live-release/release-lock.json)
+          [[ "$IMAGE" == ghcr.io/$GITHUB_REPOSITORY_OWNER/* ]]
+          [[ "$DIGEST" =~ ^sha256:[0-9a-f]{64}$ ]]
+          grep -q "@$DIGEST" live-release/docker-compose.candidate.yml
+          echo "image=$IMAGE" >> "$GITHUB_OUTPUT"
+          echo "digest=$DIGEST" >> "$GITHUB_OUTPUT"
+      - name: Iniciar sesión en GHCR (solo lectura)
+        uses: docker/login-action@74a5d142397b4f367a81961eba4e8cd7edddf772 # v3.4.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ github.token }}
+      - name: Verificar procedencia del digest
+        env:
+          IMAGE: ${{ steps.paquete.outputs.image }}
+          DIGEST: ${{ steps.paquete.outputs.digest }}
+        run: gh attestation verify "oci://$IMAGE@$DIGEST" --repo "$GITHUB_REPOSITORY"
+      - name: Actualizar la VPS (comando forzado; la VPS hace healthcheck y rollback)
+        id: vps
+        env:
+          SHA: ${{ steps.origen.outputs.sha }}
+          DIGEST: ${{ steps.paquete.outputs.digest }}
+          SSH_KEY: ${{ secrets.INTERACT_DEPLOY_SSH_KEY }}
+          KNOWN_HOSTS: ${{ secrets.INTERACT_DEPLOY_KNOWN_HOSTS }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$SSH_KEY" && test -n "$KNOWN_HOSTS" && test -n "$DEPLOY_HOST" && test -n "$DEPLOY_USER"
+          install -d -m 700 "$RUNNER_TEMP/ssh"
+          printf '%s\n' "$SSH_KEY" > "$RUNNER_TEMP/ssh/key"
+          printf '%s\n' "$KNOWN_HOSTS" > "$RUNNER_TEMP/ssh/known_hosts"
+          chmod 600 "$RUNNER_TEMP/ssh/key" "$RUNNER_TEMP/ssh/known_hosts"
+          ssh -i "$RUNNER_TEMP/ssh/key" -o IdentitiesOnly=yes -o BatchMode=yes -o StrictHostKeyChecking=yes \
+            -o UserKnownHostsFile="$RUNNER_TEMP/ssh/known_hosts" "$DEPLOY_USER@$DEPLOY_HOST" \
+            "deploy $SHA $DIGEST" < /dev/null
+      - name: Comprobar /healthz público
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$PUBLIC_URL" == https://* ]]
+          curl --fail --silent --show-error --retry 10 --retry-delay 6 --retry-all-errors "${PUBLIC_URL%/}/healthz" > /dev/null
+      - name: Rollback inmediato si falla el healthz público tras actualizar (solo si sigue desplegado este SHA/digest)
+        if: failure() && steps.vps.conclusion == 'success'
+        env:
+          SHA: ${{ steps.origen.outputs.sha }}
+          DIGEST: ${{ steps.paquete.outputs.digest }}
+        shell: bash
+        run: |
+          ssh -i "$RUNNER_TEMP/ssh/key" -o IdentitiesOnly=yes -o BatchMode=yes -o StrictHostKeyChecking=yes \
+            -o UserKnownHostsFile="$RUNNER_TEMP/ssh/known_hosts" "$DEPLOY_USER@$DEPLOY_HOST" "rollback $SHA $DIGEST"
+      - name: Registrar lo desplegado
+        env:
+          SHA: ${{ steps.origen.outputs.sha }}
+          DIGEST: ${{ steps.paquete.outputs.digest }}
+          TAG: ${{ steps.origen.outputs.tag }}
+        run: |
+          {
+            echo "### Interact desplegado"
+            echo "- tag: \`$TAG\`"
+            echo "- commit: \`$SHA\`"
+            echo "- digest: \`$DIGEST\`"
+          } >> "$GITHUB_STEP_SUMMARY"

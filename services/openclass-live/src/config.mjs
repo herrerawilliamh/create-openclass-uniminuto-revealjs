@@ -76,7 +76,15 @@ export function leerBase(env, produccion = env.NODE_ENV === 'production', variab
 
 export function leerConfig(env = process.env) {
   const appUrl = String(env.APP_URL ?? '').replace(/\/+$/, '');
-  if (!/^https?:\/\/[^/]+$/.test(appUrl)) throw new Error('APP_URL debe ser un origen, p. ej. https://openclass-live.apps.willedtech.io');
+  if (!/^https?:\/\/[^/]+$/.test(appUrl)) throw new Error('APP_URL debe ser un origen, p. ej. https://interact.apps.willedtech.io');
+
+  // Transición de dominio: orígenes adicionales (p. ej. el dominio anterior) aceptados para CSRF y Socket.IO.
+  // Los enlaces, QR y correos se generan SIEMPRE con APP_URL (el dominio canónico).
+  const origenesAlternos = lista(env.APP_ALT_URLS ?? '').map((o) => o.replace(/\/+$/, ''));
+  for (const o of origenesAlternos) {
+    if (!/^https?:\/\/[^/]+$/.test(o)) throw new Error(`APP_ALT_URLS contiene un origen inválido: ${o}`);
+    if (env.NODE_ENV === 'production' && !o.startsWith('https://')) throw new Error(`APP_ALT_URLS exige https en producción: ${o}`);
+  }
 
   const secreto = String(env.SESSION_SECRET ?? '');
   if (secreto.length < 32 || /CAMBIAR/i.test(secreto)) throw new Error('SESSION_SECRET ausente o débil (mínimo 32 caracteres aleatorios).');
@@ -104,6 +112,7 @@ export function leerConfig(env = process.env) {
     produccion,
     puerto: entero(env.PORT, 3000, 1, 65535),
     appUrl,
+    origenesApp: Object.freeze([...new Set([appUrl, ...origenesAlternos])]),
     secreto,
     hashDocente: hash,
     db,

@@ -62,7 +62,7 @@ test('Dockhand Git stack accepts explicit environment without requiring an env_f
   const app = compose.slice(compose.indexOf('  openclass-live:\n'));
   assert.doesNotMatch(app.slice(0, app.indexOf('    labels:')), /DATABASE_(ADMIN|MIGRATION|BACKUP)_URL|POSTGRES_ADMIN_PASSWORD|INTERACT_DB_/);
   assert.match(compose, /APP_URL: \$\{APP_URL:\?/);
-  assert.match(compose, /Host\(`\$\{APP_HOST\}`\)/);
+  assert.match(compose, /Host\(`\$\{APP_HOST(:\?[^}]*)?\}`\)/);
   assert.match(compose, /certresolver=myresolver/);
   assert.match(compose, /web:\s*\n\s+external: true/);
   assert.doesNotMatch(compose, /^\s*ports:/m);

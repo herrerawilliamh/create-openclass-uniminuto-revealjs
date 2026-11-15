@@ -8,6 +8,11 @@
   "verifier": "scripts/brand-verify.mjs",
   "files": [
     {
+      "from": "logo/favicon.svg",
+      "to": "public/favicon.svg",
+      "sha256": "a9212f6a241c8fc22041ea4478b763b1936300db50437bde4fe7d5a6c54b587d"
+    },
+    {
       "from": "products/interact/interact-marca.svg",
       "to": "public/assets/marca/interact-marca.svg",
       "sha256": "2eb33e3c9acea34db034c4b0f6e89e5d7d154eaec4f948f7c7062cb7b0e75f9e"
@@ -62,10 +67,6 @@
     {
       "path": "public/assets/marca/willedtech-w.svg",
       "reason": "Isotipo W heredado de la cabecera 0.4.3; su contenido no coincide con ningún archivo de Brand 3.1.0. Sin uso desde la adopción del lockup oficial; se conserva sin borrar."
-    },
-    {
-      "path": "public/favicon.svg",
-      "reason": "Favicon de Interact de la aplicación; su contenido no coincide con logo/favicon.svg ni con products/interact/interact-app.svg de Brand 3.1.0."
     },
     {
       "path": "public/assets/marca/fuentes.css",

@@ -7,6 +7,10 @@ name: OpenClass Live
 on:
   pull_request:
     branches: [main, release/openclass-live]
+  # Cadena automática: un commit integrado en la rama protegida de release (vía PR aprobado) supera checks, se construye
+  # una sola vez, pasa por el entorno de aprobación y se publica por digest. El despliegue lo consume Deploy.
+  push:
+    branches: [release/openclass-live]
   workflow_dispatch:
     inputs:
       release_tag:
@@ -61,8 +65,8 @@ jobs:
       - name: Registrar SHA probado
         id: identity
         run: echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
-      - name: Identidad de promoción manual (tag = checkout = HEAD = rama de release)
-        if: github.event_name == 'workflow_dispatch'
+      - name: Identidad de promoción (tag o punta de release = checkout = HEAD)
+        if: github.event_name != 'pull_request'
         env:
           RELEASE_TAG: ${{ inputs.release_tag }}
         run: node services/openclass-live/scripts/publicacion-ci.mjs identidad
@@ -123,7 +127,7 @@ jobs:
 
   build:
     name: Live build único (OCI)
-    if: github.event_name == 'workflow_dispatch'
+    if: github.event_name == 'workflow_dispatch' || github.event_name == 'push'
     needs: checks
     runs-on: ubuntu-24.04
     timeout-minutes: 20
@@ -221,7 +225,7 @@ jobs:
 
   approval:
     name: Live aprobación humana
-    if: github.event_name == 'workflow_dispatch'
+    if: github.event_name == 'workflow_dispatch' || github.event_name == 'push'
     needs: build
     runs-on: ubuntu-24.04
     environment: openclass-live-release
@@ -232,7 +236,7 @@ jobs:
 
   publish:
     name: Live publicar en GHCR y atestiguar
-    if: github.event_name == 'workflow_dispatch' && startsWith(github.ref, 'refs/tags/openclass-live-v')
+    if: (github.event_name == 'workflow_dispatch' && startsWith(github.ref, 'refs/tags/openclass-live-v')) || (github.event_name == 'push' && github.ref == 'refs/heads/release/openclass-live')
     needs: [build, approval]
     runs-on: ubuntu-24.04
     timeout-minutes: 15
