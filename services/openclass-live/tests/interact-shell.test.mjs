@@ -8,7 +8,8 @@ const read = (path) => readFileSync(new URL(path, root), 'utf8');
 test('estructura de cabecera y elementos de marca 3.1.0', () => {
   for (const page of ['docente/index.html', 'cuenta/index.html', 'vincular/index.html', 'index.html']) {
     const html = read(page);
-    assert.match(html, /\/favicon\.svg/);
+    assert.match(html, /<link rel="icon" href="\/favicon-interact\.svg\?v=[\w.-]+" type="image\/svg\+xml">/);
+    assert.doesNotMatch(html, /href="\/favicon\.svg/);
     assert.match(html, /<a class="wt-header__brand" href="[^"]+" aria-label="WillEdTech Interact, ir al inicio">/);
     assert.match(html, /class="wt-lockup wt-lockup--full" src="\/assets\/marca\/interact-horizontal\.svg" alt=""/);
     assert.match(html, /class="wt-lockup wt-lockup--compact" src="\/assets\/marca\/interact-compacto\.svg" alt=""/);
@@ -42,4 +43,13 @@ test('búsqueda de usuarios conserva permisos de suspensión y reactivación', (
   assert.match(panel, /function filtrarUsuarios/);
   assert.match(panel, /'input', filtrarUsuarios/);
   assert.match(panel, /onclick: \(\) => cambiarEstado\(x\)/);
+});
+
+test('favicon propio de Interact: símbolo "I" con punto naranja, nombre nuevo y versión en la URL', () => {
+  const svg = read('favicon-interact.svg');
+  const marca = read('assets/marca/interact-marca.svg');
+  const d = (s) => s.match(/<path[^>]* d="([^"]+)"/)[1];
+  assert.equal(d(svg), d(marca), 'misma geometría que interact-marca.svg');
+  assert.match(svg, /<circle[^>]*fill="#F27405"/);
+  assert.notEqual(svg, read('favicon.svg'));
 });
