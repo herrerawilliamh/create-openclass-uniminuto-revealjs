@@ -24,10 +24,12 @@ concurrency:
 jobs:
   deploy:
     name: Interact desplegar digest aprobado
+    # Manual (ensayo): siempre posible, desde main y con aprobación del entorno. Automático: solo con INTERACT_AUTODEPLOY == 'true'.
     if: >-
-      vars.INTERACT_AUTODEPLOY == 'true' &&
+      github.ref == 'refs/heads/main' &&
       (github.event_name == 'workflow_dispatch' ||
-      (github.event.workflow_run.conclusion == 'success' &&
+      (vars.INTERACT_AUTODEPLOY == 'true' &&
+      github.event.workflow_run.conclusion == 'success' &&
       ((github.event.workflow_run.event == 'push' &&
       github.event.workflow_run.head_branch == 'release/openclass-live') ||
       (github.event.workflow_run.event == 'workflow_dispatch' &&
@@ -108,11 +110,9 @@ jobs:
           IMAGE: ${{ steps.paquete.outputs.image }}
           DIGEST: ${{ steps.paquete.outputs.digest }}
         run: gh attestation verify "oci://$IMAGE@$DIGEST" --repo "$GITHUB_REPOSITORY"
-      - name: Actualizar la VPS (comando forzado; la VPS hace healthcheck y rollback)
-        id: vps
+      - name: Preparar SSH y comprobar la VPS (solo lectura; permisos, modelo efectivo con domain.yaml, salud)
+        id: ssh
         env:
-          SHA: ${{ steps.origen.outputs.sha }}
-          DIGEST: ${{ steps.paquete.outputs.digest }}
           SSH_KEY: ${{ secrets.INTERACT_DEPLOY_SSH_KEY }}
           KNOWN_HOSTS: ${{ secrets.INTERACT_DEPLOY_KNOWN_HOSTS }}
         shell: bash
@@ -123,6 +123,17 @@ jobs:
           printf '%s\n' "$SSH_KEY" > "$RUNNER_TEMP/ssh/key"
           printf '%s\n' "$KNOWN_HOSTS" > "$RUNNER_TEMP/ssh/known_hosts"
           chmod 600 "$RUNNER_TEMP/ssh/key" "$RUNNER_TEMP/ssh/known_hosts"
+          ssh -i "$RUNNER_TEMP/ssh/key" -o IdentitiesOnly=yes -o BatchMode=yes -o StrictHostKeyChecking=yes \
+            -o UserKnownHostsFile="$RUNNER_TEMP/ssh/known_hosts" "$DEPLOY_USER@$DEPLOY_HOST" \
+            "check" < /dev/null
+      - name: Actualizar la VPS (comando forzado; la VPS hace healthcheck y rollback)
+        id: vps
+        env:
+          SHA: ${{ steps.origen.outputs.sha }}
+          DIGEST: ${{ steps.paquete.outputs.digest }}
+        shell: bash
+        run: |
+          set -euo pipefail
           ssh -i "$RUNNER_TEMP/ssh/key" -o IdentitiesOnly=yes -o BatchMode=yes -o StrictHostKeyChecking=yes \
             -o UserKnownHostsFile="$RUNNER_TEMP/ssh/known_hosts" "$DEPLOY_USER@$DEPLOY_HOST" \
             "deploy $SHA $DIGEST" < /dev/null
