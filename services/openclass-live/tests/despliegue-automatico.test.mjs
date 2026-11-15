@@ -325,18 +325,22 @@ test('check: ALINEADO solo si el modelo implícito (COMPOSE_FILE en .env) es id�
   let r = e.run('check');
   assert.equal(r.status, 0, r.stderr);
   assert.match(r.stdout, /COMPOSE_FILE=AUSENTE/);
-  assert.match(r.stdout, /dockhand-solo=DERIVA/);
+  assert.match(r.stdout, /compose-implicito=DERIVA/);
   assert.match(r.stdout, /openclass-live: [^\n]*(environment|labels)/);
   assert.doesNotMatch(r.stdout, /ALINEADO/);
   // Con COMPOSE_FILE de los tres archivos en .env => ALINEADO
   writeFileSync(join(e.stack, '.env'), `COMPOSE_FILE=docker-compose.yml:${join(e.state, 'override.yaml')}:${join(e.state, 'domain.yaml')}\n`);
   r = e.run('check');
   assert.match(r.stdout, /COMPOSE_FILE=configurado/);
-  assert.match(r.stdout, /dockhand-solo=ALINEADO/);
+  assert.match(r.stdout, /compose-implicito=ALINEADO/);
+  // ALINEADO es solo diagnóstico de Compose sin -f: nunca se presenta como prueba de Dockhand; la evidencia es la del contenedor
+  assert.match(r.stdout, /NO prueba cómo invoca Dockhand/);
+  assert.match(r.stdout, /contenedor-evidencia=/);
+  assert.doesNotMatch(r.stdout, /dockhand-solo/);
   // Mismo digest, dominio/routers incorrectos en el modelo implícito => DERIVA (no basta con coincidir el digest)
   e.flag('drift');
   r = e.run('check');
-  assert.match(r.stdout, /dockhand-solo=DERIVA/);
+  assert.match(r.stdout, /compose-implicito=DERIVA/);
   assert.doesNotMatch(r.stdout, /ALINEADO/);
 });
 

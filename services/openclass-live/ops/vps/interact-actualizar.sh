@@ -182,7 +182,7 @@ if e.get("APP_URL") != sys.argv[3]: sys.exit(65)
   python3 -I -c '
 import json, sys
 try: impl = json.loads(sys.argv[1])
-except Exception: print("dockhand-solo=DERIVA (el modelo implícito no se pudo calcular)"); sys.exit(0)
+except Exception: print("compose-implicito=DERIVA (el modelo implícito no se pudo calcular)"); sys.exit(0)
 eff = json.loads(sys.argv[2])
 diffs = []
 for k in sorted(set(impl) | set(eff)):
@@ -194,9 +194,15 @@ for k in sorted(set(impl) | set(eff)):
                 keys = sorted({x for x in set(a or {}) | set(b or {}) if (a or {}).get(x) != (b or {}).get(x)}) or ["(servicio ausente)"]
                 diffs.append("%s: %s" % (n, ",".join(keys)))
     elif impl.get(k) != eff.get(k): diffs.append(k)
-if diffs: print("dockhand-solo=DERIVA (un redespliegue sin -f diferiría del modelo vigente en: %s)" % "; ".join(diffs))
-else: print("dockhand-solo=ALINEADO (el modelo implícito es idéntico al efectivo: imagen, dominio y routers)")
+if diffs: print("compose-implicito=DERIVA (un `compose up` sin -f diferiría del modelo vigente en: %s)" % "; ".join(diffs))
+else: print("compose-implicito=ALINEADO (SOLO diagnóstico de Compose sin -f; NO prueba cómo invoca Dockhand: ver evidencia contenedor=)")
 ' "$IMPL" "$EFF"
+  # Evidencia del contenedor REAL (lo que importa tras una acción de Dockhand): imagen en ejecución, APP_URL y router del contenedor.
+  CIMG=$(docker inspect -f '{{.Config.Image}}' "$SERVICE" 2>/dev/null || echo desconocida)
+  CURL=$(docker inspect -f '{{range .Config.Env}}{{println .}}{{end}}' "$SERVICE" 2>/dev/null | sed -n 's/^APP_URL=//p' | head -1)
+  CRT=$(docker inspect -f '{{json .Config.Labels}}' "$SERVICE" 2>/dev/null | grep -c "${EXPECTED_APP_URL#https://}" || true)
+  echo "contenedor=imagen:$CIMG app_url:${CURL:-?} routers-con-dominio:$CRT"
+  if [[ "$CIMG" == *"@$DIGEST" && "$CURL" == "$EXPECTED_APP_URL" && "$CRT" -ge 1 ]]; then echo "contenedor-evidencia=COINCIDE con deployed.current"; else echo "contenedor-evidencia=NO-COINCIDE (el contenedor no corresponde a deployed.current/dominio oficial)"; fi
   salud_interna && salud_publica && echo "salud=OK" || { echo "salud=FALLA" >&2; exit 1; }
   exit 0
 fi
