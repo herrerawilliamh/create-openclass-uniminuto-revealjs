@@ -319,3 +319,49 @@ jobs:
           path: live-release/
           retention-days: 30
           if-no-files-found: error
+      - name: Promover el digest aprobado a la etiqueta móvil production y verificarla (con recuperación)
+        id: promover
+        shell: bash
+        env:
+          IMAGE: ${{ steps.push.outputs.image }}
+          DIGEST: ${{ steps.push.outputs.digest }}
+        run: |
+          set -euo pipefail
+          # Último paso de publish: todo lo demás (tests, bytes, push, attestation, artefacto) ya terminó.
+          # Misma manifest (sin reconstruir) bajo :production; la autoridad sigue siendo el digest.
+          TMP="${RUNNER_TEMP:-/tmp}"
+          REF="docker://$IMAGE:production"
+          digest_de() { skopeo inspect --raw "$1" | sha256sum | cut -d' ' -f1; }
+          test "sha256:$(digest_de "docker://$IMAGE@$DIGEST")" = "$DIGEST"
+          PREV=""
+          if skopeo inspect --raw "$REF" > "$TMP/production.prev" 2> "$TMP/production.err"; then
+            PREV="sha256:$(sha256sum < "$TMP/production.prev" | cut -d' ' -f1)"
+          elif ! grep -qiE 'manifest unknown|name unknown|not found|404' "$TMP/production.err"; then
+            echo "::error::No se pudo leer el estado previo de :production; no se modifica"; exit 1
+          fi
+          if [ -z "$PREV" ]; then
+            echo "::error:::production no existe: no hay estado al que volver, no se modifica; crear la etiqueta inicial a mano: $REF"; exit 1
+          fi
+          # Se escribe la salida ANTES de mutar: un fallo local aquí no deja la etiqueta movida.
+          echo "production=$IMAGE:production" >> "$GITHUB_OUTPUT"
+          recuperar() {
+            if skopeo copy --preserve-digests "docker://$IMAGE@$PREV" "$REF"; then
+              if [ "sha256:$(digest_de "$REF")" = "$PREV" ]; then
+                echo "::warning:::production restaurada a $PREV"
+                return 0
+              fi
+            fi
+            echo "::error::Falló la recuperación de :production; debe volver a $PREV a mano"
+            return 1
+          }
+          if [ "$PREV" != "$DIGEST" ]; then
+            if ! skopeo copy --preserve-digests "docker://$IMAGE@$DIGEST" "$REF"; then
+              recuperar
+              exit 1
+            fi
+          fi
+          if [ "sha256:$(digest_de "$REF")" != "$DIGEST" ]; then
+            echo "::error::La verificación de :production falló"
+            recuperar
+            exit 1
+          fi

@@ -197,6 +197,16 @@ export function auditarWorkflow(text) {
   bad(/subject-name:\s*\$\{\{ steps\.push\.outputs\.image \}\}/.test(att) && /subject-digest:\s*\$\{\{ steps\.push\.outputs\.digest \}\}/.test(att)
     && /push-to-registry:\s*true/.test(att), 'La attestation debe vincular el digest OCI publicado (steps.push.outputs)');
   bad(iAtt > ix(/id: push/), 'La attestation debe seguir a la publicación');
+  const iProm = pb.findIndex(x => /id: promover/.test(x));
+  const iUp = pb.findIndex(x => /actions\/upload-artifact@/.test(x));
+  const prom = pb[iProm] ?? '';
+  bad(iProm >= 0 && iProm === pb.length - 1 && iProm > iAtt && iAtt > 0 && iProm > iUp && iUp > 0
+    && /skopeo copy --preserve-digests "docker:\/\/\$IMAGE@\$DIGEST" "\$REF"/.test(prom)
+    && /REF="docker:\/\/\$IMAGE:production"/.test(prom)
+    && /"sha256:\$\(digest_de "\$REF"\)" != "\$DIGEST"/.test(prom)
+    && /^ +recuperar\n +exit 1$/m.test(prom) && /skopeo copy --preserve-digests "docker:\/\/\$IMAGE@\$PREV"/.test(prom),
+  'publish: :production se promueve por digest como ÚLTIMO paso (tras attestation y artefacto), se verifica y se recupera el estado previo si falla');
+  bad(!/docker:\/\/[^\s"]*:production/.test(t.replace(prom, '')), ':production solo se escribe en el paso de promoción de publish');
   v.push(...auditarEstructura(t));
   return v;
 }
