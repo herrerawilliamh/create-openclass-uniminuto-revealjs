@@ -51,6 +51,105 @@ test('1. workflow real cumple el contrato: SHA fijados, permisos mínimos, publi
   assert.deepEqual(auditarWorkflow(workflow), []);
 });
 
+const pasoPromover = workflow.match(/      - name: Promover[\s\S]*$/)[0];
+const scriptPromover = pasoPromover.match(/        run: \|\n([\s\S]*)$/)[1].replace(/^ {10}/gm, '');
+
+test('1b. :production se promueve por digest sin reconstruir, como último paso, y se verifica', () => {
+  const publish = workflow.slice(workflow.indexOf('\n  publish:'));
+  assert.doesNotMatch(publish, /docker (buildx )?build\b/);
+  assert.ok(publish.indexOf('id: promover') > publish.indexOf('upload-artifact'));
+  assert.ok(publish.indexOf('upload-artifact') > publish.indexOf('attest-build-provenance'));
+  for (const [nombre, mal] of [
+    ['sin verificación', workflow.replace('[ "sha256:$(digest_de "$REF")" != "$DIGEST" ]', 'false')],
+    ['sin --preserve-digests', workflow.replace(pasoPromover, pasoPromover.replace('--preserve-digests "docker://$IMAGE@$DIGEST"', '"docker://$IMAGE@$DIGEST"'))],
+    ['sin recuperación', workflow.replace(/^ +recuperar\n/gm, '')],
+    ['sin paso de promoción', workflow.replace(pasoPromover, '')],
+    ['antes del artefacto', workflow.replace(pasoPromover, '').replace('      - name: Compose candidato', pasoPromover + '      - name: Compose candidato')],
+    [':production fuera del paso', workflow.replace(pasoPromover, '') + '      - run: skopeo copy docker://a@b docker://a:production\n' + pasoPromover],
+  ]) assert.ok(auditarWorkflow(mal).length > 0, nombre);
+});
+
+// Ejecuta el shell REAL del paso con un skopeo simulado que lleva el estado del registro en disco.
+function promover({ prev = 'A', modo = 'ok', restaura = 'ok', origen = true, salidaMala = false } = {}) {
+  return conTmp(dir => {
+    const reg = path.join(dir, 'reg'); mkdirSync(reg);
+    const man = x => `manifiesto-${x}`;
+    const hex = x => sha256Hex(Buffer.from(man(x)));
+    for (const x of ['A', 'B', 'C']) writeFileSync(path.join(reg, hex(x)), man(x));
+    if (origen === false) rmSync(path.join(reg, hex('C')));
+    if (prev) writeFileSync(path.join(dir, 'tag'), man(prev));
+    mkdirSync(path.join(dir, 'bin'));
+    writeFileSync(path.join(dir, 'bin', 'skopeo'), `#!/bin/bash
+D="${dir}"; ref="\${@: -1}"; [ "$1" = copy ] && ref="\${@: -2:1}"
+case "$1" in
+ inspect) case "$ref" in
+   *:production) [ -f "$D/tag" ] || { echo "manifest unknown" >&2; exit 1; }
+     [ "$MODO" = inspect ] && [ -f "$D/copiado" ] && { echo "boom" >&2; exit 1; }
+     cat "$D/tag";;
+   *@sha256:*) f="$D/reg/\${ref##*sha256:}"; [ -f "$f" ] || { echo "manifest unknown" >&2; exit 1; }; cat "$f";;
+ esac;;
+ copy) n=$(cat "$D/n" 2>/dev/null || echo 0); echo $((n+1)) > "$D/n"
+   cat "$D/reg/\${ref##*sha256:}" > "$D/nuevo" || exit 1
+   if [ "$n" = 0 ]; then
+     case "$MODO" in
+       falla) echo err >&2; exit 1;;
+       mutaYFalla) cp "$D/nuevo" "$D/tag"; touch "$D/copiado"; exit 1;;
+       distinto) printf 'otro' > "$D/tag"; touch "$D/copiado"; exit 0;;
+       *) cp "$D/nuevo" "$D/tag"; touch "$D/copiado";;
+     esac
+   else [ "$RESTAURA" = falla ] && exit 1; cp "$D/nuevo" "$D/tag"; fi;;
+esac
+`, { mode: 0o755 });
+    writeFileSync(path.join(dir, 'run.sh'), scriptPromover);
+    const r = spawnSync('bash', [path.join(dir, 'run.sh')], { encoding: 'utf8', env: {
+      PATH: `${path.join(dir, 'bin')}:${process.env.PATH}`, RUNNER_TEMP: dir, GITHUB_OUTPUT: salidaMala ? path.join(dir, 'noexiste', 'out') : path.join(dir, 'out'),
+      IMAGE: 'ghcr.io/o/i', DIGEST: `sha256:${hex('C')}`, MODO: modo, RESTAURA: restaura } });
+    let tag = null; try { tag = readFileSync(path.join(dir, 'tag'), 'utf8'); } catch {}
+    return { status: r.status, tag, stderr: r.stderr + r.stdout, copias: Number(((() => { try { return readFileSync(path.join(dir, 'n'), 'utf8'); } catch { return '0'; } })())) };
+  });
+}
+
+test('1c. promoción: éxito mueve :production al digest aprobado', () => {
+  const r = promover({ prev: 'A' });
+  assert.equal(r.status, 0); assert.equal(r.tag, 'manifiesto-C');
+});
+test('1d. promoción idempotente: si ya apunta al digest no copia', () => {
+  const r = promover({ prev: 'C' });
+  assert.equal(r.status, 0); assert.equal(r.copias, 0);
+});
+test('1e. el digest de origen ausente falla antes de mutar', () => {
+  const r = promover({ prev: 'A', origen: false });
+  assert.notEqual(r.status, 0); assert.equal(r.tag, 'manifiesto-A'); assert.equal(r.copias, 0);
+});
+test('1f. copia que falla sin mutar conserva el estado previo', () => {
+  const r = promover({ prev: 'A', modo: 'falla' });
+  assert.notEqual(r.status, 0); assert.equal(r.tag, 'manifiesto-A');
+});
+test('1g. copia que muta y devuelve error restaura el estado previo', () => {
+  const r = promover({ prev: 'A', modo: 'mutaYFalla' });
+  assert.notEqual(r.status, 0); assert.equal(r.tag, 'manifiesto-A'); assert.match(r.stderr, /restaurada/);
+});
+test('1h. inspección posterior fallida restaura el estado previo', () => {
+  const r = promover({ prev: 'A', modo: 'inspect' });
+  assert.notEqual(r.status, 0); assert.equal(r.tag, 'manifiesto-A');
+});
+test('1i. digest distinto tras copiar restaura el estado previo', () => {
+  const r = promover({ prev: 'A', modo: 'distinto' });
+  assert.notEqual(r.status, 0); assert.equal(r.tag, 'manifiesto-A');
+});
+test('1j. si la recuperación falla, sale en rojo y lo declara', () => {
+  const r = promover({ prev: 'A', modo: 'mutaYFalla', restaura: 'falla' });
+  assert.notEqual(r.status, 0); assert.equal(r.tag, 'manifiesto-C'); assert.match(r.stderr, /Falló la recuperación/);
+});
+test('1k. sin :production previa aborta antes de mutar: cero copias y sin etiqueta', () => {
+  const r = promover({ prev: null, modo: 'mutaYFalla' });
+  assert.notEqual(r.status, 0); assert.match(r.stderr, /no existe/); assert.equal(r.copias, 0); assert.equal(r.tag, null);
+});
+test('1l. salida no escribible falla antes de mutar: etiqueta previa y cero copias', () => {
+  const r = promover({ prev: 'A', salidaMala: true });
+  assert.notEqual(r.status, 0); assert.equal(r.tag, 'manifiesto-A'); assert.equal(r.copias, 0);
+});
+
 test('2. mutaciones del workflow se detectan (acción móvil, permisos, credenciales, rebuild, PR)', () => {
   const mut = (desde, hacia, esperado) => {
     assert.ok(workflow.includes(desde), `Mutación sin ancla: ${desde}`);
