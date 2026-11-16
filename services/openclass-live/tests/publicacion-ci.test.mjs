@@ -70,7 +70,7 @@ test('1b. :production se promueve por digest sin reconstruir, como último paso,
 });
 
 // Ejecuta el shell REAL del paso con un skopeo simulado que lleva el estado del registro en disco.
-function promover({ prev = 'A', modo = 'ok', restaura = 'ok', origen = true, salidaMala = false } = {}) {
+function promover({ prev = 'A', modo = 'ok', restaura = 'ok', origen = true, salidaMala = false, errLectura = '' } = {}) {
   return conTmp(dir => {
     const reg = path.join(dir, 'reg'); mkdirSync(reg);
     const man = x => `manifiesto-${x}`;
@@ -83,7 +83,8 @@ function promover({ prev = 'A', modo = 'ok', restaura = 'ok', origen = true, sal
 D="${dir}"; ref="\${@: -1}"; [ "$1" = copy ] && ref="\${@: -2:1}"
 case "$1" in
  inspect) case "$ref" in
-   *:production) [ -f "$D/tag" ] || { echo "manifest unknown" >&2; exit 1; }
+   *:production) [ -n "$ERRLECTURA" ] && { echo "$ERRLECTURA" >&2; exit 1; }
+     [ -f "$D/tag" ] || { echo "manifest unknown" >&2; exit 1; }
      [ "$MODO" = inspect ] && [ -f "$D/copiado" ] && { echo "boom" >&2; exit 1; }
      cat "$D/tag";;
    *@sha256:*) f="$D/reg/\${ref##*sha256:}"; [ -f "$f" ] || { echo "manifest unknown" >&2; exit 1; }; cat "$f";;
@@ -103,7 +104,7 @@ esac
     writeFileSync(path.join(dir, 'run.sh'), scriptPromover);
     const r = spawnSync('bash', [path.join(dir, 'run.sh')], { encoding: 'utf8', env: {
       PATH: `${path.join(dir, 'bin')}:${process.env.PATH}`, RUNNER_TEMP: dir, GITHUB_OUTPUT: salidaMala ? path.join(dir, 'noexiste', 'out') : path.join(dir, 'out'),
-      IMAGE: 'ghcr.io/o/i', DIGEST: `sha256:${hex('C')}`, MODO: modo, RESTAURA: restaura } });
+      IMAGE: 'ghcr.io/o/i', DIGEST: `sha256:${hex('C')}`, MODO: modo, RESTAURA: restaura, ERRLECTURA: errLectura } });
     let tag = null; try { tag = readFileSync(path.join(dir, 'tag'), 'utf8'); } catch {}
     return { status: r.status, tag, stderr: r.stderr + r.stdout, copias: Number(((() => { try { return readFileSync(path.join(dir, 'n'), 'utf8'); } catch { return '0'; } })())) };
   });
@@ -141,9 +142,28 @@ test('1j. si la recuperación falla, sale en rojo y lo declara', () => {
   const r = promover({ prev: 'A', modo: 'mutaYFalla', restaura: 'falla' });
   assert.notEqual(r.status, 0); assert.equal(r.tag, 'manifiesto-C'); assert.match(r.stderr, /Falló la recuperación/);
 });
-test('1k. sin :production previa aborta antes de mutar: cero copias y sin etiqueta', () => {
+test('1k. primera publicación: sin :production crea la etiqueta en el digest aprobado', () => {
+  const r = promover({ prev: null });
+  assert.equal(r.status, 0); assert.equal(r.tag, 'manifiesto-C'); assert.equal(r.copias, 1);
+});
+test('1k2. primera publicación fallida declara que no hay versión anterior y no finge recuperación', () => {
   const r = promover({ prev: null, modo: 'mutaYFalla' });
-  assert.notEqual(r.status, 0); assert.match(r.stderr, /no existe/); assert.equal(r.copias, 0); assert.equal(r.tag, null);
+  assert.notEqual(r.status, 0); assert.match(r.stderr, /no hay versión anterior/); assert.match(r.stderr, /verificar a mano/);
+  assert.doesNotMatch(r.stderr, /restaurada/); assert.equal(r.copias, 1);
+});
+test('1k3. primera publicación con digest distinto no finge recuperación', () => {
+  const r = promover({ prev: null, modo: 'distinto' });
+  assert.notEqual(r.status, 0); assert.match(r.stderr, /no hay versión anterior/); assert.doesNotMatch(r.stderr, /restaurada/);
+  assert.equal(r.copias, 1);
+});
+test('1k4. error de lectura previa (permisos, red) aborta sin escribir', () => {
+  for (const err of ['unauthorized: authentication required', 'denied: permission_denied', 'dial tcp: connection refused', 'error inesperado']) {
+    const r = promover({ prev: null, errLectura: err });
+    assert.notEqual(r.status, 0, err); assert.equal(r.copias, 0, err); assert.equal(r.tag, null, err);
+    assert.match(r.stderr, /No se pudo leer el estado previo/, err);
+  }
+  const r = promover({ prev: 'A', errLectura: 'unauthorized' });
+  assert.notEqual(r.status, 0); assert.equal(r.copias, 0); assert.equal(r.tag, 'manifiesto-A');
 });
 test('1l. salida no escribible falla antes de mutar: etiqueta previa y cero copias', () => {
   const r = promover({ prev: 'A', salidaMala: true });

@@ -336,15 +336,19 @@ jobs:
           PREV=""
           if skopeo inspect --raw "$REF" > "$TMP/production.prev" 2> "$TMP/production.err"; then
             PREV="sha256:$(sha256sum < "$TMP/production.prev" | cut -d' ' -f1)"
-          elif ! grep -qiE 'manifest unknown|name unknown|not found|404' "$TMP/production.err"; then
+          elif grep -qiE 'manifest unknown|manifest_unknown' "$TMP/production.err" \
+            && ! grep -qiE 'unauthorized|denied|forbidden|timeout|connection|no such host' "$TMP/production.err"; then
+            echo "::notice::production no existe: primera publicación desde el digest aprobado $DIGEST"
+          else
             echo "::error::No se pudo leer el estado previo de :production; no se modifica"; exit 1
-          fi
-          if [ -z "$PREV" ]; then
-            echo "::error:::production no existe: no hay estado al que volver, no se modifica; crear la etiqueta inicial a mano: $REF"; exit 1
           fi
           # Se escribe la salida ANTES de mutar: un fallo local aquí no deja la etiqueta movida.
           echo "production=$IMAGE:production" >> "$GITHUB_OUTPUT"
           recuperar() {
+            if [ -z "$PREV" ]; then
+              echo "::error::Primera publicación de :production fallida: no hay versión anterior a la que volver; verificar a mano el estado remoto de $REF"
+              return 1
+            fi
             if skopeo copy --preserve-digests "docker://$IMAGE@$PREV" "$REF"; then
               if [ "sha256:$(digest_de "$REF")" = "$PREV" ]; then
                 echo "::warning:::production restaurada a $PREV"
